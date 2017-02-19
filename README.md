@@ -1,13 +1,22 @@
 # Desharp - C# .NET Debugging Tool
 
+
+
 ## Examples
+
+### Dump/log any variable
+```cs
+var list = new List<string>() { "a", "b", "c" });
+Debug.Dump(list);  // print list by Console.WriteLine(); or append into html response as floating window
+Debug.Log(list);   // store list in hard drive in exception.log
+```
 
 ### Dump/log `Exception`
 ```cs
 try {
   throw new Exception("Something wrong!");
 } catch (Exception e) {
-  Debug.Dump(e);  // print exception by Console.WriteLine(); or append into html response
+  Debug.Dump(e);  // print exception by Console.WriteLine(); or append into html response as floating window
   Debug.Log(e);   // store exception in hard drive in exception.log
 }
 ```
@@ -70,3 +79,42 @@ You can configure by `app.config`/`web.config` or directly by calling `Debug.Con
   - javascript
 - favourite editor to open files from html output by `editor://` protocol (MSVS2016 by default)
 
+### Configuration examples
+
+Console, Windows forms or WPF application `app.config`:
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <appSettings>
+	  <add key="Desharp:Enabled" value="1" />
+	  <add key="Desharp:Editor" value="MSVS2015" />
+	  <add key="Desharp:Output" value="text" />
+	  <add key="Desharp:Levels" value="exception,debug,-info,-notice,-warning,error,critical,alert,emergency,javascript" />
+	  <add key="Desharp:Directory" value="~/logs" />
+  </appSettings>
+</configuration>
+```
+
+Website application `web.config`:
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <appSettings>
+	  <add key="Desharp:Enabled" value="1" />
+	  <add key="Desharp:Editor" value="MSVS2015" />
+	  <add key="Desharp:Output" value="html" />
+	  <add key="Desharp:DebugIps" value="127.0.0.1,88.31.45.67" />
+	  <add key="Desharp:Levels" value="exception,debug,-info,-notice,-warning,error,critical,alert,emergency,javascript" />
+	  <add key="Desharp:Directory" value="~/logs" />
+  </appSettings>
+</configuration>
+```
+
+Any place inside your application to overwrite config settings:
+```cs
+Debug.Configure(new DebugConfig {
+  Enabled = true,
+  Directory = "~/logs",
+  OutputType = OutputType.Html
+});
+```
