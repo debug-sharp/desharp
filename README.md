@@ -1,5 +1,17 @@
 # Desharp - C# .NET Debugging Tool
 
+## Examples
+
+### Dump/log `Exception`
+```cs
+try {
+  throw new Exception("Something wrong!");
+} catch (Exception e) {
+  Debug.Dump(e);  // print exception by Console.WriteLine(); or append into html response
+  Debug.Log(e);   // store exception in hard drive in exception.log
+}
+```
+
 ## Dump outputs
 
 - console window for console application
