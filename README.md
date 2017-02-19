@@ -85,13 +85,26 @@ Console, Windows forms or WPF application `app.config`:
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
 <configuration>
-  <appSettings>
-	  <add key="Desharp:Enabled" value="1" />
-	  <add key="Desharp:Editor" value="MSVS2015" />
-	  <add key="Desharp:Output" value="text" />
-	  <add key="Desharp:Levels" value="exception,debug,-info,-notice,-warning,error,critical,alert,emergency,javascript" />
-	  <add key="Desharp:Directory" value="~/logs" />
-  </appSettings>
+    <appSettings>
+        <!-- values: 1, 0, true, false -->
+	<add key="Desharp:Enabled" value="1" />
+        <!--
+	     values: any string key to open your editor from html output by: 
+	     `editor://file=...&line=...&editor=MSVS2015
+	-->
+	<add key="Desharp:Editor" value="MSVS2015" />
+        <!-- values: html, text -->
+	<add key="Desharp:Output" value="text" />
+        <!-- 
+             values: list of keys bellow, 
+             it's not necessary to use all, 
+             all enabled by default, 
+             if you want to disable any logging level - put minus char before level key
+        -->
+	<add key="Desharp:Levels" value="exception,debug,-info,-notice,-warning,error,critical,alert,emergency,javascript" />
+        <!-- values: absolute path or relative path from application root starting with '~/' -->
+	<add key="Desharp:Directory" value="~/logs" />
+    </appSettings>
 </configuration>
 ```
 
@@ -99,13 +112,27 @@ Website application `web.config`:
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
 <configuration>
-  <appSettings>
-	  <add key="Desharp:Enabled" value="1" />
-	  <add key="Desharp:Editor" value="MSVS2015" />
-	  <add key="Desharp:Output" value="html" />
-	  <add key="Desharp:DebugIps" value="127.0.0.1,88.31.45.67" />
-	  <add key="Desharp:Levels" value="exception,debug,-info,-notice,-warning,error,critical,alert,emergency,javascript" />
-	  <add key="Desharp:Directory" value="~/logs" />
+    <appSettings>
+        <!-- values: 1, 0, true, false -->
+	<add key="Desharp:Enabled" value="1" />
+        <!--
+	     values: any string key to open your editor from html output by: 
+	     `editor://file=...&line=...&editor=MSVS2015
+	-->
+	<add key="Desharp:Editor" value="MSVS2015" />
+        <!-- values: html, text -->
+	<add key="Desharp:Output" value="html" />
+        <!-- values: IPv4 or IPv6 separated by comma, only for web applications -->
+	<add key="Desharp:DebugIps" value="127.0.0.1,88.31.45.67" />
+        <!-- 
+             values: list of keys bellow, 
+             it's not necessary to use all, 
+             all enabled by default, 
+             if you want to disable any logging level - put minus char before level key
+        -->
+	<add key="Desharp:Levels" value="exception,debug,-info,-notice,-warning,error,critical,alert,emergency,javascript" />
+        <!-- values: absolute path or relative path from application root starting with '~/' -->
+	<add key="Desharp:Directory" value="~/logs" />
   </appSettings>
 </configuration>
 ```
