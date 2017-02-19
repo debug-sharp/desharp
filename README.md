@@ -1,2 +1,60 @@
-# desharp
-C# .NET debuging tool to print structuralized vars, exceptions, stack traces andmore into console, visual studio console, into html web response or into html/text log files.
+# Desharp - C# .NET Debugging Tool
+
+## Dump outputs
+
+- console window for console application
+- Visual Studio console for Windows Forms or WPF application
+- floating window in html response for web applications
+- headers formated for FilePHP browser extension for web applications
+- file logs
+
+
+## Dump possibilities
+
+You can dump or log:
+- any variables
+  - primitive variables and it's primitive arrays
+  - `Lists`, `Arrays` and `Dictionaries` (`IList`, `IEnumerable` and `IDictionary`)
+  - database results (`DataSet`, `DataTable`, `DataRow`)
+  - **custom classes** with properties and fields
+  - **anonymous objects**
+  - much more... you can try:-)
+- exceptions
+
+
+## Dump additional info
+
+All dump or log calls have automaticly rendered:
+- thread/request id
+- current time from `DateTime.Now`
+- call stack, where was `Debug.Dump()` or Debug.Log() used
+- if source code is possible by *.PDB file, there is rendered:
+  - a few lines from source code, where was `Debug.Dump()` or `Debug.Log()` used 
+- if environment is web application, there is rendered:
+  - request URL
+  - all http request headers
+  - client IP
+
+
+## Configuration
+
+You can configure by `app.config`/`web.config` or directly by calling `Debug.Configure()`:
+- if debugging is enabled or not (enabled by default)
+- debug IPs to enable debugging only for list of client IPs (no ips by default)
+- logs directory (app root if not defined)
+- log files format:
+  - text (*.log, by default)
+  - html (*.html)
+- logging levels:
+  - debug (by default)
+  - exception
+  - info
+  - notice
+  - warning
+  - error
+  - critical
+  - alert
+  - emergency
+  - javascript
+- favourite editor to open files from html output by `editor://` protocol (MSVS2016 by default)
+
