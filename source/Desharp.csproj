@@ -1,0 +1,96 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{4F63D16B-A1E9-45A9-AC2F-831A1220B2B9}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Desharp</RootNamespace>
+    <AssemblyName>Desharp</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>..\build\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Web" />
+    <Reference Include="System.Web.Extensions" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Assets.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Assets.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Debug.cs" />
+    <Compile Include="Core\Config.cs" />
+    <Compile Include="Core\Environment.cs" />
+    <Compile Include="Completers\HttpHeaders.cs" />
+    <Compile Include="Completers\StackTrace.cs" />
+    <Compile Include="Core\Enums\EnvironmentType.cs" />
+    <Compile Include="Core\Enums\Level.cs" />
+    <Compile Include="Core\Enums\OutputType.cs" />
+    <Compile Include="Renderers\ErrorFile.cs" />
+    <Compile Include="Renderers\JavascriptExceptionData.cs" />
+    <Compile Include="Core\Structs\DebugConfig.cs" />
+    <Compile Include="Core\Structs\LevelValues.cs" />
+    <Compile Include="Core\Structs\StackTraceItem.cs" />
+    <Compile Include="Core\Structs\RenderingCollection.cs" />
+    <Compile Include="Outputers\HtmlResponse.cs" />
+    <Compile Include="Core\Tools.cs" />
+    <Compile Include="Core\Structs\DumpType.cs" />
+    <Compile Include="Completers\Detector.cs" />
+    <Compile Include="Renderers\Dumper.cs" />
+    <Compile Include="FireLogger.cs" />
+    <Compile Include="Outputers\FileLog.cs" />
+    <Compile Include="Renderers\StackTrace.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Assets.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Assets.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Assets\DumpsCss.css" />
+    <Content Include="Assets\DumpsJs.js" />
+    <Content Include="Assets\LogsCss.css" />
+    <Content Include="Assets\LogsJs.js" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="example.config" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
