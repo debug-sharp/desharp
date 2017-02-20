@@ -145,3 +145,6 @@ Debug.Configure(new DebugConfig {
   OutputType = OutputType.Html
 });
 ```
+
+## Additional info
+- Desharp library works in .NET framework >= 4.5
