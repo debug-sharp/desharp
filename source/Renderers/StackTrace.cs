@@ -36,7 +36,7 @@ namespace Desharp.Renderers {
 				if (preparedResult.ErrorFileStackTrace.HasValue) {
 					errorFileStr = ErrorFile.Render(preparedResult.ErrorFileStackTrace.Value, StackTraceFormat.Html);
 				}
-				stackTraceStr = StackTrace._renderStackTrace(preparedResult.AllStackTraces, StackTraceFormat.Html);
+				stackTraceStr = StackTrace._renderStackTrace(preparedResult.AllStackTraces, StackTraceFormat.Html, fileSystemLog);
 				return StackTrace._renderStackRecordResultHtml(
 					preparedResult, String.Join(": ", threadOrRequestIdStrs), errorFileStr, stackTraceStr, headersStr, dateStr
 				);
@@ -44,12 +44,12 @@ namespace Desharp.Renderers {
 				if (preparedResult.ErrorFileStackTrace.HasValue) {
 					errorFileStr = ErrorFile.Render(preparedResult.ErrorFileStackTrace.Value, StackTraceFormat.Text);
 				}
-				stackTraceStr = StackTrace._renderStackTrace(preparedResult.AllStackTraces, StackTraceFormat.Text);
+				stackTraceStr = StackTrace._renderStackTrace(preparedResult.AllStackTraces, StackTraceFormat.Text, fileSystemLog);
 				return StackTrace._renderStackRecordResultConsoleText(
 					preparedResult, String.Join(" : ", threadOrRequestIdStrs), errorFileStr, stackTraceStr, headersStr, dateStr
 				);
 			} else {
-				stackTraceStr = StackTrace._renderStackTrace(preparedResult.AllStackTraces, StackTraceFormat.Json);
+				stackTraceStr = StackTrace._renderStackTrace(preparedResult.AllStackTraces, StackTraceFormat.Json, fileSystemLog);
 				return StackTrace._renderStackRecordResultLoggerText(
 					preparedResult, String.Join(": ", threadOrRequestIdStrs), errorFileStr, stackTraceStr, headersStr, dateStr
 				);
@@ -65,10 +65,10 @@ namespace Desharp.Renderers {
 		) {
 			string linkValue = " href=\"ht" + "tps://www.google.com/webhp?hl=en&amp;sourceid=desharp&amp;q="
 				+ HttpUtility.UrlEncode(preparedResult.ExceptionMessage) + "\"";
-			string result = "<div class=\"logger-record\">"
-				+ "<a" + linkValue + " target=\"_blank\" class=\"logger-record-control\">"
-					+ "<span class=\"logger-record-id\">[" + threadOrRequestIdStr + "; Date: " + dateStr + "]</span>&nbsp;"
-					+ "<span class=\"logger-record-msg\">"
+			string result = "<div class=\"desharp-dump\">"
+				+ "<a" + linkValue + " target=\"_blank\" class=\"desharp-dump-control\">"
+					+ "<span class=\"desharp-dump-id\">[" + threadOrRequestIdStr + "; Date: " + dateStr + "]</span>&nbsp;"
+					+ "<span class=\"desharp-dump-msg\">"
 						+ "<span>" + preparedResult.ExceptionType + "</span>&nbsp;"
 						+ "<b>" + preparedResult.ExceptionMessage + "</b>"
 					+ "</span>"
@@ -76,7 +76,7 @@ namespace Desharp.Renderers {
 				+ errorFileStr
 				+ stackTraceStr;
 			if (preparedResult.Headers.Count > 0) {
-				result += "<table class=\"logger-record-hdrs\">"
+				result += "<table class=\"desharp-dump-hdrs\">"
 					+ "<thead><tr><th colspan=\"2\">HTTP Headers:</th></tr></thead>"
 					+ "<tbody>" + headersStr + "</tbody>"
 				+ "</table>";
@@ -129,7 +129,7 @@ namespace Desharp.Renderers {
 				foreach (var item in headers) {
 					result.Append(
 						"<tr>"
-							+ "<td>" + item.Key + "</td>"
+							+ "<th>" + item.Key + "</th>"
 							+ "<td>" + item.Value + "</td>"
 						+ "</tr>"
 					);
@@ -143,7 +143,7 @@ namespace Desharp.Renderers {
 			}
 			return result.ToString();
 		}
-		private static string _renderStackTrace (List<StackTraceItem> stackTrace, StackTraceFormat format) {
+		private static string _renderStackTrace (List<StackTraceItem> stackTrace, StackTraceFormat format, bool fileSystemLog = true) {
 			List<string> result = new List<string>();
 			int counter = 0;
 			int[] textLengths = new int[] { 0, 0};
@@ -162,11 +162,17 @@ namespace Desharp.Renderers {
 				counter++;
 			}
 			if (format == StackTraceFormat.Html) {
-				return "<table class=\"logger-record-dtls\">"
-					+ "<thead><tr><th colspan=\"3\">Call stack:</th></tr></thead>"
-					+ "<tbody>" + String.Join("", result.ToArray()) + "</tbody>"
-				+ "</table>";
-			} else if (format == StackTraceFormat.Text) {
+                string resultStr = "<table class=\"desharp-dump-dtls\">"
+                    + "<thead><tr><th colspan=\"3\">Call stack:</th></tr></thead>"
+                    + "<tbody>" + String.Join("", result.ToArray()) + "</tbody>"
+                + "</table>";
+                if (!fileSystemLog) {
+                    resultStr += "<script>"
+                        + "(function(){var a=document.getElementsByTagName(\"table\"),b={},c=[],d={},e={};for(var i=0,l=a.length;i<l;i+=1){b=a[i];if(b.className.indexOf(\"desharp-dump-dtls\")>-1){c=b.getElementsByTagName(\"td\");for(var j=0,k=c.length;j<k;j+=1){d=c[j];if(d.className.indexOf('mthd')>-1){e=d.getElementsByTagName(\"i\")[0];e.style.width=e.offsetWidth+'px'}}b.className=b.className+\" nowrap\";break}}})();"
+                    + "</script>";
+                }
+                return resultStr;
+            } else if (format == StackTraceFormat.Text) {
 				return System.Environment.NewLine + "      " + String.Join(System.Environment.NewLine + "      ", result.ToArray());
 			} else if (format == StackTraceFormat.Json) {
 				return "[" + String.Join(",", result.ToArray()) + "]";

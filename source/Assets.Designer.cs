@@ -63,13 +63,13 @@ namespace Desharp {
         /// <summary>
         ///   Looks up a localized string similar to html,body{font-size:14px;font-family:&apos;Consolas&apos;,courier new;font-weight:bold;}
         ///body{border-top:1px solid #ccc;}
-        ///.logger-record{display:block;padding:2px;text-decoration:none;border-bottom:1px solid #ccc;}
-        ///a.logger-record-control{display:block;padding:2px;text-decoration:none;}
-        ///span.logger-record-id,span.logger-record-msg{cursor:pointer;}
-        ///span.logger-record-id{color:#666;}
-        ///span.logger-record-msg span{color:#000;}
-        ///span.logger-record-msg b{color:#328adc;}
-        ///table.logger-record-dtls{display:none;}
+        ///.desharp-dump{display:block;padding:2px;text-decoration:none;border-bottom:1px solid #ccc;}
+        ///a.desharp-dump-control{display:block;padding:2px;text-decoration:none;}
+        ///span.desharp-dump-id,span.desharp-dump-msg{cursor:pointer;}
+        ///span.desharp-dump-id{color:#666;}
+        ///span.desharp-dump-msg span{color:#000;}
+        ///span.desharp-dump-msg b{color:#328adc;}
+        ///table.desharp-dump-dtls{display:none;}
         ///table. [rest of string was truncated]&quot;;.
         /// </summary>
         internal static string DumpsCss {
@@ -99,14 +99,14 @@ namespace Desharp {
         /// <summary>
         ///   Looks up a localized string similar to html,body{font-size:14px;font-family:&apos;Consolas&apos;,courier new;font-weight:bold;}
         ///body{border-top:1px solid #ccc;}
-        ///.logger-record{display:block;padding:2px;text-decoration:none;border-bottom:1px solid #ccc;}
-        ///a.logger-record-control{display:block;padding:2px;text-decoration:none;}
-        ///span.logger-record-id,span.logger-record-msg{cursor:pointer;}
-        ///span.logger-record-id{color:#666;}
-        ///span.logger-record-msg span{color:#000;}
-        ///span.logger-record-msg b{color:#328adc;}
-        ///table.logger-record-dtls{display:none;}
-        ///table. [rest of string was truncated]&quot;;.
+        ///.desharp-dump{display:block;padding:2px;text-decoration:none;border-bottom:1px solid #ccc;}
+        ///a.desharp-dump-control{display:block;padding:2px;text-decoration:none;}
+        ///span.desharp-dump-id,span.desharp-dump-msg{cursor:pointer;}
+        ///span.desharp-dump-id{color:#666;}
+        ///span.desharp-dump-msg span{color:#000;}
+        ///span.desharp-dump-msg b{color:#328adc;}
+        ///div.desharp-dump-file{display:none;}
+        ///table.desharp-dump-dtls [rest of string was truncated]&quot;;.
         /// </summary>
         internal static string LogsCss {
             get {
@@ -116,10 +116,10 @@ namespace Desharp {
         
         /// <summary>
         ///   Looks up a localized string similar to var init = function () {
-        ///	var a = document.querySelectorAll(&apos;a.logger-record-control&apos;),
-        ///		d = &apos;logger-record-dtls&apos;,
+        ///	var a = document.querySelectorAll(&apos;a.desharp-dump-control&apos;),
+        ///		d = &apos;desharp-dump-dtls&apos;,
         ///		e = function (c) {
-        ///			var o = c.querySelectorAll(&apos;span.logger-record-msg b&apos;);
+        ///			var o = c.querySelectorAll(&apos;span.desharp-dump-msg b&apos;);
         ///			c.setAttribute(&quot;href&quot;, &quot;https://www.google.com/webhp?hl=en&amp;sourceid=c-sharp-debug&amp;q=&quot; + String(o[0].innerHTML).replace(/\t\r\n/g, &quot; &quot;).replace(/ /g, &quot;+&quot;));
         ///			c.onclick = function (e) {
         ///				e = e || window.event;

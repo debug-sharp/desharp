@@ -27,17 +27,17 @@ namespace Desharp.Renderers {
 						+ "</tr>"
 					);
 				}
-				return "<div class=\"logger-record\">"
-					+ "<a class=\"logger-record-control\">"
-						+ "<span class=\"logger-record-id\">[Date: " + requestDate + "]</span>&nbsp;"
-						+ "<span class=\"logger-record-msg\"><b>"
+				return "<div class=\"desharp-dump\">"
+					+ "<a class=\"desharp-dump-control\">"
+						+ "<span class=\"desharp-dump-id\">[Date: " + requestDate + "]</span>&nbsp;"
+						+ "<span class=\"desharp-dump-msg\"><b>"
 							+ jsExceptionProps["message"]
 								.Replace("&", "&amp;")
 								.Replace("<", "&lt;")
 								.Replace(">", "&gt;")
 						+ "</b></span>"
 					+ "</a>"
-					+ "<table class=\"logger-record-hdrs\">"
+					+ "<table class=\"desharp-dump-hdrs\">"
 						+ dataItems.ToString()
 							.Replace("&", "&amp;")
 							.Replace("<", "&lt;")

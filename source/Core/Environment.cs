@@ -21,7 +21,7 @@ namespace Desharp.Core {
                 Environment.Type = EnvironmentType.Web;
 				Environment.AppRoot = HttpContext.Current.Server.MapPath("~").Replace('\\', '/').TrimEnd('/');
 				Environment._debugIps = Config.GetDebugIps();
-			} else {
+            } else {
                 Environment.Type = EnvironmentType.Windows;
 				Environment.AppRoot = System.IO.Path.GetDirectoryName(
 					System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName
@@ -91,14 +91,6 @@ namespace Desharp.Core {
 					} catch (Exception e) { }
 				}
 			}
-		}
-		internal static void InitWebRequestEvents (EnvironmentType envType) {
-			HttpContext.Current.ApplicationInstance.BeginRequest += delegate (object o, EventArgs e) {
-				Debug.RequestBegin();
-			};
-			HttpContext.Current.ApplicationInstance.EndRequest += delegate (object o, EventArgs e) {
-				Debug.RequestEnd();
-			};
 		}
 		internal static bool GetEnabled () {
 			if (Environment.Type == EnvironmentType.Web) {

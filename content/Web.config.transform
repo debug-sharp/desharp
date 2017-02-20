@@ -1,0 +1,11 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<configuration>
+  <appSettings>
+		<add key="Desharp:Enabled" value="true" />
+		<add key="Desharp:Editor" value="MSVS2015" />
+		<add key="Desharp:Output" value="html" />
+		<add key="Desharp:DebugIps" value="127.0.0.1" />
+		<add key="Desharp:Levels" value="exception,debug,-info,-notice,-warning,error,critical,alert,emergency,javascript" />
+		<add key="Desharp:Directory" value="~/logs" />
+  </appSettings>
+</configuration>

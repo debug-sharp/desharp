@@ -29,13 +29,13 @@ namespace Desharp.Core {
             return clientIpAddress;
         }
         public static long GetRequestId () {
-			return Thread.CurrentThread.ManagedThreadId;
-		}
+            if (HttpContext.Current == null) return 0; // windows, unit testing
+            return HttpContext.Current.Timestamp.Ticks;
+        }
 		public static long GetThreadId () {
-			if (HttpContext.Current == null) return 0; // windows, unit testing
-			return HttpContext.Current.Timestamp.Ticks;
+            return Thread.CurrentThread.ManagedThreadId;
 		}
-		internal static string[] StringToUnicodeIndexes (string s) {
+		internal static string StringToUnicodeIndexes (string s) {
             List<string> r = new List<string>();
             char[] chars = s.ToCharArray();
             for (int i = 0, l = chars.Length; i < l; i += 1) {
@@ -43,26 +43,7 @@ namespace Desharp.Core {
                     Convert.ToUInt16(chars[i]).ToString()
                 );
             }
-            return r.ToArray();
-        }
-        // TODO
-        internal static bool IsHtmlResponse () {
-            bool r = true;
-            string requestPath = HttpContext.Current.Request.Path;
-            int questionMarkPos = requestPath.IndexOf("?");
-            if (questionMarkPos > -1) {
-                requestPath = requestPath.Substring(0, questionMarkPos);
-            }
-            if (
-                HttpContext.Current.Response.ContentType != "text/html"/* ||
-                requestPath.LastIndexOf("/Scripts/") == 0 ||
-                requestPath.LastIndexOf(".js") == 0 ||
-                requestPath.LastIndexOf(".css") == 0 ||
-                requestPath.LastIndexOf(".ico") == 0*/
-            ) {
-                r = false;
-            }
-            return r;
+            return String.Join(",", r.ToArray());
         }
         internal static string Md5 (string s) {
             System.Security.Cryptography.MD5 md5Hash = System.Security.Cryptography.MD5.Create();

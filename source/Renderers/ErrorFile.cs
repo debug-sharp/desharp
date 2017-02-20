@@ -8,7 +8,7 @@ using System.Web;
 namespace Desharp.Renderers {
 	internal class ErrorFile {
 		private const string ERROR_FILE_LINE_COLUMN_CURSOR_PRESET = "__STACK_TRACE_RENDERER_ERROR_FILE_LINE_COLUMN_CURSOR__";
-		private const string ERROR_FILE_LINE_COLUMN_CURSOR_VALUE = "<span class=\"logger-file-line-current-column\">|</span>";
+		private const string ERROR_FILE_LINE_COLUMN_CURSOR_VALUE = "<span class=\"desharp-dump-file-line-current-column\">|</span>";
 		private static int[] _errorFileLineDisplayArea = new int[2]{4, 4};
 		internal static string Render (StackTraceItem errorFileStackTrace, StackTraceFormat format) {
 			string result = "";
@@ -66,7 +66,7 @@ namespace Desharp.Renderers {
 			foreach (dynamic line in linesToRender) {
 				lineText = line.text;
 				if (line.current) {
-					currentLineCls = " logger-file-line-current";
+					currentLineCls = " desharp-dump-file-line-current";
 					if (columnInt > -1) {
 						lineText = lineText.Substring(0, columnInt - 1)
 							+ ErrorFile.ERROR_FILE_LINE_COLUMN_CURSOR_PRESET
@@ -85,11 +85,11 @@ namespace Desharp.Renderers {
 							ErrorFile.ERROR_FILE_LINE_COLUMN_CURSOR_PRESET,
 							ErrorFile.ERROR_FILE_LINE_COLUMN_CURSOR_VALUE
 						);
-					lineContent = "<div class=\"logger-file-line" + currentLineCls.ToString() + "\">"
-						+ "<span class=\"logger-file-line-number logger-file-line-digits-" + lineNumDigitsCount.ToString() + "\">"
+					lineContent = "<div class=\"desharp-dump-file-line" + currentLineCls.ToString() + "\">"
+						+ "<span class=\"desharp-dump-file-line-number desharp-dump-file-line-digits-" + lineNumDigitsCount.ToString() + "\">"
 							+ line.num.ToString() + ":"
 						+ "</span>"
-						+ "<span class=\"logger-file-line-content\">"
+						+ "<span class=\"desharp-dump-file-line-content\">"
 							+ lineText
 						+ "</span>"
 					+ "</div>";
@@ -105,16 +105,16 @@ namespace Desharp.Renderers {
 				linesContent.Add(lineContent);
 			}
 			if (format == StackTraceFormat.Html) {
-				result = "<div class=\"logger-file\">"
-					+ "<div class=\"logger-file-title\">"
+				result = "<div class=\"desharp-dump-file\">"
+					+ "<div class=\"desharp-dump-file-title\">"
 						+ "<b>Fi" + "le:</b>"
 						+ "<a href=\"editor://open/?file=" + HttpUtility.UrlEncode(errorFile)
 							+ "&line=" + errorLine.ToString()
 							+ "&editor=" + Tools.Editor
 						+ "\">" + errorFile + ":" + errorLine.ToString() + "</a>"
 					+ "</div>"
-					+ "<div class=\"logger-file-content\">"
-						+ "<div class=\"logger-file-lines\">" + String.Join("", linesContent) + "</div>"
+					+ "<div class=\"desharp-dump-file-content\">"
+						+ "<div class=\"desharp-dump-file-lines\">" + String.Join("", linesContent) + "</div>"
 					+ "</div>"
 				+ "</div>";
 			} else {

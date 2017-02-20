@@ -147,5 +147,5 @@ Debug.Configure(new DebugConfig {
 ```
 
 ## Additional info
-- Desharp library works in .NET framework >= 4.5
+- Desharp library works in .NET framework >= 4.0
 - Desharp is probably possible to use in Visual Basic application, but it has never been tested

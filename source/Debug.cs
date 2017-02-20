@@ -33,11 +33,17 @@ namespace Desharp {
         }
 		public static void Stop () {
 			if (!Core.Environment.GetEnabled()) return;
-			Debug.Dump(new Exception("Script has been stopped."));
-			if (Core.Environment.Type == EnvironmentType.Web) {
-				HttpContext.Current.Response.End();
+            bool htmlOut = Core.Environment.GetOutput() == OutputType.Html && Core.Environment.Type == EnvironmentType.Web;
+		    string renderedException = Debug._renderStackTraceForCurrentApplicationPoint(
+                "Script has been stopped.", "Exception", false, htmlOut
+            );
+            if (Core.Environment.Type == EnvironmentType.Web){
+               HtmlResponse.SendRenderedExceptions(renderedException, "Exception");
+                Debug.RequestEnd();
+                HttpContext.Current.Response.End();
 			} else {
-				Thread.CurrentThread.Abort();
+                Core.Environment.WriteOutput(renderedException);
+                Thread.CurrentThread.Abort();
 			}
 		}
 		public static void Dump (Exception e) {

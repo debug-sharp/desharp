@@ -384,8 +384,8 @@ namespace Desharp.Renderers {
 			object child;
 			foreach (PropertyInfo prop in props) {
 				if (prop.CanRead) {
-					try {
-						child = prop.GetValue(obj);
+					try{
+                        child = prop.GetValue(obj, null);
 					} catch (Exception e) {
 						child = "Exception: " + e.Message;
 					}

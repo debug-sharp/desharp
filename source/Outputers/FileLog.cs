@@ -61,7 +61,7 @@ namespace Desharp.Outputers {
         }
 		private static string _getHtmlLogFileBegin (string filename) {
 			ResourceManager rm = new ResourceManager("Desharp.Assets", Assembly.GetExecutingAssembly());
-			string jsContent = rm.GetString("LogsJs").Replace("\r", "").Replace("\n", "").Replace("\t", "");
+            string jsContent = rm.GetString("LogsJs");//.Replace("\r", "").Replace("\n", "").Replace("\t", "");
 			string cssContent = rm.GetString("LogsCss").Replace("\r", "").Replace("\n", "").Replace("\t", "");
 			return "<!DOCTYPE HTML>"
 				+ "<html lang=\"en-US\">"
