@@ -48,6 +48,7 @@
       <DependentUpon>Assets.resx</DependentUpon>
     </Compile>
     <Compile Include="Core\Module.cs" />
+    <Compile Include="Core\Structs\DumpItem.cs" />
     <Compile Include="Debug.cs" />
     <Compile Include="Core\Config.cs" />
     <Compile Include="Core\Environment.cs" />
@@ -88,7 +89,6 @@
     <Content Include="Assets\LogsJs.js" />
     <None Include="example.config" />
   </ItemGroup>
-  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

@@ -3,6 +3,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Data;
+using System.Reflection;
 
 namespace Desharp.Completers {
     public class Detector {
@@ -22,8 +23,30 @@ namespace Desharp.Completers {
             }
             return false;
         }
-        public static bool IsSimpleArray (object obj) {
+        public static bool IsReflectionObject (object obj) {
             if (
+                obj is MethodInfo || obj is PropertyInfo ||
+                obj is FieldInfo || obj is EventInfo ||
+                obj is MemberInfo || obj is ConstructorInfo
+            ) {
+                return true;
+            }
+            return false;
+        }
+        public static bool IsReflectionObjectArray (object obj) {
+			if (obj == null) return false;
+			if (
+                obj is MethodInfo[] || obj is PropertyInfo[] ||
+                obj is FieldInfo[] || obj is EventInfo[] ||
+                obj is MemberInfo[] || obj is ConstructorInfo[]
+            ) {
+                return true;
+            }
+            return false;
+        }
+        public static bool IsSimpleArray (object obj) {
+			if (obj == null) return false;
+			if (
                 obj is sbyte[] || obj is byte[] ||
                 obj is short[] || obj is ushort[] ||
                 obj is int[] || obj is uint[] || obj is long[] || obj is ulong[] ||
@@ -35,11 +58,12 @@ namespace Desharp.Completers {
             return false;
         }
 		public static bool IsEnum (object obj) {
+			if (obj == null) return false;
 			Type objType = obj.GetType();
 			if (objType != null) {
-				if (objType.BaseType.Name == "Enum") {
-					if (objType.BaseType.BaseType.Name == "ValueType") {
-						if (objType.BaseType.BaseType.BaseType.Name == "Object") {
+				if (objType.BaseType is Type && objType.BaseType.Name == "Enum") {
+					if (objType.BaseType.BaseType is Type && objType.BaseType.BaseType.Name == "ValueType") {
+						if (objType.BaseType.BaseType.BaseType is Type && objType.BaseType.BaseType.BaseType.Name == "Object") {
 							return true;
 						}
 					}
@@ -48,11 +72,13 @@ namespace Desharp.Completers {
 			return false;
 		}
 		public static bool IsDbResult (object obj) {
-            if (obj is DataSet || obj is DataTable || obj is DataRow) return true;
+			if (obj == null) return false;
+			if (obj is DataSet || obj is DataTable || obj is DataRow) return true;
             return false;
         }
         public static bool IsEnumerable (object obj) {
-            if (
+			if (obj == null) return false;
+			if (
                 obj is IList ||
                 obj is System.Array ||
                 obj is System.Collections.ArrayList ||
@@ -63,7 +89,8 @@ namespace Desharp.Completers {
             return false;
         }
         public static bool IsDictionary (object obj) {
-            var r = false;
+			if (obj == null) return false;
+			var r = false;
             if (obj is IDictionary) {
                 r = true;
             } else {
@@ -80,7 +107,8 @@ namespace Desharp.Completers {
             return r;
         }
         public static bool IsDictionaryInnerCollection (object obj) {
-            if (
+			if (obj == null) return false;
+			if (
                 obj is Dictionary<string, object>.KeyCollection ||
                 obj is Dictionary<string, object>.ValueCollection
             ) {

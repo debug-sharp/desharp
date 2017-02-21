@@ -1,157 +1,309 @@
 var Desharp = (function () {
     var Desharp = function (unicodeIndexes) {
-        if (!unicodeIndexes.length) return;
-        var content = String.fromCharCode.apply(window, unicodeIndexes);
-        this.headMouseDown = [false, 0, 0];
-        this.resizerMouseDown = [false, 0, 0];
-        this._sizes = [0, 0, 100, 100];
-        this.cont = this.elm('div', Desharp.contStyles, { id: 'desharp-dumps-cont' });
-        this._head = this.elm('div', Desharp.headStyles, { id: 'desharp-dumps-head' });
-        this._body = this.elm('div', Desharp.bodyStyles, { id: 'desharp-dumps-body' }, content);
-        this.resizer = this.elm('div', Desharp.resizerStyles, { id: 'desharp-dumps-resizer' });
-        this.styles = this.elm('style', {}, { type: 'text/css' }, Desharp.STYLES);
-        this.setUpElmsTogether();
-        this.setUpSizes();
-        this.setUpEvents();
-        var htmlCodeSpans = this._body.getElementsByTagName("span"),
-            codeSpan;
-        for (var i = 0, l = htmlCodeSpans.length; i < l; i += 1) {
-            codeSpan = htmlCodeSpans[i];
-            if (codeSpan.className.indexOf('html-code') > -1) {
-                codeSpan.innerHTML = codeSpan.innerHTML
-                    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-            }
-        };
+        if (!unicodeIndexes.length || Desharp['Instance']) return;
+        var scope = this;
+        Desharp['Instance'] = scope;
+        scope._mouseInside = false;
+        scope._oldIe = /MSIE [5-8]/gi.test(navigator.userAgent);
+        scope._cookieName = Desharp['COOKIE_NAME'];
+        scope._moveAndResizeSizes = [0, 0, 0, 0];
+        scope._headMouseDown = false;
+        scope._cornerResizerMouseDown = false;
+        scope._leftResizerMouseDown = false;
+        scope._bottomResizerMouseDown = false;
+        scope._sizes = [0, 0, 100, 100];
+        scope._clickSpans = {};
+        scope._dumpDivs = {};
+        scope._cont = scope._elm('div', { id: scope._cookieName + '-cont' });
+        scope._inner = scope._elm('div', { id: scope._cookieName + '-inner' });
+        scope._head = scope._elm('div', { id: scope._cookieName + '-head' });
+        scope._head.innerHTML = 'Dumps';
+        scope._body = scope._elm('div', { id: scope._cookieName + '-body' });
+        scope._cornerResizer = scope._elm('div', { id: scope._cookieName + '-corner' });
+        scope._leftResizer = scope._elm('div', { id: scope._cookieName + '-left' });
+        scope._bottomResizer = scope._elm('div', { id: scope._cookieName + '-bottom' });
+        scope._body.innerHTML = String.fromCharCode.apply(window, unicodeIndexes);
+        scope._setUpElmsTogether();
+        scope._setUpSizes();
+        scope._setUpContent();
         if (document.body == null) {
-            var scope = this;
             window.onload = function () {
-                scope.cont = scope._append(document.body, scope.cont);
+                scope._start();
             }
         } else {
-            this.cont = this._append(document.body, this.cont);
+            scope._start();
         }
     };
-    Desharp.COOKIE_NAME = 'desharp-dumps-window';
-    Desharp.STYLES = '#desharp-dumps-body{font-family:\'Consolas\',courier new;font-weight:bold;}'
-	+ ' #desharp-dumps-body span.table{color:rgb(100,255,255);}'
-	+ ' #desharp-dumps-body span.column{color:rgb(0,200,255);}'
-	+ ' #desharp-dumps-body span.type{color:#999;}'
-	+ ' #desharp-dumps-body span.document{padding:0;margin:0;}'
-	+ ' #desharp-dumps-body span.string{color:rgb(0,255,139);}'
-	+ ' #desharp-dumps-body span.html-code{color:orange;}'
-	+ ' #desharp-dumps-body span.int{color:rgb(255,0,48);}'
-	+ ' #desharp-dumps-body span.boolean{color:rgb(255,48,48);}'
-	+ ' #desharp-dumps-body span.int32{color:rgb(255,0,80);}'
-	+ ' #desharp-dumps-body span.int64{color:rgb(255,48,96);}'
-	+ ' #desharp-dumps-body span.double{color:rgb(255,0,213);}'
-	+ ' #desharp-dumps-body span.long{color:rgb(142,0,255);}'
-	+ ' #desharp-dumps-body span.dbnull{color:rgb(255,0,255);}';
-    Desharp.contStyles = {
-        position: 'absolute',
-        'z-index': 9999990,
-        background: '#000',
-        color: '#fff',
-        overflow: 'hidden'
-    };
-    Desharp.headStyles = {
-        position: 'absolute',
-        'z-index': 9999991,
-        width: '100%',
-        height: '30px',
-        background: '#888',
-        cursor: 'move',
-        overflow: 'hidden'
-    };
-    Desharp.bodyStyles = {
-        position: 'absolute',
-        'z-index': 9999992,
-        top: '30px',
-        width: '100%',
-        overflow: 'auto'
-    };
-    Desharp.resizerStyles = {
-        position: 'absolute',
-        'z-index': 9999993,
-        width: '10px',
-        height: '10px',
-        background: '#fff',
-        cursor: 'se-resize',
-        overflow: 'hidden'
-    };
+    Desharp['Instance'] = null;
+    Desharp['COOKIE_NAME'] = 'desharp-dumps';
+    Desharp.OPENED_CSS_CLASS = ' opened';
+    Desharp.CLICK_CSS_CLASS_BEGIN = 'click click-';
+    Desharp.DUMP_CSS_CLASS_BEGIN = 'dump dump-';
+    Desharp.HTML_CODE_CSS_CLASS = 'html-code';
+    Desharp.INNER_PADDING = 5;
     Desharp.prototype = {
-        setUpElmsTogether: function () {
-            this._head = this._append(this.cont, this._head);
-            this._body = this._append(this.cont, this._body);
-            this.resizer = this._append(this.cont, this.resizer);
-            this.styles = this._append(this.cont, this.styles);
+        _setUpElmsTogether: function () {
+            var scope = this;
+            scope._head = scope._append(scope._inner, scope._head);
+            scope._body = scope._append(scope._inner, scope._body);
+            scope._inner = scope._append(scope._cont, scope._inner);
+            scope._cornerResizer = scope._append(scope._cont, scope._cornerResizer);
+            scope._leftResizer = scope._append(scope._cont, scope._leftResizer);
+            scope._bottomResizer = scope._append(scope._cont, scope._bottomResizer);
         },
-        setUpSizes: function () {
-            var cookieSizes = this.trim(this.getCookie(Desharp.COOKIE_NAME)),
+        _setUpSizes: function () {
+            var scope = this,
+				cookieSizes = scope._trim(scope._getCookie(scope._cookieName)),
                 sizes = [];
             if (cookieSizes) {
                 sizes = cookieSizes.split('_');
-                for (var i = 0, l = sizes.length; i < l; i++) this._sizes[i] = parseInt(sizes[i], 10);
+                for (var i = 0, l = sizes.length; i < l; i++) scope._sizes[i] = parseInt(sizes[i], 10);
             }
-            this.styleElms();
-            this.setCookie(Desharp.COOKIE_NAME, this._sizes.join('_'));
+            scope._setCookie(scope._cookieName, scope._sizes.join('_'));
         },
-        setUpEvents: function () {
+        _setUpContent: function () {
+            var scope = this,
+				elms = scope._body.getElementsByTagName("span"),
+				elm = {},
+				cls = '',
+				clsPos = 0,
+                divKey = '',
+				clsBegin = Desharp.CLICK_CSS_CLASS_BEGIN,
+				htmlCodeCls = Desharp.HTML_CODE_CSS_CLASS;
+            for (var i = 0, l = elms.length; i < l; i += 1) {
+                elm = elms[i];
+                cls = elm.className;
+                clsPos = cls.indexOf(clsBegin);
+                if (clsPos > -1) {
+                    scope._clickSpans[scope._getClickOrDumpEmlClassId(elm, cls, clsPos, clsBegin)] = elm;
+                } else if (cls.indexOf(htmlCodeCls) > -1) {
+                    elm.innerHTML = elm.innerHTML
+						.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                }
+            };
+            elms = scope._body.getElementsByTagName("div");
+            clsBegin = Desharp.DUMP_CSS_CLASS_BEGIN;
+            for (var i = 0, l = elms.length; i < l; i += 1) {
+                elm = elms[i];
+                cls = elm.className;
+                clsPos = cls.indexOf(clsBegin);
+                if (clsPos > -1) {
+                    divKey = scope._getClickOrDumpEmlClassId(elm, cls, clsPos, clsBegin);
+                    if (typeof (scope._dumpDivs[divKey]) == 'undefined') {
+                        scope._dumpDivs[divKey] = [elm];
+                    } else {
+                        scope._dumpDivs[divKey].push(elm);
+                    }
+                }
+            };
+        },
+        _start: function () {
             var scope = this;
-            this._head.onmousedown = function (e) {
-                scope.headMouseDown = [true, e.pageX - scope._sizes[0], e.pageY - scope._sizes[1]];
-            };
-            this._head.onmousemove = function (e) {
-                scope.styleElms();
-            };
-            this._head.onmouseup = function (e) {
-                scope.headMouseDown[0] = false;
-                scope.setCookie(Desharp.COOKIE_NAME, scope._sizes.join('_'));
-            };
-
-            this.resizer.onmousedown = function (e) {
-                scope.resizerMouseDown = [true, e.pageX - scope._sizes[2], e.pageY - scope._sizes[3]];
-            };
-            this.resizer.onmouseup = function (e) {
-                scope.resizerMouseDown[0] = false;
-                scope.setCookie(Desharp.COOKIE_NAME, scope._sizes.join('_'));
-            };
-            document.onmousemove = function (e) {
-                if (scope.headMouseDown[0]) {
-                    scope._sizes[0] = e.pageX - scope.headMouseDown[1];
-                    scope._sizes[1] = e.pageY - scope.headMouseDown[2];
-                }
-                if (scope.resizerMouseDown[0]) {
-                    scope._sizes[2] = e.pageX - scope.resizerMouseDown[1];
-                    scope._sizes[3] = e.pageY - scope.resizerMouseDown[2];
-                }
-                if (scope.headMouseDown[0] || scope.resizerMouseDown[0]) scope.styleElms();
-            };
+            scope._cont = scope._append(document.body, scope._cont);
+            scope._setUpEvents();
+            scope._styleElms();
+            scope._openFirstLevelItems();
         },
-        styleElms: function () {
-            var px = 'px',
-                x = this._sizes[0],
-                y = this._sizes[1],
-                w = this._sizes[2],
-                h = this._sizes[3],
-
-                constStyle = this.cont.style,
-                bodyStyle = this._body.style,
-                resizerStyle = this.resizer.style;
-
-            constStyle.top = y + px;
-            constStyle.left = x + px;
-            constStyle.width = w + px;
-            constStyle.height = h + px;
-
-            this._head.style.width = w + px;
-
-            bodyStyle.width = w + px;
-            bodyStyle.height = (h - 30) + px;
-
-            resizerStyle.top = (h - 11) + px;
-            resizerStyle.left = (w - 11) + px;
+        _openFirstLevelItems: function () {
+            var scope = this,
+				firstDivs = scope._body.getElementsByTagName("div"),
+				firstSpans = [],
+				firstSpan = {},
+				clickClsBegin = Desharp.CLICK_CSS_CLASS_BEGIN;
+            if (firstDivs.length > 8) return;
+            for (var i = 0, l = firstDivs.length; i < l; i += 1) {
+                firstSpans = firstDivs[i].getElementsByTagName("span");
+                for (var j = 0, k = firstSpans.length; j < k; j += 1) {
+                    firstSpan = firstSpans[j];
+                    if (firstSpan.className.indexOf(clickClsBegin) > 0) {
+                        firstSpan.click();
+                    }
+                }
+            }
         },
-        trim: function (a, b) {
+        _getClickOrDumpEmlClassId: function (elm, cls, clsPos, clsBegin) {
+            cls = cls.substr(clsPos);
+            clsPos = cls.indexOf(" ", clsBegin.length);
+            return cls.substr(clsBegin.length, clsPos > -1 ? clsPos : cls.length);
+        },
+        _setUpEvents: function () {
+            var scope = this,
+				onmousedown = 'onmousedown',
+				onmousemove = 'onmousemove',
+				onmouseup = 'onmouseup';
+            scope._head[onmousedown] = function (e) {
+                var xy = scope._getCoords(e);
+                scope._headMouseDown = true;
+                scope._moveAndResizeSizes[0] = xy.pageX - scope._sizes[0];
+                scope._moveAndResizeSizes[1] = xy.pageY - scope._sizes[1];
+            };
+            scope._head[onmousemove] = function () {
+                scope._styleElms();
+            };
+            scope._head[onmouseup] = function () {
+                scope._headMouseDown = false;
+                scope._setCookie(scope._cookieName, scope._sizes.join('_'));
+            };
+            scope._cornerResizer[onmousedown] = function (e) {
+                var xy = scope._getCoords(e);
+                scope._cornerResizerMouseDown = true;
+                scope._moveAndResizeSizes[2] = xy.pageX - scope._sizes[2];
+                scope._moveAndResizeSizes[3] = xy.pageY - scope._sizes[3];
+            };
+            scope._cornerResizer[onmouseup] = function () {
+                scope._cornerResizerMouseDown = false;
+                scope._setCookie(scope._cookieName, scope._sizes.join('_'));
+            };
+            scope._leftResizer[onmousedown] = function (e) {
+                var xy = scope._getCoords(e);
+                scope._leftResizerMouseDown = true;
+                scope._moveAndResizeSizes[2] = xy.pageX - scope._sizes[2];
+            };
+            scope._leftResizer[onmouseup] = function () {
+                scope._leftResizerMouseDown = false;
+                scope._setCookie(scope._cookieName, scope._sizes.join('_'));
+            };
+            scope._bottomResizer[onmousedown] = function (e) {
+                var xy = scope._getCoords(e);
+                scope._bottomResizerMouseDown = true;
+                scope._moveAndResizeSizes[3] = xy.pageY - scope._sizes[3];
+            };
+            scope._bottomResizer[onmouseup] = function () {
+                scope._bottomResizerMouseDown = false;
+                scope._setCookie(scope._cookieName, scope._sizes.join('_'));
+            };
+            document[onmousemove] = function (e) {
+                scope._documentOnMouseMoveHandler(e);
+            };
+            scope._body.onclick = function (e) {
+                e = e || window.event;
+                scope._bodyClickHandler(e);
+            };
+            scope._headSize = scope._head.offsetHeight;
+        },
+        _getCoords: function (e) {
+            e = e || window.event;
+            if (this._oldIe) {
+                var doc = document,
+					docElm = doc['documentElement'],
+					docBody = doc['body'],
+					docScrolls = [],
+					scrollTop = 'scrollTop',
+					scrollLeft = 'scrollLeft';
+                if (docElm && docElm[scrollTop]) {
+                    docScrolls = [
+						docElm[scrollLeft],
+						docElm[scrollTop]
+                    ];
+                } else {
+                    docScrolls = [
+						docBody[scrollLeft],
+						docBody[scrollTop]
+                    ];
+                }
+                return {
+                    pageX: e['clientX'] + docScrolls[0],
+                    pageY: e['clientY'] + docScrolls[1]
+                };
+            } else {
+                return {
+                    pageX: e.pageX,
+                    pageY: e.pageY
+                };
+            }
+        },
+        _documentOnMouseMoveHandler: function (e) {
+            var scope = this, xy = {};
+            if (
+				scope._headMouseDown ||
+				scope._cornerResizerMouseDown ||
+				scope._leftResizerMouseDown ||
+				scope._bottomResizerMouseDown
+			) {
+                xy = scope._getCoords(e);
+                if (scope._headMouseDown) {
+                    scope._sizes[0] = xy.pageX - scope._moveAndResizeSizes[0];
+                    scope._sizes[1] = xy.pageY - scope._moveAndResizeSizes[1];
+                }
+                if (scope._cornerResizerMouseDown) {
+                    scope._sizes[2] = xy.pageX - scope._moveAndResizeSizes[2];
+                    scope._sizes[3] = xy.pageY - scope._moveAndResizeSizes[3];
+                }
+                if (scope._leftResizerMouseDown) {
+                    scope._sizes[2] = xy.pageX - scope._moveAndResizeSizes[2];
+                }
+                if (scope._bottomResizerMouseDown) {
+                    scope._sizes[3] = xy.pageY - scope._moveAndResizeSizes[3];
+                }
+                scope._styleElms();
+            }
+        },
+        _bodyClickHandler: function (e) {
+            var scope = this,
+				srcElm = scope._getEventSourceElm(e),
+				cls = srcElm.className,
+				clsBegin = Desharp.CLICK_CSS_CLASS_BEGIN,
+				clsPos = cls.indexOf(clsBegin),
+				dumpElms = [],
+				dumpElm = {};
+            if (clsPos > -1) {
+                clsBegin = Desharp.OPENED_CSS_CLASS;
+                if (cls.indexOf(clsBegin) > -1) {
+                    srcElm.className = srcElm.className.replace(clsBegin, '');
+                } else {
+                    srcElm.className = srcElm.className + clsBegin;
+                }
+                dumpElms = scope._dumpDivs[scope._getClickOrDumpEmlClassId(srcElm, cls, clsPos, clsBegin)];
+                for (var i = 0, l = dumpElms.length; i < l; i += 1) {
+                    dumpElm = dumpElms[i];
+                    if (dumpElm) {
+                        cls = dumpElm.className;
+                        if (cls.indexOf(clsBegin) > -1) {
+                            dumpElm.className = dumpElm.className.replace(clsBegin, '');
+                        } else {
+                            dumpElm.className = dumpElm.className + clsBegin;
+                        }
+                    }
+                }
+            }
+        },
+        _getEventSourceElm: function (e) {
+            var result = e.target ? e.target : (e.srcElement ? e.srcElement : null);
+            if (result.nodeType == 3) result = result.parentNode; // Safari bug by clicking on text node
+            return result;
+        },
+        _styleElms: function () {
+            var scope = this,
+                x = scope._sizes[0],
+                y = scope._sizes[1],
+                w = scope._sizes[2],
+                h = scope._sizes[3],
+				p = Desharp.INNER_PADDING,
+				p2 = p * 2,
+
+				width = 'width',
+				height = 'height',
+
+                constStyle = scope._cont.style,
+                bodyStyle = scope._body.style,
+                cornerStyle = scope._cornerResizer.style;
+
+            scope._styleElmProp(constStyle, 'top', y);
+            scope._styleElmProp(constStyle, 'left', x);
+            scope._styleElmProp(constStyle, width, w);
+            scope._styleElmProp(constStyle, height, h + 5);
+            scope._styleElmProp(scope._head.style, width, w - p2 + 2);
+            scope._styleElmProp(bodyStyle, width, w - p2 - 10/* 5 - body padding left and right*/);
+            scope._styleElmProp(bodyStyle, height, h - scope._headSize - p - 5/* 5 - body padding bottom*/);
+        },
+        _styleElmProp: function (styleObj, propName, propValue) {
+            if (this._oldIe) {
+                styleObj[propName] = propValue;
+            } else {
+                styleObj[propName] = propValue + 'px';
+            }
+        },
+        _trim: function (a, b) {
             var c, d = 0, e = 0;
             a += "";
             if (b) {
@@ -176,34 +328,29 @@ var Desharp = (function () {
             }
             return c.indexOf(a.charAt(0)) === -1 ? a : '';
         },
-        elm: function (name, styles, attributes, content) {
+        _elm: function (name, attributes) {
             var elm = document.createElement(name);
-            styles = styles || {};
             attributes = attributes || {};
             for (var name in attributes) {
                 elm.setAttribute(name, attributes[name]);
             }
-            for (var name in styles) {
-                elm.style[name] = styles[name];
-            }
-            if (content) elm.innerHTML = content;
             return elm;
         },
         _append: function (parent, child) {
-            if (parent.appendChild) {
-                return parent.appendChild(child);
-            } else {
+            if (this._oldIe) {
                 return parent.insertAdjacentElement('beforeEnd', child);
+            } else {
+                return parent.appendChild(child);
             }
         },
-        getCookie: function (name) {
+        _getCookie: function (name) {
             var resultCookie = '',
                 docCookieStr = document.cookie,
                 docCookieStrArr = docCookieStr.split(';'),
                 docCookieStrItem = '',
                 cookieDelimiterStr = '__JS_COOKIE_DELIMITER__';
             for (var i = 0, l = docCookieStrArr.length; i < l; i++) {
-                docCookieStrItem = this.trim(docCookieStrArr[i]);
+                docCookieStrItem = this._trim(docCookieStrArr[i]);
                 if (docCookieStrItem.indexOf('expires') === 0 || docCookieStrItem.indexOf('path') === 0 || docCookieStrItem.indexOf('domain') === 0 || docCookieStrItem.indexOf('max-age') === 0 || docCookieStrItem.indexOf('secure') === 0) {
                     docCookieStrArr[i] = docCookieStrItem;
                 } else if (i > 0) {
@@ -213,7 +360,7 @@ var Desharp = (function () {
             docCookieStr = docCookieStrArr.join('; ');
             docCookieStrArr = docCookieStr.split(cookieDelimiterStr);
             for (var i = 0, l = docCookieStrArr.length; i < l; i++) {
-                docCookieStrItem = this.trim(docCookieStrArr[i]);
+                docCookieStrItem = this._trim(docCookieStrArr[i]);
                 if (docCookieStrItem.indexOf(name) === 0) {
                     resultCookie = docCookieStrArr[i];
                     break;
@@ -223,27 +370,31 @@ var Desharp = (function () {
                 resultCookie = resultCookie.substr(0, resultCookie.indexOf(';'));
             }
             resultCookie = resultCookie.substr(resultCookie.indexOf('=') + 1);
-            resultCookie = this.trim(decodeURIComponent(resultCookie));
+            resultCookie = this._trim(decodeURIComponent(resultCookie));
             return resultCookie;
         },
-        setCookie: function (name, value, exdays) {
+        _setCookie: function (name, value, exdays) {
             var exdate = new Date(),
                 newCookieRawValue = '',
                 explDomain = [],
                 domain = '';
             exdays = exdays || 365;
             exdate.setDate(exdate.getDate() + exdays);
-            newCookieRawValue = name + "=" + encodeURIComponent(value) + '; ';
-            newCookieRawValue += 'path=/; ';
+            newCookieRawValue = name + "=" + encodeURIComponent(value);
+            newCookieRawValue += '; path=/';
             /* use only for multiple domains in third level */
-            explDomain = location.host.split('.');
-            explDomain[0] = '';
-            domain = explDomain.join('.');
-            newCookieRawValue += 'domain=' + domain + '; ';
-            if (exdays) {
-                newCookieRawValue += 'expires=' + exdate.toUTCString() + '; ';
+            explDomain = location.hostname.split('.');
+            if (explDomain.length == 3) {
+                explDomain[0] = '';
+                domain = explDomain.join('.');
+                newCookieRawValue += '; domain=' + domain;
+            } else {
+                newCookieRawValue += '; domain=' + location.hostname;
             }
-            return document.cookie = newCookieRawValue;
+            if (exdays) {
+                newCookieRawValue += '; expires=' + exdate.toUTCString();
+            }
+            document.cookie = newCookieRawValue;
         }
     };
     return Desharp;

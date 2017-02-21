@@ -6,57 +6,89 @@ using System.Linq;
 using System.Reflection;
 using Desharp.Core;
 using Desharp.Completers;
+using System.Collections;
+using System.Web;
+using System.Text.RegularExpressions;
 
 namespace Desharp.Renderers {
-    public class Dumper {
-        public static string Dump (object obj, int level = 0, bool htmlOut = false, List<int> ids = null) {
+	public class Dumper {
+		public static string Dump (object obj, int level = 0, bool htmlOut = false, int maxDepth = 0) {
+			return Dumper._dump(obj, level, htmlOut, null, maxDepth).Content;
+		}
+		private static DumpItem _dump (object obj, int level = 0, bool htmlOut = false, List<int> ids = null, int maxDepth = 0) {
 			if (ids == null) ids = new List<int>();
+			if (maxDepth == 0) maxDepth = Core.Environment.Depth;
 			if (obj != null) {
 				int objId = obj.GetHashCode();
 				if (ids.Contains(objId)) {
-					return "{*** RECURSION ***}";
+					// detected recursion
+					return new DumpItem {
+						Complex = false,
+						Content = htmlOut ? "<span class=\"recursion click click-" + objId.ToString() + "\">{*** RECURSION ***}</span>" : "{*** RECURSION ***}"
+					};
 				} else {
 					ids.Add(objId);
 				}
 			}
-			string result = "";
-            if (htmlOut && level == 0) {
-                result += "<div>";
-            }
-            if (Detector.IsTypeObject(obj)) {
-                result += Dumper._dumpTypeObject(obj as Type, level, htmlOut);
-            } else if (Detector.IsEnum(obj)) {
-				result += Dumper._dumpEnum(obj, level, htmlOut);
+			if (level == maxDepth) {
+				// detected last level depth
+				if (Detector.IsTypeObject(obj)) {
+					return Dumper._dumpTypeObject(obj as Type, level, htmlOut);
+				} else if (Detector.IsEnum(obj)) {
+					return Dumper._dumpEnum(obj, level, htmlOut);
+				} else if (Detector.IsSimpleType(obj)) {
+					return Dumper._dumpSimpleType(obj, level, htmlOut);
+				} else {
+					DumpType type = Dumper.GetDumpTypes(obj, "", htmlOut, true);
+					return new DumpItem {
+						Complex = false,
+						Content = type.ValueTypeCode
+					};
+				}
+			}
+			DumpItem result;
+			if (Detector.IsTypeObject(obj)) {
+				result = Dumper._dumpTypeObject(obj as Type, level, htmlOut);
+			} else if (Detector.IsEnum(obj)) {
+				result = Dumper._dumpEnum(obj, level, htmlOut);
 			} else if (Detector.IsSimpleType(obj)) {
-                result += Dumper._dumpSimpleType(obj, level, htmlOut);
-            } else if (Detector.IsSimpleArray(obj)) {
-                result += Dumper._dumpSimpleArray(obj, level, htmlOut, ids);
-            } else if (Detector.IsDictionary(obj)) {
-                result += Dumper._dumpDictionary(obj, level, htmlOut, ids);
-            } else if (Detector.IsDictionaryInnerCollection(obj)) {
-                result += Dumper._dumpDictionaryInnerCollection(obj, level, htmlOut, ids);
-            } else if (Detector.IsEnumerable(obj)) {
-                result += Dumper._dumpEnumerable(obj, level, htmlOut, ids);
-            } else if (Detector.IsDbResult(obj)) {
-                result += Dumper._dumpDbResult(obj, level, htmlOut, ids);
-            } else {
-                result += Dumper._dumpUnknown(obj, level, htmlOut, ids);
-            }
-            if (htmlOut && level == 0) {
-                result += "</div>";
-            }
-            return result;
+				result = Dumper._dumpSimpleType(obj, level, htmlOut);
+			} else if (Detector.IsSimpleArray(obj)) {
+				result = Dumper._dumpSimpleArray(obj, level, htmlOut, ids, maxDepth);
+			} else if (Detector.IsDictionary(obj)) {
+				result = Dumper._dumpDictionary(obj, level, htmlOut, ids, maxDepth);
+			} else if (Detector.IsDictionaryInnerCollection(obj)) {
+				result = Dumper._dumpDictionaryInnerCollection(obj, level, htmlOut, ids, maxDepth);
+			} else if (Detector.IsEnumerable(obj)) {
+				result = Dumper._dumpEnumerable(obj, level, htmlOut, ids, maxDepth);
+			} else if (Detector.IsDbResult(obj)) {
+				result = Dumper._dumpDbResult(obj, level, htmlOut, ids, maxDepth);
+			} else if (!(Detector.IsReflectionObject(obj) || Detector.IsReflectionObjectArray(obj))) {
+				result = Dumper._dumpUnknown(obj, level, htmlOut, ids, maxDepth);
+			} else {
+				result = new DumpItem {
+					Complex = false,
+					Content = obj.ToString()
+				};
+			}
+			if (htmlOut) {
+				if (level == 0) {
+					result.Content = "<div class=\"item\">" + result.Content + "</div>";
+				}
+			}
+			return result;
 		}
 		internal static DumpType GetDumpTypes (object obj, string length = "", bool htmlOut = false, bool fullTypeName = false) {
 			string typeStr = "";
-			string html = "";
+			string valueTypeHtml = "";
+			string nameTypeClass = "";
+			string valueTypeClickClass = "";
 			if (obj == null) {
 				typeStr = "null";
 			} else {
+				valueTypeClickClass = (length.Length > 0 && !(obj is string)) ? "click click-" + obj.GetHashCode().ToString() : "";
 				Type type = obj.GetType() as Type;
-				if (type == null) {
-					typeStr = "null";
-				} else {
+				if (type != null) {
 					Type[] gta = type.GetGenericArguments();
 					if (fullTypeName) {
 						typeStr = type.FullName.ToString();
@@ -81,31 +113,45 @@ namespace Desharp.Renderers {
 			if (typeStr.IndexOf("<>f__AnonymousType2") > -1) { // mostly simple base object with key/value passed into Dump method
 				typeStr = "Object" + typeStr.Substring(19);
 			}
-			if (htmlOut) {
-				html = "<span class=\"type\">[" + typeStr + "]</span>";
-			} else {
-				html = "[" + typeStr + "]";
-			}
+			if (htmlOut) nameTypeClass = typeStr.ToLower();
 			if (length.Length > 0) {
-				if (htmlOut) {
-					html = "<span class=\"type\">[" + typeStr + "(" + length + ")]</span>";
-				} else {
-					html = "[" + typeStr + "(" + length + ")]";
+				int lastArrCharsPos = typeStr.LastIndexOf("[]");
+				if (lastArrCharsPos == typeStr.Length - 2) {
+					int startIndex = lastArrCharsPos; // typeStr.Length - 2
+					int arrCharsPos;
+					while (true) {
+						arrCharsPos = typeStr.IndexOf("[]", startIndex - 2);
+						if (arrCharsPos > -1 && arrCharsPos < lastArrCharsPos) {
+							lastArrCharsPos = arrCharsPos;
+							startIndex -= 2;
+						} else {
+							break;
+						}
+					}
+					typeStr = typeStr.Substring(0, lastArrCharsPos) + "[" + length + "]" + typeStr.Substring(lastArrCharsPos + 2);
+				} else if (obj != null) {
+					typeStr = typeStr + "(" + length + ")";
 				}
+			}
+			if (htmlOut) {
+				valueTypeHtml = "<span class=\"type " + valueTypeClickClass + "\">[" + typeStr + "]</span>";
+			} else {
+				valueTypeHtml = "[" + typeStr + "]";
 			}
 			if (htmlOut) {
 				return new DumpType {
 					Text = typeStr.ToLower(),
-					Html = html
+					ValueTypeCode = valueTypeHtml,
+					NameCssClass = nameTypeClass
 				};
 			} else {
 				return new DumpType {
 					Text = typeStr,
-					Html = html
+					ValueTypeCode = valueTypeHtml,
 				};
 			}
 		}
-		private static string _dumpEnum (object obj, int level, bool htmlOut) {
+		private static DumpItem _dumpEnum (object obj, int level, bool htmlOut) {
 			DumpType type = Dumper.GetDumpTypes(obj, "", htmlOut, true);
 			List<string> result = new List<string>();
 			Type objType = obj.GetType();
@@ -122,59 +168,108 @@ namespace Desharp.Renderers {
 				}
 				if (hasFlag) result.Add(fi.Name);
 			}
-			return String.Join(", ", result.ToArray()) + " " + type.Html;
+			return new DumpItem {
+				Complex = false,
+				Content = String.Join(", ", result.ToArray()) + " " + type.ValueTypeCode
+			};
 		}
-		private static string _dumpTypeObject (Type obj, int level = 0, bool htmlOut = true) {
-            string htmlValue = obj == null ? "null" : obj.FullName;
-            DumpType type = Dumper.GetDumpTypes(obj, "", htmlOut);
-            if (htmlOut) return "<span class=\"" + type.Text + "\">" + htmlValue + "</span>&nbsp;" + type.Html;
-            return htmlValue + " [" + type.Text + "]";
-        }
-        private static string _dumpSimpleType (object obj, int level = 0, bool htmlOut = true) {
-            string htmlValue = obj == null ? "null" : obj.ToString();
+		private static DumpItem _dumpTypeObject (Type obj, int level = 0, bool htmlOut = true) {
+			string htmlValue = obj == null ? "null" : obj.FullName;
+			DumpType type = Dumper.GetDumpTypes(obj, "", htmlOut);
+			DumpItem result = new DumpItem { Complex = false };
+			if (htmlOut) {
+				result.Content = "<span class=\"" + type.Text + "\">" + htmlValue + "</span>&nbsp;" + type.ValueTypeCode;
+			} else {
+				result.Content = htmlValue + " [" + type.Text + "]";
+			}
+			return result;
+		}
+		private static DumpItem _dumpSimpleType (object obj, int level = 0, bool htmlOut = true) {
+			string htmlValue = "";
+			if (obj == null) {
+				htmlValue = "null";
+			} else {
+				htmlValue = obj.ToString();
+				if (obj is char || obj is string) {
+					if (htmlOut) htmlValue = Tools.HtmlEntities(htmlValue.ToString());
+				} else if (obj is bool) {
+					htmlValue = htmlValue.ToLower();
+				} else if (obj is double) {
+					htmlValue = htmlValue.Replace(',', '.'); // Microsoft .NET environment ToString() translates double into shits
+				}
+			}
             DumpType type = (obj is string) ? Dumper.GetDumpTypes(obj, obj.ToString().Length.ToString(), htmlOut) : Dumper.GetDumpTypes(obj, "", htmlOut);
-            if (htmlOut) return "<span class=\"" + type.Text + "\">" + htmlValue + "</span>&nbsp;" + type.Html;
-            return htmlValue + " [" + type.Text + "]";
+            DumpItem result = new DumpItem { Complex = false };
+            if (htmlOut) {
+                result.Content = "<span class=\"" + type.NameCssClass + "\">" + htmlValue + "</span>&nbsp;" + type.ValueTypeCode;
+            } else {
+                result.Content = htmlValue + " [" + type.Text + "]";
+            }
+            return result;
         }
-        private static string _dumpSimpleArray (object obj, int level = 0, bool htmlOut = true, List<int> ids = null) {
+        private static DumpItem _dumpSimpleArray (object obj, int level = 0, bool htmlOut = true, List<int> ids = null, int maxDepth = 0) {
             dynamic simpleArray = Dumper._getSimpleTypeArray(obj);
             DumpType type = Dumper.GetDumpTypes(obj, simpleArray.length.ToString(), htmlOut);
-            string result = type.Html;
+            string result = type.ValueTypeCode;
+            DumpItem dumpedChild;
+            object child;
+            if (htmlOut) result += "<div class=\"item dump dump-" + obj.GetHashCode().ToString() + "\">";
             for (int i = 0, l = simpleArray.length; i < l; i += 1) {
+                child = simpleArray.array[i];
+                dumpedChild = Dumper._dump(child, level + 1, htmlOut, new List<int>(ids), maxDepth);
                 if (htmlOut) {
-                    result += "<br />" + Dumper._tabsIndent(level + 1, htmlOut)
-                        + "<span class=\"int\">" + i.ToString() + "</span>:&nbsp;"
-                        + Dumper.Dump(simpleArray.array[i], level + 1, htmlOut, new List<int>(ids));
+                    result += (i > 0 ? "<br />" : "") + Dumper._tabsIndent(level + 1, htmlOut)
+                        + "<span class=\"int\">" 
+                            + i.ToString() 
+                        + "</span>:&nbsp;"
+                        + dumpedChild.Content;
                 } else {
                     result += "\r\n" + Dumper._tabsIndent(level + 1, htmlOut)
                         + i.ToString() + ": "
-                        + Dumper.Dump(simpleArray.array[i], level + 1, htmlOut, new List<int>(ids));
+                        + dumpedChild.Content;
                 }
             }
-            return result;
+            if (htmlOut) result += "</div>";
+            return new DumpItem {
+                Complex = true,
+                Content = result
+            };
         }
-        private static string _dumpDictionary (object obj, int level = 0, bool htmlOut = false, List<int> ids = null) {
+        private static DumpItem _dumpDictionary (object obj, int level = 0, bool htmlOut = false, List<int> ids = null, int maxDepth = 0) {
             dynamic objDct = (dynamic)obj;
             DumpType type = Dumper.GetDumpTypes(obj, objDct.Count.ToString(), htmlOut);
-            string result = type.Html;
-            foreach (dynamic item in objDct) {
-                object child = item.Value;
-                string keyStr = item.Key.ToString();
-                DumpType subTypeKey = Dumper.GetDumpTypes(item.Key, "", htmlOut);
-                DumpType subTypeValue = Dumper.GetDumpTypes(child, "", htmlOut);
+            string result = type.ValueTypeCode;
+            DumpItem dumpedChild;
+            object child;
+            string keyStr;
+            DumpType subTypeKey;
+            DumpType subTypeValue;
+			if (htmlOut) result += "<div class=\"item dump dump-" + obj.GetHashCode().ToString() + "\">";
+			int i = 0;
+			foreach (dynamic item in objDct) {
+                child = item.Value;
+                keyStr = item.Key.ToString();
+                subTypeKey = Dumper.GetDumpTypes(item.Key, "", htmlOut);
+                subTypeValue = Dumper.GetDumpTypes(child, "", htmlOut);
 				child = child == null ? "null" : child;
-				if (htmlOut) {
-                    result += "<br />" + Dumper._tabsIndent(level + 1, htmlOut)
-                        + "<span class=\"" + subTypeKey.Text + "\">" + keyStr + "</span>"
-                        + ":&nbsp;" + Dumper.Dump(child, level + 1, htmlOut, new List<int>(ids));
+				dumpedChild = Dumper._dump(child, level + 1, htmlOut, new List<int>(ids), maxDepth);
+                if (htmlOut) {
+                    result += (i > 0 ? "<br />" : "") + Dumper._tabsIndent(level + 1, htmlOut)
+                        + "<span class=\"" + subTypeKey.NameCssClass + "\">" + keyStr + "</span>"
+                        + ":&nbsp;" + dumpedChild.Content;
                 } else {
                     result += "\r\n" + Dumper._tabsIndent(level + 1, htmlOut)
-                        + keyStr + ": " + Dumper.Dump(child, level + 1, htmlOut, new List<int>(ids));
+                        + keyStr + ": " + dumpedChild.Content;
                 }
-            }
-            return result;
+				i++;
+			}
+			if (htmlOut) result += "</div>";
+			return new DumpItem {
+                Complex = true,
+                Content = result
+            };
         }
-        private static string _dumpDictionaryInnerCollection (object obj, int level = 0, bool htmlOut = false, List<int> ids = null) {
+        private static DumpItem _dumpDictionaryInnerCollection (object obj, int level = 0, bool htmlOut = false, List<int> ids = null, int maxDepth = 0) {
             string result = "";
             int length = 0;
             List<string> objList = new List<string>();
@@ -189,23 +284,32 @@ namespace Desharp.Renderers {
             }
             length = objList.Count;
             DumpType type = Dumper.GetDumpTypes(obj, length.ToString(), htmlOut);
-            result += type.Html;
-            for (int i = 0; i < length; i++) {
-                object child = objList[i];
-                string keyStr = i.ToString();
+            result += type.ValueTypeCode;
+			DumpItem dumpedChild;
+			object child;
+            string keyStr;
+			if (htmlOut) result += "<div class=\"item dump dump-" + obj.GetHashCode().ToString() + "\">";
+			for (int i = 0; i < length; i++) {
+                child = objList[i];
+                keyStr = i.ToString();
 				child = child == null ? "null" : child;
+				dumpedChild = Dumper._dump(child, level + 1, htmlOut, new List<int>(ids), maxDepth);
 				if (htmlOut) {
-                    result += "<br />" + Dumper._tabsIndent(level + 1, htmlOut)
-                        + "<span class=\"property\">" + keyStr + "</span>"
-                        + ":&nbsp;" + Dumper.Dump(child, level + 1, htmlOut, new List<int>(ids));
+                    result += (i > 0 ? "<br />" : "") + Dumper._tabsIndent(level + 1, htmlOut)
+                        + "<span class=\"int\">" + keyStr + "</span>"
+                        + ":&nbsp;" + dumpedChild.Content;
                 } else {
                     result += "\r\n" + Dumper._tabsIndent(level + 1, htmlOut)
-                        + keyStr + ": " + Dumper.Dump(child, level + 1, htmlOut, new List<int>(ids));
+                        + keyStr + ": " + dumpedChild.Content;
                 }
-            }
-            return result;
-        }
-        private static string _dumpEnumerable (object obj, int level = 0, bool htmlOut = false, List<int> ids = null) {
+			}
+			if (htmlOut) result += "</div>";
+			return new DumpItem {
+				Complex = true,
+				Content = result
+			};
+		}
+        private static DumpItem _dumpEnumerable (object obj, int level = 0, bool htmlOut = false, List<int> ids = null, int maxDepth = 0) {
             string result = "";
             int length = 0;
             dynamic objEnum = (dynamic)obj;
@@ -214,121 +318,152 @@ namespace Desharp.Renderers {
             } else if (obj is System.Array) {
                 length = objEnum.Length;
             } else {
-                length = objEnum.Count;
+				length = objEnum.Count;
             }
             DumpType type = Dumper.GetDumpTypes(obj, length.ToString(), htmlOut);
-            result += type.Html;
-            for (int i = 0; i < length; i++) {
-                object child = objEnum[i];
-                string keyStr = i.ToString();
+            result += type.ValueTypeCode;
+			DumpItem dumpedChild;
+			object child;
+            string keyStr;
+			if (htmlOut) result += "<div class=\"item dump dump-" + obj.GetHashCode().ToString() + "\">";
+			for (int i = 0; i < length; i++) {
+                child = objEnum[i];
+                keyStr = i.ToString();
 				child = child == null ? "null" : child;
+				dumpedChild = Dumper._dump(child, level + 1, htmlOut, new List<int>(ids), maxDepth);
 				if (htmlOut) {
-                    result += "<br />" + Dumper._tabsIndent(level + 1, htmlOut)
-                    + "<span class=\"property\">" + keyStr + "</span>"
-                    + ":&nbsp;" + Dumper.Dump(child, level + 1, htmlOut, new List<int>(ids));
+                    result += (i > 0 ? "<br />" : "") + Dumper._tabsIndent(level + 1, htmlOut)
+                    + "<span class=\"int\">" + keyStr + "</span>"
+                    + ":&nbsp;" + dumpedChild.Content;
                 } else {
                     result += "\r\n" + Dumper._tabsIndent(level + 1, htmlOut)
-                    + keyStr + ": " + Dumper.Dump(child, level + 1, htmlOut, new List<int>(ids));
+                    + keyStr + ": " + dumpedChild.Content;
                 }
-            }
-            return result;
-        }
-        private static string _dumpDbResult (object obj, int level = 0, bool htmlOut = false, List<int> ids = null) {
+			}
+			if (htmlOut) result += "</div>";
+			return new DumpItem {
+				Complex = true,
+				Content = result
+			};
+		}
+        private static DumpItem _dumpDbResult (object obj, int level = 0, bool htmlOut = false, List<int> ids = null, int maxDepth = 0) {
             string result = "";
             DumpType type;
             int length = 0;
-            if (obj is DataSet) {
+			DumpItem dumpedChild;
+            object child;
+			if (htmlOut) result += "<div class=\"item dump dump-" + obj.GetHashCode().ToString() + "\">";
+			if (obj is DataSet) {
                 DataSet ds = obj as DataSet;
                 length = ds.Tables.Count;
                 type = Dumper.GetDumpTypes(obj, length.ToString(), htmlOut);
-                result += type.Html;
+                result += type.ValueTypeCode;
                 for (int i = 0; i < length; i++) {
+                    child = ds.Tables[i];
                     DataTable table = ds.Tables[i];
-                    if (htmlOut) {
-                        result += "<br />" + Dumper._tabsIndent(level + 1, htmlOut)
-                            + "<span class=\"table\">" + table.TableName + "</span>:&nbsp;" + Dumper.Dump(table, level + 1, htmlOut, new List<int>(ids));
+					dumpedChild = Dumper._dump(child, level + 1, htmlOut, new List<int>(ids), maxDepth);
+					if (htmlOut) {
+                        result += (i > 0 ? "<br />" : "") + Dumper._tabsIndent(level + 1, htmlOut)
+                            + "<span class=\"table\">" + table.TableName + "</span>:&nbsp;" 
+                            + dumpedChild.Content;
                     } else {
                         result += "\r\n" + Dumper._tabsIndent(level + 1, htmlOut)
-                            + table.TableName + ": " + Dumper.Dump(table, level + 1, htmlOut, new List<int>(ids));
+                            + table.TableName + ": " + dumpedChild.Content;
                     }
-                }
-            } else if (obj is DataTable) {
+				}
+			} else if (obj is DataTable) {
                 DataTable ds = obj as DataTable;
                 DataRowCollection rows = ds.Rows;
                 length = rows.Count;
                 type = Dumper.GetDumpTypes(obj, length.ToString(), htmlOut);
-                result += type.Html;
+                result += type.ValueTypeCode;
                 for (int i = 0; i < length; i++) {
-                    if (htmlOut) {
-                        result += "<br />" + Dumper._tabsIndent(level + 1, htmlOut)
-                            + "<span class=\"int\">" + i.ToString() + "</span>:&nbsp;" + Dumper.Dump(rows[i], level + 1, htmlOut, new List<int>(ids));
+                    child = rows[i];
+					dumpedChild = Dumper._dump(child, level + 1, htmlOut, new List<int>(ids), maxDepth);
+					if (htmlOut) {
+                        result += (i > 0 ? "<br />" : "") + Dumper._tabsIndent(level + 1, htmlOut)
+                            + "<span class=\"int\">" + i.ToString() + "</span>:&nbsp;" 
+                            + dumpedChild.Content;
                     } else {
                         result += "\r\n" + Dumper._tabsIndent(level + 1, htmlOut)
-                            + i.ToString() + ": " + Dumper.Dump(rows[i], level + 1, htmlOut, new List<int>(ids));
+                            + i.ToString() + ": " + dumpedChild.Content;
                     }
-                }
-            } else if (obj is DataRow) {
+				}
+			} else if (obj is DataRow) {
                 DataRow row = obj as DataRow;
                 DataColumnCollection columns = row.Table.Columns;
                 length = columns.Count;
                 type = Dumper.GetDumpTypes(obj, length.ToString(), htmlOut);
-                result += type.Html;
+                result += type.ValueTypeCode;
+				int i = 0;
                 foreach (DataColumn column in columns) {
                     DumpType subTypeValue = Dumper.GetDumpTypes(row[column], "", htmlOut);
-                    string subTypeCls = subTypeValue.Text.ToString().ToLower();
+					string subTypeCls = subTypeValue.Text.ToString().ToLower();
                     string val = subTypeCls == "dbnull" ? "DBNull" : row[column].ToString();
-                    if (htmlOut) {
-                        result += "<br />" + Dumper._tabsIndent(level + 1, htmlOut)
+					if (htmlOut) {
+                        result += (i > 0 ? "<br />" : "") + Dumper._tabsIndent(level + 1, htmlOut)
                         + "<span class=\"column\">" + column.ToString() + "</span>:&nbsp;"
-                        + "<span class=\"" + subTypeCls + "\">" + val + "</span>&nbsp;" + subTypeValue.Html;
+                        + "<span class=\" " + subTypeCls + "\">" + val + "</span>&nbsp;" + subTypeValue.ValueTypeCode;
                     } else {
                         result += "\r\n" + Dumper._tabsIndent(level + 1, htmlOut)
                         + column.ToString() + ": "
-                        + val + " " + subTypeValue.Html;
+                        + val + " " + subTypeValue.ValueTypeCode;
                     }
-
+					i++;
                 }
-            }
-            return result;
-        }
-        private static string _dumpUnknown (object obj, int level = 0, bool htmlOut = true, List<int> ids = null) {
+			}
+			if (htmlOut) result += "</div>";
+			return new DumpItem {
+				Complex = true,
+				Content = result
+			};
+		}
+        private static DumpItem _dumpUnknown (object obj, int level = 0, bool htmlOut = true, List<int> ids = null, int maxDepth = 0) {
 			if (obj == null) {
-				return Dumper._dumpUnknownNotTyped(obj, level, htmlOut, ids);
+				return Dumper._dumpUnknownNotTyped(obj, level, htmlOut, ids, maxDepth);
 			} else {
 				Type objType = obj.GetType();
 				if (objType == null) {
-					return Dumper._dumpUnknownNotTyped(obj, level, htmlOut, ids);
+					return Dumper._dumpUnknownNotTyped(obj, level, htmlOut, ids, maxDepth);
 				} else {
-					return Dumper._dumpUnknownTyped(obj, level, htmlOut, ids);
+					return Dumper._dumpUnknownTyped(obj, level, htmlOut, ids, maxDepth);
 				}
 			}
         }
-        private static string _dumpUnknownNotTyped (object obj, int level = 0, bool htmlOut = true, List<int> ids = null) {
-            DumpType type = Dumper.GetDumpTypes(obj, "", htmlOut);
-            string result = type.Html;
+        private static DumpItem _dumpUnknownNotTyped (object obj, int level = 0, bool htmlOut = true, List<int> ids = null, int maxDepth = 0) {
             PropertyDescriptorCollection objProperties = TypeDescriptor.GetProperties(obj);
-            foreach (PropertyDescriptor descriptor in objProperties) {
-				string name = descriptor.Name;
-                object child;
+            DumpType type = Dumper.GetDumpTypes(obj, objProperties.Count.ToString(), htmlOut);
+            string result = type.ValueTypeCode;
+            string name;
+            object child;
+			DumpItem dumpedChild;
+			if (htmlOut) result += "<div class=\"item dump dump-" + obj.GetHashCode().ToString() + "\">";
+			int i = 0;
+			foreach (PropertyDescriptor descriptor in objProperties) {
+                name = descriptor.Name;
                 try {
                     child = descriptor.GetValue(obj);
                 } catch (Exception e) {
                     child = e;
                 }
 				child = child == null ? "null" : child;
+				dumpedChild = Dumper._dump(child, level + 1, htmlOut, new List<int>(ids), maxDepth);
 				if (htmlOut) {
-                    result += "<br />" + Dumper._tabsIndent(level + 1, htmlOut)
-                    + "<span class=\"property\">" + name + "</span>:&nbsp;" + Dumper.Dump(child, level + 1, htmlOut, new List<int>(ids));
+                    result += (i > 0 ? "<br />" : "") + Dumper._tabsIndent(level + 1, htmlOut)
+                        + "<span class=\"field\">" + name + "</span>:&nbsp;" 
+                        + dumpedChild.Content;
                 } else {
-                    result += "\r\n" + Dumper._tabsIndent(level + 1, htmlOut)
-                    + name + ": " + Dumper.Dump(child, level + 1, htmlOut, new List<int>(ids));
+                    result += "\r\n" + Dumper._tabsIndent(level + 1, htmlOut) + name + ": " + dumpedChild.Content;
                 }
-            }
-            return result;
-        }
-        private static string _dumpUnknownTyped (object obj, int level = 0, bool htmlOut = true, List<int> ids = null) {
-            DumpType type = Dumper.GetDumpTypes(obj, "", htmlOut, true);
-            string result = type.Html;
+				i++;
+			}
+			if (htmlOut) result += "</div>";
+			return new DumpItem {
+				Complex = true,
+				Content = result
+			};
+		}
+        private static DumpItem _dumpUnknownTyped (object obj, int level = 0, bool htmlOut = true, List<int> ids = null, int maxDepth = 0) {
             Type objType = obj.GetType();
 			int flagsLength = 0;
 			int namesLength = 0;
@@ -353,26 +488,47 @@ namespace Desharp.Renderers {
 				Dumper._getUnknownTypedProperties(items, ref flagsLength, ref namesLength, obj, currentType, BindingFlags.Static | BindingFlags.NonPublic);
 				Dumper._getUnknownTypedFields(items, ref flagsLength, ref namesLength, obj, currentType, BindingFlags.Static | BindingFlags.NonPublic);
 			}
-			string flags;
+            DumpType type = Dumper.GetDumpTypes(obj, items.Count.ToString(), htmlOut, true);
+            string flags;
 			string name;
 			object child;
-			foreach (var item in items) {
-				name = item.Key + Tools.SpaceIndent(namesLength - item.Key.Length, htmlOut);
-				flags = item.Value[0].ToString();
-				flags = "[" + flags + "]" + Tools.SpaceIndent(flagsLength - flags.Length - 3, htmlOut);
-				child = item.Value[1];
+			string cssClass;
+			DumpItem dumpedChild;
+            string result = type.ValueTypeCode;
+			if (htmlOut) result += "<div class=\"item dump dump-" + obj.GetHashCode().ToString() + "\">";
+			int i = 0;
+            foreach (var item in items) {
+                name = item.Key;
+                if (!htmlOut) name += Tools.SpaceIndent(namesLength - item.Key.Length, htmlOut);
+                flags = item.Value[0].ToString();
+                if (!htmlOut) flags = "[" + flags + "]" + Tools.SpaceIndent(flagsLength - flags.Length - 3, htmlOut);
+                child = item.Value[1];
+				cssClass = flags.Replace(",", " ");
 				child = child == null ? "null" : child;
+				dumpedChild = Dumper._dump(child, level + 1, htmlOut, new List<int>(ids), maxDepth);
 				if (htmlOut) {
-					result += "<br />" + Dumper._tabsIndent(level + 1, htmlOut)
-						+ "<span class=\"property\">" + flags + " " + name + "</span>:&nbsp;" + Dumper.Dump(child, level + 1, htmlOut, new List<int>(ids));
-				} else {
-					result += "\r\n" + Dumper._tabsIndent(level + 1, htmlOut)
-						+ flags + " " + name + ": " + Dumper.Dump(child, level + 1, htmlOut, new List<int>(ids));
+                    result += (i > 0 ? "<br />" : "") + Dumper._tabsIndent(level + 1, htmlOut)
+						+ "<span class=\"" + cssClass + "\" title=\"" + flags + "\">" + name + "</span>:&nbsp;" 
+                        + dumpedChild.Content;
+                } else {
+					result += "\r\n" + Dumper._tabsIndent(level + 1, htmlOut) + flags + " " + name + ": " + dumpedChild.Content;
 				}
+				i++;
 			}
-            return result;
+			if (htmlOut) result += "</div>";
+			return new DumpItem {
+				Complex = true,
+				Content = result
+			};
+		}
+        private static string _getClickableClassIfNecessary (ref object child, ref string renderedChild) {
+            string clickableClass = "";
+            if (renderedChild.IndexOf("<span class=\"dump dump-") == 0) {
+                clickableClass = "click click-" + child.GetHashCode().ToString() + " ";
+            }
+            return clickableClass;
         }
-		private static void _getUnknownTypedProperties (Dictionary<string, object[]> items, ref int flagsLength, ref int namesLength, object obj, Type objType, BindingFlags bindingFlags) {
+        private static void _getUnknownTypedProperties (Dictionary<string, object[]> items, ref int flagsLength, ref int namesLength, object obj, Type objType, BindingFlags bindingFlags) {
 			Dictionary<string, object[]> newItems = new Dictionary<string, object[]>();
 			List<string> flags = new List<string>();
 			if (bindingFlags.HasFlag(BindingFlags.Public)) flags.Add("public");
@@ -412,13 +568,14 @@ namespace Desharp.Renderers {
 			if (bindingFlags.HasFlag(BindingFlags.Static)) flags.Add("static");
 			flags.Add("field");
 			string flag = String.Join(",", flags);
+			string flag2;
 			IEnumerable<FieldInfo> fields = objType.GetFields(bindingFlags);
 			object child;
 			foreach (FieldInfo field in fields) {
 				if (field.IsPrivate && !bindingFlags.HasFlag(BindingFlags.Public)) {
-					flag = flag.Replace("nonpublic", "private");
+					flag2 = flag.Replace("nonpublic", "private");
 				} else {
-					flag = flag.Replace("nonpublic", "protected");
+					flag2 = flag.Replace("nonpublic", "protected");
 				}
 				try {
 					child = field.GetValue(obj);
@@ -427,12 +584,13 @@ namespace Desharp.Renderers {
 				}
 				if (!items.ContainsKey(field.Name) && !newItems.ContainsKey(field.Name)) {
 					if (field.Name.Length > namesLength) namesLength = field.Name.Length;
-					newItems.Add(field.Name, new object[] { flag, child });
+					newItems.Add(field.Name, new object[] { flag2, child });
 				}
 			}
 			IOrderedEnumerable<KeyValuePair<string, object[]>> sorter = newItems.OrderBy(key => key.Key);
 			newItems = sorter.ToDictionary((keyItem) => keyItem.Key, (valueItem) => valueItem.Value);
 			foreach (var item in newItems) {
+				flag = item.Value[0].ToString();
 				if (flag.Length > flagsLength) flagsLength = flag.Length;
 				items.Add(item.Key, item.Value);
 			}
@@ -456,11 +614,13 @@ namespace Desharp.Renderers {
             return new { array = new object[] { }, length = 0 };
         }
         private static string _tabsIndent (int tabs = 0, bool htmlOut = true) {
-            string s = "";
-            for (var i = 0; i < tabs; i++) {
-                s += htmlOut ? "&nbsp;&nbsp;&nbsp;" : "   ";
-            }
-            return s;
-        }
+			string s = "";
+			if (htmlOut) {
+				s = "<s style=\"width:" + (27*tabs) + "px\"></s>";
+			} else {
+				for (var i = 0; i < tabs; i++) s += "   ";
+			}
+			return s;
+		}
 	}
 }

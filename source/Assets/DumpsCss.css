@@ -1,19 +1,64 @@
+#desharp-dumps-cont{position:absolute !important;z-index:9999990 !important;background:rgba(255,255,255,0.9) !important;#border:1px dotted #888 !important;#padding-bottom:5px !important;}
+#desharp-dumps-inner{position:relative !important;z-index:9999991 !important;border-radius:4px !important;box-shadow:2px 2px 20px rgba(0,0,0,0.4) !important;padding-bottom:8px !important;#background:#fff !important;}
+#desharp-dumps-head{position:relative !important;z-index:9999992 !important;height:40px !important;line-height:38px !important;text-indent:11px !important;font-size:24px !important;font-weight:bold !important;color:#222 !important;width:100%;top:4px;left:4px;overflow:hidden !important;border-top-left-radius:3px !important;border-top-right-radius:3px !important;cursor:move !important;}
+#desharp-dumps-body{position:relative !important;z-index:9999993 !important;border:1px dotted #888;background:#fdf5d0;width:100%;overflow:auto;border-bottom-left-radius:3px;border-bottom-right-radius:3px;top:4px;left:4px;color:#000;padding:5px !important;}
+#desharp-dumps-left{position:absolute !important;z-index:9999994 !important;top:0 !important;right:0 !important;width:15px !important;height:100% !important;cursor:e-resize !important;overflow:hidden !important;}
+#desharp-dumps-bottom{position:absolute !important;z-index:9999995 !important;bottom:0 !important;width:100% !important;height:15px !important;cursor:s-resize !important;overflow:hidden !important;}
+#desharp-dumps-corner{position:absolute !important;z-index:9999996 !important;bottom:0 !important;right:0 !important;width:15px !important;height:15px !important;cursor:se-resize !important;overflow:hidden !important;}
+#desharp-dumps-cont,#desharp-dumps-cont *{font-family:'Consolas',courier new !important;font-weight:bold !important;}
+#desharp-dumps-body,#desharp-dumps-body *{font-size:15px !important;}
+#desharp-dumps-body s{display:inline-block !important;text-decoration:none !important;}
+#desharp-dumps-body div.item{white-space:nowrap !important;line-height:0 !important;}
+#desharp-dumps-body span{display:inline-block !important;line-height:17px !important;}
+#desharp-dumps-body span.click{cursor:pointer !important;border-bottom:1px dotted #999 !important;padding-bottom:2px !important;}
+#desharp-dumps-body span.click::after{content:' ►';}
+#desharp-dumps-body span.recursion.click::after{content:' ▲' !important;}
+#desharp-dumps-body span.click:hover,#desharp-dumps-body span.click:focus,#desharp-dumps-body span.click:active{border-bottom:2px solid #999 !important;padding-bottom:1px !important;}
+#desharp-dumps-body span.click.opened::after{content:' ▼';}
+#desharp-dumps-body span.recursion.click.opened::after{content:' ▲' !important;}
+#desharp-dumps-body span.recursion{font-style:italic;color:#888 !important;}
+#desharp-dumps-body div.dump{height:0 !important;overflow:hidden !important;}
+#desharp-dumps-body div.dump.opened{height:auto !important;overflow:visible !important;}
+
+#desharp-dumps-body span.table{color:#00b5b5 !important;}
+#desharp-dumps-body span.column{color:#00a1d4 !important;}
+#desharp-dumps-body span.type{color:#888 !important;}
+#desharp-dumps-body span.string{color:#00a42b !important;}
+#desharp-dumps-body span.char{color:#4eb900 !important;}
+#desharp-dumps-body span.html-code{color:#c78100 !important;}
+#desharp-dumps-body span.int{color:rgb(255,0,48) !important;}
+#desharp-dumps-body span.boolean{color:#0059ff !important;}
+#desharp-dumps-body span.int32{color:rgb(255,0,80) !important;}
+#desharp-dumps-body span.int64{color:#a12aff !important;}
+#desharp-dumps-body span.double{color:rgb(255,0,213) !important;}
+#desharp-dumps-body span.dbnull{color:rgb(255,0,255) !important;}
+#desharp-dumps-body span.public.property{color:#00d2d4 !important;}
+#desharp-dumps-body span.nonpublic.property{color:#68cacc !important;}
+#desharp-dumps-body span.public.static.property{color:#00988b !important;}
+#desharp-dumps-body span.nonpublic.static.property{color:#4f8788 !important;}
+#desharp-dumps-body span.public.field{color:#0059ff !important;}
+#desharp-dumps-body span.protected.field{color:#4a86f7 !important;}
+#desharp-dumps-body span.private.field{color:#81aaf9 !important;}
+#desharp-dumps-body span.public.static.field{color:#0043bf !important;}
+#desharp-dumps-body span.protected.static.field{color:#5175b9 !important;}
+#desharp-dumps-body span.private.static.field{color:#7f8ca5 !important;}
+/*
 html,body{font-family:'Consolas',courier new;}
 body{margin:0;}
-
+*/
 .desharp-dump{display:block;text-decoration:none;padding-bottom:20px;}
 a.desharp-dump-control{display:block;padding:2px;text-decoration:none;}
-span.desharp-dump-id,span.desharp-dump-msg{cursor:pointer;}
-span.desharp-dump-id{color:#666;}
-span.desharp-dump-msg span{color:#000;}
-span.desharp-dump-msg b{color:#328adc;}
+span.desharp-dump-id,span.desharp-dump-msg{cursor:pointer !important;}
+span.desharp-dump-id{color:#666 !important;}
+span.desharp-dump-msg span{color:#000 !important;}
+span.desharp-dump-msg b{color:#328adc !important;}
 
 table.desharp-dump-dtls,
 table.desharp-dump-hdrs{border-collapse:collapse;}
 table.desharp-dump-dtls tr td,
 table.desharp-dump-dtls tr th,
 table.desharp-dump-hdrs tr td,
-table.desharp-dump-hdrs tr th{padding:0 5px;vertical-align:top;text-align:left;line-height:1.4em;}
+table.desharp-dump-hdrs tr th{padding:0 5px;vertical-align:top;text-align:left;line-height:1.4em !important;}
 table.desharp-dump-hdrs tr td{font-size:14px;}
 table.desharp-dump-dtls tr th,
 table.desharp-dump-hdrs thead tr th{font-size:14px;padding:10px 0 0 5px;}
@@ -29,9 +74,9 @@ table.desharp-dump-dtls tbody tr td.clmn{width:60px;text-align:right;}
 .desharp-dump{background:#fff;border-bottom:1px solid #ccc;}
 .desharp-dump .desharp-dump-control{background:#cd1818;padding:20px 20px 30px 20px;text-shadow:1px 1px 0 rgba(0, 0, 0, 0.4);border-bottom:1px solid #ccc;}
 .desharp-dump .desharp-dump-control span.desharp-dump-id,
-.desharp-dump .desharp-dump-control span.desharp-dump-msg{color:#fff;text-decoration:none;}
-.desharp-dump .desharp-dump-control span.desharp-dump-msg span{color:#fff;font-size:14px;}
-.desharp-dump .desharp-dump-control span.desharp-dump-msg b{display:block;font-size:28px;color:#fff;text-decoration:none;letter-spacing:-0.5px;line-height:1.15em;margin-top:27px;text-align:left;}
+.desharp-dump .desharp-dump-control span.desharp-dump-msg{color:#000;text-decoration:none;}
+.desharp-dump .desharp-dump-control span.desharp-dump-msg span{color:#000;font-size:14px;}
+.desharp-dump .desharp-dump-control span.desharp-dump-msg b{display:block;font-size:28px;color:#000;text-decoration:none;letter-spacing:-0.5px;line-height:1.15em !important;margin-top:27px;text-align:left;}
 table.desharp-dump-hdrs{display:block;width:auto;margin:0 20px 0 20px;}
 table.desharp-dump-dtls{display:block;width:auto;margin:0 20px 0 20px;}
 table.desharp-dump-dtls.nowrap tbody tr td.mthd i{white-space:nowrap;}
@@ -55,11 +100,11 @@ div.desharp-dump-file div.desharp-dump-file-title a{color:#328adc;font-size:16px
 div.desharp-dump-file div.desharp-dump-file-content{background:#f4f3f1;border-radius:10px;padding:10px;}
 div.desharp-dump-file div.desharp-dump-file-lines{background:#fdf5ce;padding:5px 8px;border:1px dotted silver;overflow:auto;}
 div.desharp-dump-file div.desharp-dump-file-line{padding:2px 5px;margin:0;}
-div.desharp-dump-file div.desharp-dump-file-line-current{background:#cd1818;color:#fff;font-weight:bold;}
+div.desharp-dump-file div.desharp-dump-file-line-current{background:#cd1818;color:#000;font-weight:bold;}
 div.desharp-dump-file span.desharp-dump-file-line-number{color:#9f9c7f;display:inline-block;}
 div.desharp-dump-file span.desharp-dump-file-line-digits-2{width:22px;}
 div.desharp-dump-file span.desharp-dump-file-line-digits-3{width:30px;}
 div.desharp-dump-file span.desharp-dump-file-line-digits-4{width:38px;}
 div.desharp-dump-file span.desharp-dump-file-line-digits-5{width:46px;}
-div.desharp-dump-file div.desharp-dump-file-line-current span.desharp-dump-file-line-number{color:#fff;}
+div.desharp-dump-file div.desharp-dump-file-line-current span.desharp-dump-file-line-number{color:#000;}
 div.desharp-dump-file span.desharp-dump-file-line-current-column{color:yellow;padding:0 2px;}

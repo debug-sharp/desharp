@@ -48,9 +48,13 @@ namespace Desharp {
 		}
 		public static void Dump (Exception e) {
 			if (!Core.Environment.GetEnabled()) return;
-			bool htmlOut = Core.Environment.GetOutput() == OutputType.Html && Core.Environment.Type == EnvironmentType.Web;
-			string renderedExceptions = Debug._renderStackTraceForExceptions(e, false, htmlOut);
-			Core.Environment.WriteOutput(renderedExceptions);
+			if (e == null) {
+				Debug.Dump(new object[] { null });
+			} else { 
+				bool htmlOut = Core.Environment.GetOutput() == OutputType.Html && Core.Environment.Type == EnvironmentType.Web;
+				string renderedExceptions = Debug._renderStackTraceForExceptions(e, false, htmlOut);
+				Core.Environment.WriteOutput(renderedExceptions);
+			}
 		}
 		public static void Log (Exception e) {
 			if (!Core.Environment.GetEnabled()) return;
@@ -63,18 +67,40 @@ namespace Desharp {
             bool htmlOut = Core.Environment.GetOutput() == OutputType.Html && Core.Environment.Type == EnvironmentType.Web;
             string logResult;
 			if (args == null) args = new object[] { null };
+			if (args.GetType().FullName != "System.Object[]") args = new object[] { args };
 			object arg;
 			for (int i = 0; i < args.Length; i++) {
-				arg = args[i];
-				if (arg != null && arg is Exception) {
-					Debug.Log(arg as Exception);
-				} else {
-					logResult = Dumper.Dump(args[i], 0, htmlOut);
-					Core.Environment.WriteOutput(logResult);
-				}
+                try { 
+				    arg = args[i];
+				    if (arg != null && arg is Exception) {
+					    Debug.Log(arg as Exception);
+				    } else {
+					    logResult = Dumper.Dump(args[i], 0, htmlOut);
+					    Core.Environment.WriteOutput(logResult);
+				    }
+                } catch (Exception e) {
+					string renderedExceptions = Debug._renderStackTraceForExceptions(e, true, htmlOut);
+					FileLog.Log(renderedExceptions, "exception");
+                }
             }
         }
-		public static void Log (object obj, Level level = Level.DEBUG) {
+        public static void Dump (object obj, int maxDepth = 0) {
+            if (!Core.Environment.GetEnabled()) return;
+            bool htmlOut = Core.Environment.GetOutput() == OutputType.Html && Core.Environment.Type == EnvironmentType.Web;
+            string logResult;
+            try {
+                if (obj != null && obj is Exception) {
+                    Debug.Log(obj as Exception);
+                } else {
+                    logResult = Dumper.Dump(obj, 0, htmlOut, maxDepth);
+                    Core.Environment.WriteOutput(logResult);
+                }
+            } catch (Exception e) {
+				string renderedExceptions = Debug._renderStackTraceForExceptions(e, true, htmlOut);
+				FileLog.Log(renderedExceptions, "exception");
+			}
+        }
+        public static void Log (object obj, Level level = Level.DEBUG, int maxDepth = 0) {
 			if (!Core.Environment.GetEnabled()) return;
 			bool htmlOut = Core.Environment.GetOutput() == OutputType.Html;
 			string renderedObj;
@@ -84,7 +110,11 @@ namespace Desharp {
 				}
 				renderedObj = JavascriptExceptionData.RenderLogedExceptionData(obj as Dictionary<string, string>, htmlOut) + "\n";
 			} else {
-				renderedObj = Dumper.Dump(obj, 0, htmlOut);
+                try {
+                    renderedObj = Dumper.Dump(obj, 0, htmlOut, maxDepth);
+                } catch (Exception e) {
+                    renderedObj = e.Message;
+                }
 				if (htmlOut) {
 					// remove begin and end div
 					renderedObj = renderedObj.Substring(5, renderedObj.Length - (5 + 6));

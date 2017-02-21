@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -11,7 +12,8 @@ namespace Desharp.Core {
 		internal const string APP_SETTINGS_DEBUG_IPS = "Desharp:DebugIps"; // 127.0.0.1,88.31.45.67,...
 		internal const string APP_SETTINGS_LEVELS = "Desharp:Levels"; // exception,-debug,info,notice,warning,error,critical,alert,emergency,-javascript
 		internal const string APP_SETTINGS_DIRECTORY = "Desharp:Directory"; // ~/logs
-		private static Dictionary<string, string> _appSettings = new Dictionary<string, string>();
+        internal const string APP_SETTINGS_DEPTH = "Desharp:Depth"; // 5
+        private static Dictionary<string, string> _appSettings = new Dictionary<string, string>();
 		static Config () {
 			string itemKey;
 			string itemValue;
@@ -90,6 +92,16 @@ namespace Desharp.Core {
 				return Config._appSettings[Config.APP_SETTINGS_DIRECTORY].Trim();
 			}
 			return "";
-		}
-	}
+        }
+        internal static int GetDepth () {
+            if (Config._appSettings.ContainsKey(Config.APP_SETTINGS_DEPTH)) {
+                string rawValue = Config._appSettings[Config.APP_SETTINGS_DEPTH].Trim();
+                rawValue = new Regex("[^0-9]").Replace(rawValue, "");
+                if (rawValue.Length > 0) { 
+                    return Int32.Parse(rawValue);
+                }
+            }
+            return 0;
+        }
+    }
 }

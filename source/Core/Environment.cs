@@ -9,7 +9,8 @@ namespace Desharp.Core {
 		internal static EnvironmentType Type;
 		internal static string AppRoot;
 		internal static string Directory;
-		private static bool? _enabled = null;
+        internal static int Depth = 3;
+        private static bool? _enabled = null;
 		private static OutputType? _output = null;
 		private static List<string> _debugIps;
         private static Dictionary<long, bool> _enabledBools;
@@ -27,7 +28,9 @@ namespace Desharp.Core {
 					System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName
 				).Replace('\\', '/').TrimEnd('/');
 			}
-			Environment.InitEnabled();
+            int cfgDepth = Config.GetDepth();
+            if (cfgDepth > 0) Environment.Depth = cfgDepth;
+            Environment.InitEnabled();
 			Environment.InitOutput();
 			Environment.InitDirectory(Config.GetDirectory());
 		}
@@ -138,8 +141,11 @@ namespace Desharp.Core {
 			}
 			if (cfg.Directory != null && cfg.Directory.Length > 0) {
 				Environment.InitDirectory(cfg.Directory);
-			}
-		}
+            }
+            if (cfg.Depth != null && cfg.Depth.Value > 0) {
+                Environment.Depth = cfg.Depth.Value;
+            }
+        }
         internal static void WriteOutput (string dumpedCode) {
             if (Environment.Type == EnvironmentType.Web) {
                 HtmlResponse.GetCurrentOutputBuffer().Append(dumpedCode);

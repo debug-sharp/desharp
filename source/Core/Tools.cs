@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Web;
 
@@ -34,6 +35,30 @@ namespace Desharp.Core {
         }
 		public static long GetThreadId () {
             return Thread.CurrentThread.ManagedThreadId;
+		}
+		public static string HtmlEntities (string value) {
+			value = HttpUtility.JavaScriptStringEncode(value);
+			Regex r = new Regex(@"\\u([0-9a-f]{4})");
+			MatchCollection m = r.Matches(value);
+			long intItem;
+			if (m.Count > 0) {
+				string newValue = value.Substring(0, m[0].Index);
+				int i = 0;
+				int start;
+				foreach (Match item in m) {
+					intItem = Convert.ToInt64(item.Value.Substring(2), 16);
+					newValue += "&#" + intItem.ToString() + ";";
+					if (i + 1 < m.Count) {
+						start = item.Index + 6;
+						newValue += value.Substring(start, m[i + 1].Index - start);
+					} else {
+						newValue += value.Substring(item.Index + 6);
+					}
+					i++;
+				}
+				value = newValue;
+			}
+			return value;
 		}
 		internal static string StringToUnicodeIndexes (string s) {
             List<string> r = new List<string>();
