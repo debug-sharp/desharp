@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
 using Desharp.Core;
+using System.Linq;
 
 namespace Desharp.Completers {
 	public class StackTrace {
@@ -44,8 +45,8 @@ namespace Desharp.Completers {
 				column = stackItem.GetFileColumnNumber().ToString().Trim();
 				method = stackItem.GetMethod().ToString().Trim();
 
-				if (fileName.Length == 0) fileName = Renderers.StackTrace.GetExternalCodeDescription();
-				if (line.Length == 0) line = Renderers.StackTrace.GetUnknownLineDescription();
+				if (fileName.Length == 0) fileName = Renderers.Exceptions.GetExternalCodeDescription();
+				if (line.Length == 0) line = "?";
 
 				stackTraceItem = new StackTraceItem {
 					File = fileName,
@@ -55,8 +56,8 @@ namespace Desharp.Completers {
 				};
 				if (
 					!errorFile.HasValue && 
-					fileName != Renderers.StackTrace.GetExternalCodeDescription() && 
-					line != Renderers.StackTrace.GetUnknownLineDescription()
+					fileName != Renderers.Exceptions.GetExternalCodeDescription() && 
+					line != "?"
 				) {
 					errorFile = stackTraceItem;
 				}
@@ -71,13 +72,16 @@ namespace Desharp.Completers {
 				ExceptionType = exceptionType.Length > 0 ? exceptionType : ""
 			};
 		}
-		internal static RenderingCollection RenderStackTraceForException (Exception e, bool fileSystemLog = true, bool htmlOut = false, int index = 0) {
+		internal static RenderingCollection RenderStackTraceForException (ExceptionToRender exceptionToRender, bool fileSystemLog = true, bool htmlOut = false, int index = 0) {
 			StackTraceItem? possibleViewExceptionStackTrace;
-			List<StackTraceItem> stackTraceItems = StackTrace._completeStackTraceForSingleException(e);
+			List<StackTraceItem> stackTraceItems = StackTrace._completeStackTraceForSingleException(exceptionToRender.Exception);
 			StackTraceItem? errorFile = null;
+			string causedByHash = "";
+			string causedByType = "";
+			string causedByMessage = "";
 			if (index == 0 && !fileSystemLog) {
 				// there is possible view exception
-				possibleViewExceptionStackTrace = StackTrace._getPossibleViewExceptionInfo(e);
+				possibleViewExceptionStackTrace = StackTrace._getPossibleViewExceptionInfo(exceptionToRender.Exception);
 				if (possibleViewExceptionStackTrace.HasValue) {
 					errorFile = possibleViewExceptionStackTrace;
 				}
@@ -85,76 +89,116 @@ namespace Desharp.Completers {
 			if (errorFile == null && !fileSystemLog) {
 				foreach (StackTraceItem stackTraceItem in stackTraceItems) {
 					if (
-						stackTraceItem.File != Renderers.StackTrace.GetExternalCodeDescription() &&
-						stackTraceItem.Line != Renderers.StackTrace.GetUnknownLineDescription()
+						stackTraceItem.File != Renderers.Exceptions.GetExternalCodeDescription() &&
+						stackTraceItem.Line != "?"
 					) {
 						errorFile = stackTraceItem;
 						break;
 					}
 				}
 			}
-			string exceptionMessage = e.Message;
+			string exceptionMessage = exceptionToRender.Exception.Message;
 			if (htmlOut) {
 				exceptionMessage = exceptionMessage
 					.Replace("&", "&amp;")
 					.Replace("<", "&lt;")
 					.Replace(">", "&gt;");
 			}
+			if (exceptionToRender.CausedBy is Exception) {
+				causedByHash = exceptionToRender.CausedBy.GetHashCode().ToString();
+				causedByType = exceptionToRender.CausedBy.GetType().FullName;
+				causedByMessage = exceptionToRender.CausedBy.Message;
+			}
 			return new RenderingCollection {
 				ErrorFileStackTrace = errorFile,
 				AllStackTraces = stackTraceItems,
-				ExceptionType = e.GetType().ToString(),
-				ExceptionMessage = exceptionMessage
+				Catched = exceptionToRender.Catched,
+				ExceptionHash = exceptionToRender.Exception.GetHashCode().ToString(),
+				ExceptionType = exceptionToRender.Exception.GetType().FullName,
+				ExceptionMessage = exceptionMessage,
+				CausedByHash = causedByHash,
+				CausedByType = causedByType,
+				CausedByMessage = causedByMessage,
 			};
 		}
-
-		internal static Dictionary<string, Exception> CompleteInnerExceptions (Exception e) {
-			Dictionary<string, Exception> exceptions = new Dictionary<string, Exception>();
-			string exceptionFingerPrint = StackTrace._getExceptionFingerPrint(e);
-			exceptions.Add(exceptionFingerPrint, e);
+		internal static Dictionary<string, ExceptionToRender> CompleteInnerExceptions (Exception e, bool catched = true) {
+			// key - current exception imprint (child exception)
+			// value[0] - current exception instance (child exception)
+			// value[1] - optional, inner/base exception imprint (parent exception, caused by exception)
+			// value[2] - optional, inner/base exception instance (parent exception, caused by exception)
+			Dictionary<string, object[]> exceptions = new Dictionary<string, object[]>();
+			exceptions.Add(StackTrace._getExceptionFingerPrint(e), new object[] { e });
+			StackTrace._completeExceptionsGetBaseAndInnerExceptions(e, ref exceptions, true);
+			StackTrace._completeExceptionsGetBaseAndInnerExceptions(e, ref exceptions, false);
+			return StackTrace._completeExceptionsOrderByRelationships(exceptions, catched);
+		}
+		private static void _completeExceptionsGetBaseAndInnerExceptions (Exception e, ref Dictionary<string, object[]> exceptions, bool useBaseExceptionsGetter) {
+			string currentExceptionImprint = StackTrace._getExceptionFingerPrint(e);
 			Exception currentException = e;
+			Exception baseException;
+			string baseExceptionImprint;
+			bool breakWhile;
 			while (true) {
-				bool cntn = true;
+				breakWhile = true;
 				try {
-					Exception baseExc = currentException.GetBaseException();
-					if (baseExc is Exception) {
-						exceptionFingerPrint = StackTrace._getExceptionFingerPrint(baseExc);
-						if (exceptions.ContainsKey(exceptionFingerPrint)) {
-							cntn = false;
-						} else {
-							exceptions.Add(exceptionFingerPrint, baseExc);
-							currentException = baseExc;
-						}
+					if (useBaseExceptionsGetter) { 
+						baseException = currentException.GetBaseException();
 					} else {
-						cntn = false;
+						baseException = currentException.InnerException;
+					}
+					if (baseException is Exception) {
+						baseExceptionImprint = StackTrace._getExceptionFingerPrint(baseException);
+						if (!exceptions.ContainsKey(baseExceptionImprint)) {
+							breakWhile = false;
+							exceptions.Add(baseExceptionImprint, new object[] {
+								baseException, currentExceptionImprint, currentException
+							});
+							currentException = baseException;
+							currentExceptionImprint = baseExceptionImprint;
+						}
 					}
 				} catch (Exception _e1) {
-					cntn = false;
 				}
-				if (!cntn) break;
+				if (breakWhile) break;
 			}
-			currentException = e;
-			while (true) {
-				bool cntn = true;
-				try {
-					Exception innerExc = currentException.InnerException;
-					if (innerExc is Exception) {
-						exceptionFingerPrint = StackTrace._getExceptionFingerPrint(innerExc);
-						if (exceptions.ContainsKey(exceptionFingerPrint)) {
-							cntn = false;
-						} else {
-							exceptions.Add(exceptionFingerPrint, innerExc);
-							currentException = innerExc;
-						}
-					} else {
-						cntn = false;
+		}
+		private static Dictionary<string, ExceptionToRender> _completeExceptionsOrderByRelationships (Dictionary<string, object[]> exceptions, bool catched = true) {
+			Dictionary<string, ExceptionToRender> result = new Dictionary<string, ExceptionToRender>();
+			Dictionary<string, ExceptionToRender> reversedResult = new Dictionary<string, ExceptionToRender>();
+			Exception causedByException;
+			Exception triggeredException;
+			string triggeredExceptionKey;
+			foreach (var item in exceptions) {
+				causedByException = item.Value[0] as Exception;
+				triggeredException = null;
+				if (item.Value.Length > 1) {
+					triggeredExceptionKey = item.Value[1].ToString();
+					if (exceptions.ContainsKey(triggeredExceptionKey)) {
+						triggeredException = item.Value[2] as Exception;
 					}
-				} catch (Exception _e2) {
-					cntn = false;
+					reversedResult.Add(triggeredExceptionKey, new ExceptionToRender {
+						Exception = triggeredException,
+						CausedBy = causedByException,
+						Catched = catched
+					});
 				}
-				if (!cntn) break;
 			}
-			return exceptions;
+			foreach (var item in exceptions) {
+				if (!reversedResult.ContainsKey(item.Key)) {
+					reversedResult.Add(item.Key, new ExceptionToRender {
+						Exception = item.Value[0] as Exception,
+						CausedBy = null,
+						Catched = catched
+					});
+					// break;?
+				}
+			}
+			List<string> resultKeysOrdered = reversedResult.Keys.ToList<string>();
+			resultKeysOrdered.Reverse();
+			foreach (string resultKey in resultKeysOrdered) {
+				result.Add(resultKey, reversedResult[resultKey]);
+			}
+			return result;
 		}
 		private static StackTraceItem? _getPossibleViewExceptionInfo (Exception e) {
 			StackTraceItem? result = null;
@@ -172,11 +216,11 @@ namespace Desharp.Completers {
 				@"\\([a-zA-Z0-9_\-\.\@]*)\.cshtml\(([0-9]*)\)",
 				RegexOptions.IgnoreCase | RegexOptions.Singleline
 			);
-			docRootPos = message.ToLower().IndexOf(Core.Environment.AppRoot.ToLower().Substring(1));
+			docRootPos = message.ToLower().IndexOf(Dispatcher.AppRoot.ToLower().Substring(1));
 			if (matches.Count > 0) {
 				if (matches[0] is Match && docRootPos > -1) {
-					viewRelativePathBegin = docRootPos - 1 + Core.Environment.AppRoot.Length;
-					viewAbsPath = message.Substring(docRootPos - 1, Core.Environment.AppRoot.Length)
+					viewRelativePathBegin = docRootPos - 1 + Dispatcher.AppRoot.Length;
+					viewAbsPath = message.Substring(docRootPos - 1, Dispatcher.AppRoot.Length)
 						+ message.Substring(viewRelativePathBegin, matches[0].Index - viewRelativePathBegin)
 						+ "\\" + matches[0].Groups[1].ToString() + ".cshtml";
 					viewLine = matches[0].Groups[2].ToString();
@@ -241,8 +285,8 @@ namespace Desharp.Completers {
 			Regex r3 = new Regex(@"(.*)\.(cs|vb):([^\s]+)\s([0-9]*)$");
 			for (int i = 0; i < rawStackTraceLines.Length; i++) {
 				method = "";
-				fileName = Renderers.StackTrace.GetExternalCodeDescription();
-				line = Renderers.StackTrace.GetUnknownLineDescription();
+				fileName = Renderers.Exceptions.GetExternalCodeDescription();
+				line = "?";
 				// here stack trace line should contains: conjunction + method with params + conjunction + file + conjunction + : + line
 				// 'at App.Controllers.WebsiteController.OnActionExecuting(ActionExecutingContext filterContext) in c:\inetpub\wwwroot\MVC-a-01\MVC-a-04\Controllers\WebsiteController.cs:line 20'
 				methodAndPossibleFileNameAndLine = r1.Replace(rawStackTraceLines[i].Trim(), "$2").Trim();
@@ -266,6 +310,7 @@ namespace Desharp.Completers {
 				}
 
 				if (fileName is string && fileName.LastIndexOf(StackTrace.SELF_FILENAME) == fileName.Length - StackTrace.SELF_FILENAME.Length) continue;
+				fileName = fileName.Replace('\\', '/');
 				result.Add(new StackTraceItem {
 					File = fileName,
 					Line = line,

@@ -47,49 +47,83 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Assets.resx</DependentUpon>
     </Compile>
+    <Compile Include="Completers\LoadedAssemblies.cs" />
+    <Compile Include="Core\Dispatcher.cs" />
+    <Compile Include="Core\Enums\PanelIconType.cs" />
+    <Compile Include="Core\Enums\PanelType.cs" />
+    <Compile Include="Core\Enums\StackTraceFormat.cs" />
     <Compile Include="Core\Module.cs" />
-    <Compile Include="Core\Structs\DumpItem.cs" />
+    <Compile Include="Core\Structs\DumpOptions.cs" />
+    <Compile Include="Core\Structs\ExceptionToRender.cs" />
+    <Compile Include="Core\Structs\RenderedPanel.cs" />
+    <Compile Include="Core\WinDebuggerAttaching.cs" />
     <Compile Include="Debug.cs" />
     <Compile Include="Core\Config.cs" />
-    <Compile Include="Core\Environment.cs" />
     <Compile Include="Completers\HttpHeaders.cs" />
     <Compile Include="Completers\StackTrace.cs" />
     <Compile Include="Core\Enums\EnvironmentType.cs" />
     <Compile Include="Core\Enums\Level.cs" />
     <Compile Include="Core\Enums\OutputType.cs" />
+    <Compile Include="Panels\Dumps.cs" />
+    <Compile Include="Panels\Abstract.cs" />
+    <Compile Include="Panels\Exceptions.cs" />
+    <Compile Include="Panels\Routing.cs" />
+    <Compile Include="Panels\Session.cs" />
     <Compile Include="Renderers\ErrorFile.cs" />
     <Compile Include="Renderers\JavascriptExceptionData.cs" />
     <Compile Include="Core\Structs\DebugConfig.cs" />
     <Compile Include="Core\Structs\LevelValues.cs" />
     <Compile Include="Core\Structs\StackTraceItem.cs" />
     <Compile Include="Core\Structs\RenderingCollection.cs" />
-    <Compile Include="Outputers\HtmlResponse.cs" />
+    <Compile Include="Producers\HtmlResponse.cs" />
     <Compile Include="Core\Tools.cs" />
     <Compile Include="Core\Structs\DumpType.cs" />
     <Compile Include="Completers\Detector.cs" />
     <Compile Include="Renderers\Dumper.cs" />
     <Compile Include="FireLogger.cs" />
-    <Compile Include="Outputers\FileLog.cs" />
-    <Compile Include="Renderers\StackTrace.cs" />
+    <Compile Include="Producers\FileLog.cs" />
+    <Compile Include="Renderers\Exceptions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Assets.resx">
       <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>Assets.Designer.cs</LastGenOutput>
       <SubType>Designer</SubType>
+      <LastGenOutput>Assets.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Assets\DumpsCss.css" />
-    <Content Include="Assets\DumpsJs.src.js" />
-    <Content Include="Assets\DumpsJs.js" />
-    <Content Include="Assets\LogsCss.css" />
-    <Content Include="Assets\LogsJs.src.js" />
-    <Content Include="Assets\LogsJs.js" />
+    <Content Include="Assets\src\dev-tools\bin\compiler-help.txt" />
+    <Content Include="Assets\src\dev-tools\bin\string.js" />
+    <Content Include="Assets\src\dev-tools\build.js" />
+    <Content Include="Assets\src\src\arrow-down.png" />
+    <Content Include="Assets\src\src\arrow-right.png" />
+    <Content Include="Assets\src\src\arrow-up.png" />
+    <Content Include="Assets\src\src\close.png" />
+    <Content Include="Assets\src\src\dumps.js" />
+    <Content Include="Assets\src\src\logs.js" />
+    <Content Include="Assets\src\src\unbox.png" />
+    <Content Include="Assets\src\tests\dumps-min.php" />
+    <Content Include="Assets\src\tests\dumps.php" />
+    <None Include="Assets\dumps.css" />
+    <None Include="Assets\dumps.js" />
+    <None Include="Assets\logs.css" />
+    <None Include="Assets\logs.js" />
+    <Content Include="Assets\src\install.js" />
+    <None Include="Assets\src\dev-tools\build.cmd" />
+    <None Include="Assets\src\dev-tools\build.sh" />
+    <None Include="Assets\src\package.json" />
     <None Include="example.config" />
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Assets\src\dev-tools\bin\compiler\" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PreBuildEvent>cd $(ProjectDir)/Assets/src/dev-tools
+build.cmd
+</PreBuildEvent>
+  </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

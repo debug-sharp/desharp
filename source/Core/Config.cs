@@ -5,15 +5,17 @@ using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace Desharp.Core {
-    public class Config {
+	internal class Config {
 		internal const string APP_SETTINGS_ENABLED = "Desharp:Enabled"; // true | false | 1 | 0
 		internal const string APP_SETTINGS_EDITOR = "Desharp:Editor"; // MSVS2005 | MSVS2008 | MSVS2010 | MSVS2012 | MSVS2013 | MSVS2015 | MSVS2017
 		internal const string APP_SETTINGS_OUTPUT = "Desharp:Output"; // text | html
 		internal const string APP_SETTINGS_DEBUG_IPS = "Desharp:DebugIps"; // 127.0.0.1,88.31.45.67,...
 		internal const string APP_SETTINGS_LEVELS = "Desharp:Levels"; // exception,-debug,info,notice,warning,error,critical,alert,emergency,-javascript
+		internal const string APP_SETTINGS_PANELS = "Desharp:Panels"; // Desharp.Panels.Session,Desharp.Panels.Routing
 		internal const string APP_SETTINGS_DIRECTORY = "Desharp:Directory"; // ~/logs
         internal const string APP_SETTINGS_DEPTH = "Desharp:Depth"; // 5
-        private static Dictionary<string, string> _appSettings = new Dictionary<string, string>();
+		internal const string APP_SETTINGS_MAX_LENGTH = "Desharp:MaxLength"; // 1024
+		private static Dictionary<string, string> _appSettings = new Dictionary<string, string>();
 		static Config () {
 			string itemKey;
 			string itemValue;
@@ -32,6 +34,25 @@ namespace Desharp.Core {
 			} else {
 				return null;
 			}
+		}
+		internal static Type[] GetDebugPanels () {
+			List<Type> result = new List<Type>();
+			if (Config._appSettings.ContainsKey(Config.APP_SETTINGS_PANELS)) {
+				string rawValue = Config._appSettings[Config.APP_SETTINGS_PANELS].Trim();
+				Regex r = new Regex(@"[^a-zA-Z0-9_\,\.]");
+				rawValue = r.Replace(rawValue, "");
+				List<string> rawItems = rawValue.Split(',').ToList<string>();
+				Type value;
+				foreach (string rawItem in rawItems) {
+					try {
+						value = Type.GetType(rawItem, true);
+						if (value != null && !result.Contains(value)) {
+							result.Add(value);
+						}
+					} catch (Exception e) { }
+				}
+			}
+			return result.ToArray();
 		}
 		internal static string GetEditor () {
 			if (Config._appSettings.ContainsKey(Config.APP_SETTINGS_EDITOR)) {
@@ -102,6 +123,16 @@ namespace Desharp.Core {
                 }
             }
             return 0;
-        }
-    }
+		}
+		internal static int GetMaxLength () {
+			if (Config._appSettings.ContainsKey(Config.APP_SETTINGS_MAX_LENGTH)) {
+				string rawValue = Config._appSettings[Config.APP_SETTINGS_MAX_LENGTH].Trim();
+				rawValue = new Regex("[^0-9]").Replace(rawValue, "");
+				if (rawValue.Length > 0) {
+					return Int32.Parse(rawValue);
+				}
+			}
+			return 0;
+		}
+	}
 }

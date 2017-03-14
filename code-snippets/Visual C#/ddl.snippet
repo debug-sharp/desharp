@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<CodeSnippets  xmlns="http://schemas.microsoft.com/VisualStudio/2005/CodeSnippet">
+	<CodeSnippet Format="1.0.0">
+		<Header>
+			<Title>ddl</Title>
+			<Shortcut>ddl</Shortcut>
+			<Description>Code snippet for: Desharp.Debug.Log(obj, Desharp.Level.DEBUG);</Description>
+			<Author>Tom Flídr</Author>
+			<SnippetTypes>
+				<SnippetType>Expansion</SnippetType>
+			</SnippetTypes>
+		</Header>
+		<Snippet>
+			<Declarations>
+				<Literal Editable="false">
+					<ID>DesharpDebug</ID>
+					<Function>SimpleTypeName(global::Desharp.Debug)</Function>
+				</Literal>
+				<Literal>
+					<ID>obj</ID>
+					<Default>obj</Default>
+					<ToolTip>Any C# object to dump into HDD log.</ToolTip>
+				</Literal>
+				<Literal>
+					<ID>level</ID>
+					<Default>DEBUG</Default>
+					<ToolTip>Log level - ALERT, CRITICAL, DEBUG, EMERGENCY, ERROR, INFO, JAVASCRIPT, NOTICE or WARNING.</ToolTip>
+				</Literal>
+				<Literal>
+					<ID>snippetEnd</ID>
+					<Default></Default>
+					<ToolTip>Snippet end.</ToolTip>
+				</Literal>
+			</Declarations>
+			<Code Language="csharp"><![CDATA[$DesharpDebug$.Log($obj$, Desharp.Level.$level$);$snippetEnd$]]></Code>
+		</Snippet>
+	</CodeSnippet>
+</CodeSnippets>

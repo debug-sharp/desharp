@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<CodeSnippets  xmlns="http://schemas.microsoft.com/VisualStudio/2005/CodeSnippet">
+	<CodeSnippet Format="1.0.0">
+		<Header>
+			<Title>ddc</Title>
+			<Shortcut>ddc</Shortcut>
+			<Description>Code snippet for: Desharp.Debug.Configure(new Desharp.DebugConfig {...});</Description>
+			<Author>Tom Flídr</Author>
+			<SnippetTypes>
+				<SnippetType>Expansion</SnippetType>
+			</SnippetTypes>
+		</Header>
+		<Snippet>
+			<Declarations>
+				<Literal Editable="false">
+					<ID>DesharpDebug</ID>
+					<Function>SimpleTypeName(global::Desharp.Debug)</Function>
+				</Literal>
+				<Literal>
+					<ID>enabled</ID>
+					<Default>true</Default>
+					<ToolTip>Debug dumping into output is enabled or not.</ToolTip>
+				</Literal>
+				<Literal>
+					<ID>depth</ID>
+					<Default>3</Default>
+					<ToolTip>Default dumping depth.</ToolTip>
+				</Literal>
+				<Literal>
+					<ID>directory</ID>
+					<Default>logs</Default>
+					<ToolTip>File logs directory, relative path from application root dir.</ToolTip>
+				</Literal>
+				<Literal>
+					<ID>outputType</ID>
+					<Default>Html</Default>
+					<ToolTip>File logs output type.</ToolTip>
+				</Literal>
+				<Literal>
+					<ID>snippetEnd</ID>
+					<Default></Default>
+					<ToolTip>Snippet end.</ToolTip>
+				</Literal>
+			</Declarations>
+			<Code Language="csharp"><![CDATA[$DesharpDebug$.Configure(new Desharp.DebugConfig {
+	Enabled = $enabled$,
+	Depth = $depth$,
+	Directory = "~/$directory$",
+	OutputType = Desharp.OutputType.$outputType$
+});$snippetEnd$]]></Code>
+		</Snippet>
+	</CodeSnippet>
+</CodeSnippets>

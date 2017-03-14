@@ -118,16 +118,16 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
-  <data name="DumpsCss" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Assets\DumpsCss.css;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
+  <data name="dumps_css" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Assets\dumps.css;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
   </data>
-  <data name="DumpsJs" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Assets\DumpsJs.js;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;windows-1250</value>
+  <data name="dumps_js" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Assets\dumps.js;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;windows-1250</value>
   </data>
-  <data name="LogsCss" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Assets\LogsCss.css;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
+  <data name="logs_css" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Assets\logs.css;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
   </data>
-  <data name="LogsJs" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Assets\LogsJs.js;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;windows-1250</value>
+  <data name="logs_js" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Assets\logs.js;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;windows-1250</value>
   </data>
 </root>

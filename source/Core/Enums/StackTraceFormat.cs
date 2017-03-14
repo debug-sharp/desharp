@@ -4,8 +4,9 @@ using System.Linq;
 using System.Text;
 
 namespace Desharp {
-    internal struct DumpItem {
-        public bool Complex;
-        public string Content;
-    }
+	internal enum StackTraceFormat {
+		Html,
+		Text,
+		Json
+	}
 }

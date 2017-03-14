@@ -4,170 +4,175 @@ using System.Text;
 using System.Collections.Generic;
 using Desharp.Core;
 using Desharp.Completers;
-using Desharp.Outputers;
+using Desharp.Producers;
 using Desharp.Renderers;
 using System.Threading;
+using System.Linq;
 
 namespace Desharp {
     public class Debug {
+		public static Version Version = new Version(1, 0, 0, 0);
+		public const string SESSION_STORAGE_KEY = "$$$Desharp";
 		internal const string SELF_FILENAME = "Debug.cs";
-		public static bool Enabled() {
-            return Core.Environment.GetEnabled();
+		static Debug () {
+			Dispatcher.GetCurrent();
+		}
+		public static bool Enabled (bool? enabled = null) {
+			if (enabled.HasValue) Dispatcher.GetCurrent().Enabled = enabled.Value;
+			return Dispatcher.GetCurrent().Enabled == true;
 		}
 		public static void Configure (DebugConfig cfg) {
-			Core.Environment.Configure(cfg);
+			Dispatcher.GetCurrent().Configure(cfg);
 		}
 		public static double GetProcessingTime() {
 			double r = new TimeSpan(DateTime.Now.Ticks - Tools.GetRequestId()).TotalSeconds;
             return Math.Round(r * 1000) / 1000;
         }
-        public static void Time(string msg = "") {
-			if (!Core.Environment.GetEnabled()) return;
+		public static void Time(string msg = "") {
+			if (Dispatcher.GetCurrent().Enabled != true) return;
 			Debug.Dump((msg.Length > 0 ? msg + ": " : "") + Debug.GetProcessingTime());
         }
-		public static void Assert(bool assertion, string message) {
-			if (!Core.Environment.GetEnabled()) return;
-			Debug.Dump(
-				String.Format("{0}: ({1})", message, assertion ? "true" : "false")
-			);
+		public static void Assert(bool assertion, string message = "") {
+			if (Dispatcher.GetCurrent().Enabled != true) return;
+			Debug.Dump(String.Format(
+				(message.Length > 0 ? "{0}: ({1})" : "{0}{1}"), message, (assertion ? "true" : "false")
+			));
         }
 		public static void Stop () {
-			if (!Core.Environment.GetEnabled()) return;
-            bool htmlOut = Core.Environment.GetOutput() == OutputType.Html && Core.Environment.Type == EnvironmentType.Web;
-		    string renderedException = Debug._renderStackTraceForCurrentApplicationPoint(
+			Dispatcher dispatcher = Dispatcher.GetCurrent();
+			if (dispatcher.Enabled != true) return;
+			bool htmlOut = dispatcher.Output == OutputType.Html && Dispatcher.EnvType == EnvType.Web;
+		    string renderedException = Renderers.Exceptions.RenderCurrentApplicationPoint(
                 "Script has been stopped.", "Exception", false, htmlOut
             );
-            if (Core.Environment.Type == EnvironmentType.Web){
-               HtmlResponse.SendRenderedExceptions(renderedException, "Exception");
-                Debug.RequestEnd();
-                HttpContext.Current.Response.End();
+            if (Dispatcher.EnvType == EnvType.Web){
+				HtmlResponse.SendRenderedExceptions(renderedException, "Exception");
 			} else {
-                Core.Environment.WriteOutput(renderedException);
-                Thread.CurrentThread.Abort();
+				dispatcher.WriteExceptionToOutput(new List<string>() { renderedException });
 			}
+			dispatcher.Stop();
 		}
-		public static void Dump (Exception e) {
-			if (!Core.Environment.GetEnabled()) return;
+		public static string Dump (Exception e, DumpOptions? options = null) {
+			Dispatcher dispatcher = Dispatcher.GetCurrent();
+			if (dispatcher.Enabled != true) return "";
+			if (!options.HasValue) options = new DumpOptions { Return = false, Depth = 0, MaxLength = 0 };
+			DumpOptions optionsValue = options.Value;
+			string dumpResult = "";
+			List<string> exceptionResult = new List<string>();
+			bool htmlOut = dispatcher.Output == OutputType.Html && Dispatcher.EnvType == EnvType.Web;
 			if (e == null) {
-				Debug.Dump(new object[] { null });
-			} else { 
-				bool htmlOut = Core.Environment.GetOutput() == OutputType.Html && Core.Environment.Type == EnvironmentType.Web;
-				string renderedExceptions = Debug._renderStackTraceForExceptions(e, false, htmlOut);
-				Core.Environment.WriteOutput(renderedExceptions);
+				dumpResult = Dumper.Dump(null);
+			} else if (e is Exception) {
+				if (!optionsValue.CatchedException.HasValue) {
+					optionsValue.CatchedException = true;
+				}
+				exceptionResult = Exceptions.RenderExceptions(e, false, htmlOut, optionsValue.CatchedException.Value);
+			} else {
+				if (!optionsValue.Depth.HasValue) optionsValue.Depth = 0;
+				if (!optionsValue.MaxLength.HasValue) optionsValue.MaxLength = 0;
+				if (!optionsValue.Return.HasValue) optionsValue.Return = false;
+				dumpResult = Dumper.Dump(e, htmlOut, optionsValue.Depth.Value, optionsValue.MaxLength.Value);
+			}
+			if (!optionsValue.Return.HasValue || (optionsValue.Return.HasValue && !optionsValue.Return.Value)) {
+				if (dumpResult.Length == 0 && exceptionResult.Count > 0) {
+					dispatcher.WriteExceptionToOutput(exceptionResult);
+				} else {
+					dispatcher.WriteDumpToOutput(dumpResult);
+				}
+				return "";
+			}
+			if (dumpResult.Length == 0 && exceptionResult.Count > 0) {
+				return String.Join(Environment.NewLine, exceptionResult.ToArray());
+			} else {
+				return dumpResult;
 			}
 		}
-		public static void Log (Exception e) {
-			if (!Core.Environment.GetEnabled()) return;
-			bool htmlOut = Core.Environment.GetOutput() == OutputType.Html;
-			string renderedExceptions = Debug._renderStackTraceForExceptions(e, true, htmlOut);
-			FileLog.Log(renderedExceptions, "exception");
-		}
-		public static void Dump(params object[] args){
-			if (!Core.Environment.GetEnabled()) return;
-            bool htmlOut = Core.Environment.GetOutput() == OutputType.Html && Core.Environment.Type == EnvironmentType.Web;
-            string logResult;
+		public static string Dump (params object[] args) {
+			Dispatcher dispatcher = Dispatcher.GetCurrent();
+			if (dispatcher.Enabled != true) return "";
+			string result;
+			StringBuilder resultItems = new StringBuilder();
+			bool htmlOut = dispatcher.Output == OutputType.Html && Dispatcher.EnvType == EnvType.Web;
 			if (args == null) args = new object[] { null };
 			if (args.GetType().FullName != "System.Object[]") args = new object[] { args };
-			object arg;
 			for (int i = 0; i < args.Length; i++) {
-                try { 
-				    arg = args[i];
-				    if (arg != null && arg is Exception) {
-					    Debug.Log(arg as Exception);
-				    } else {
-					    logResult = Dumper.Dump(args[i], 0, htmlOut);
-					    Core.Environment.WriteOutput(logResult);
-				    }
+                try {
+					resultItems.Append(Dumper.Dump(args[i], htmlOut));
                 } catch (Exception e) {
-					string renderedExceptions = Debug._renderStackTraceForExceptions(e, true, htmlOut);
-					FileLog.Log(renderedExceptions, "exception");
+					resultItems.Append(Debug.Dump(e, true));
                 }
-            }
-        }
-        public static void Dump (object obj, int maxDepth = 0) {
-            if (!Core.Environment.GetEnabled()) return;
-            bool htmlOut = Core.Environment.GetOutput() == OutputType.Html && Core.Environment.Type == EnvironmentType.Web;
-            string logResult;
-            try {
-                if (obj != null && obj is Exception) {
-                    Debug.Log(obj as Exception);
-                } else {
-                    logResult = Dumper.Dump(obj, 0, htmlOut, maxDepth);
-                    Core.Environment.WriteOutput(logResult);
-                }
-            } catch (Exception e) {
-				string renderedExceptions = Debug._renderStackTraceForExceptions(e, true, htmlOut);
-				FileLog.Log(renderedExceptions, "exception");
 			}
-        }
-        public static void Log (object obj, Level level = Level.DEBUG, int maxDepth = 0) {
-			if (!Core.Environment.GetEnabled()) return;
-			bool htmlOut = Core.Environment.GetOutput() == OutputType.Html;
+			result = resultItems.ToString();
+			dispatcher.WriteDumpToOutput(result);
+			return result;
+		}
+		public static string Dump (object obj, DumpOptions? options = null) {
+			Dispatcher dispatcher = Dispatcher.GetCurrent();
+			if (dispatcher.Enabled != true) return "";
+			if (!options.HasValue) options = new DumpOptions { Return = false, Depth = 0, MaxLength = 0 };
+			DumpOptions optionsValue = options.Value;
+			if (!optionsValue.Depth.HasValue) optionsValue.Depth = 0;
+			if (!optionsValue.MaxLength.HasValue) optionsValue.MaxLength = 0;
+			if (!optionsValue.Return.HasValue) optionsValue.Return = false;
+			string result = "";
+			bool htmlOut = dispatcher.Output == OutputType.Html && Dispatcher.EnvType == EnvType.Web;
+			try {
+				result = Dumper.Dump(obj, htmlOut, optionsValue.Depth.Value, optionsValue.MaxLength.Value);
+			} catch (Exception e) {
+				result = Debug.Dump(e, optionsValue);
+			}
+			if (!optionsValue.Return.Value || (optionsValue.Return.HasValue && !optionsValue.Return.Value)) {
+				dispatcher.WriteDumpToOutput(result);
+				return "";
+			}
+			return result;
+		}
+		public static string DumpAndDie (object obj, DumpOptions? options = null) {
+			if (!options.HasValue) options = new DumpOptions { Return = true, Depth = 0, MaxLength = 0 };
+			DumpOptions optionsValue = options.Value;
+			if (!optionsValue.Return.HasValue) optionsValue.Return = true;
+			string result = Debug.Dump(obj, optionsValue);
+			if (Dispatcher.EnvType == EnvType.Web) {
+				HttpContext.Current.Response.Write(result);
+			} else {
+				Console.Write(result);
+			}
+			Dispatcher.GetCurrent().Stop();
+			return "";
+		}
+		public static void Log (Exception e) {
+			Dispatcher dispatcher = Dispatcher.GetCurrent();
+			if (dispatcher.Enabled != true) return;
+			bool htmlOut = dispatcher.Output == OutputType.Html;
+			List<string> renderedExceptions = Renderers.Exceptions.RenderExceptions(e, true, htmlOut, true);
+			foreach (string renderedException in renderedExceptions) FileLog.Log(renderedException, "exception");
+		}
+		public static void Log (object obj, Level level = Level.INFO, int maxDepth = 0, int maxLength = 0) {
+			Dispatcher dispatcher = Dispatcher.GetCurrent();
+			if (dispatcher.Enabled != true) return;
+			bool htmlOut = dispatcher.Output == OutputType.Html;
 			string renderedObj;
 			if (level == Level.JAVASCRIPT) {
 				if (!(obj is Dictionary<string, string>)) {
-					Debug.Log(new Exception("To log javascript exceptions - pass into Debug.Write() type: Dictionary<string, string>."));
+					Debug.Log(new Exception("To log javascript exceptions, call: Desharp.Debug.Log(data as Dictionary<string, string>, Level.JAVASCRIPT);"));
 				}
-				renderedObj = JavascriptExceptionData.RenderLogedExceptionData(obj as Dictionary<string, string>, htmlOut) + "\n";
+				renderedObj = JavascriptExceptionData.RenderLogedExceptionData(obj as Dictionary<string, string>, htmlOut) 
+					+ Environment.NewLine;
 			} else {
                 try {
-                    renderedObj = Dumper.Dump(obj, 0, htmlOut, maxDepth);
+                    renderedObj = Dumper.Dump(obj, htmlOut, maxDepth, maxLength);
                 } catch (Exception e) {
                     renderedObj = e.Message;
                 }
-				if (htmlOut) {
-					// remove begin and end div
-					renderedObj = renderedObj.Substring(5, renderedObj.Length - (5 + 6));
+				if (htmlOut && renderedObj.Length > Dumper.HtmlDumpWrapper[0].Length && renderedObj.IndexOf(Dumper.HtmlDumpWrapper[0]) == 0) {
+					// remove begin <div class="item"> end </div>
+					renderedObj = renderedObj.Substring(Dumper.HtmlDumpWrapper[0].Length, renderedObj.Length - (Dumper.HtmlDumpWrapper[0].Length + Dumper.HtmlDumpWrapper[1].Length));
 				}
-				renderedObj = Debug._renderStackTraceForCurrentApplicationPoint(
-					renderedObj, htmlOut ? "" : "Value", true, htmlOut
-				) + "\n";
+				renderedObj = Renderers.Exceptions.RenderCurrentApplicationPoint(
+					htmlOut ? "" : renderedObj, htmlOut ? renderedObj : "Value", true, htmlOut
+				) + Environment.NewLine;
 			}
 			FileLog.Log(renderedObj, LevelValues.Values[level]);
-		}
-		internal static void RequestBegin (long crt = -1) {
-			if (crt == -1) crt = Tools.GetRequestId();
-			Core.Environment.RequestBegin(crt);
-		}
-		internal static void RequestEnd (long crt = -1) {
-            if (Core.Environment.Type == EnvironmentType.Web) {
-                if (crt == -1) crt = Tools.GetRequestId();
-                HtmlResponse.RequestEnd(crt);
-				FileLog.RequestEnd(crt);
-				Core.Environment.RequestEnd(crt);
-            }
-        }
-		private static string _renderStackTraceForExceptions (Exception e, bool fileSystemLog = true, bool htmlOut = false) {
-			StringBuilder result = new StringBuilder();
-			Dictionary<string, Exception> exceptions = Completers.StackTrace.CompleteInnerExceptions(e);
-			Dictionary<string, string> headers = new Dictionary<string, string>();
-			if (Core.Environment.Type == EnvironmentType.Web) {
-				headers = HttpHeaders.CompletePossibleHttpHeaders();
-			}
-			int i = 0;
-			foreach (var item in exceptions) {
-				if (item.Value.StackTrace == null) continue;
-				RenderingCollection preparedResult = Completers.StackTrace.RenderStackTraceForException(
-					item.Value, fileSystemLog, htmlOut, i
-				);
-				preparedResult.Headers = headers;
-				result.Append(
-					Renderers.StackTrace.RenderStackRecordResult(
-						preparedResult, fileSystemLog, htmlOut
-					)
-				);
-				i++;
-			}
-			return result.ToString();
-		}
-		private static string _renderStackTraceForCurrentApplicationPoint (string message = "", string exceptionType = "", bool fileSystemLog = true, bool htmlOut = false) {
-			RenderingCollection preparedResult = Completers.StackTrace.CompleteStackTraceForCurrentApplicationPoint(message, exceptionType, fileSystemLog, htmlOut);
-			Dictionary<string, string> headers = new Dictionary<string, string>();
-			if (Core.Environment.Type == EnvironmentType.Web) {
-				headers = HttpHeaders.CompletePossibleHttpHeaders();
-			}
-			preparedResult.Headers = headers;
-			return Renderers.StackTrace.RenderStackRecordResult(preparedResult, fileSystemLog, htmlOut);
 		}
 	}
 }

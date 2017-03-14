@@ -1,5 +1,5 @@
 ﻿namespace Desharp {
-	public enum EnvironmentType {
+	public enum EnvType {
 		Auto,
 		Windows,
 		Web	

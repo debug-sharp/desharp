@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<CodeSnippets  xmlns="http://schemas.microsoft.com/VisualStudio/2005/CodeSnippet">
+	<CodeSnippet Format="1.0.0">
+		<Header>
+			<Title>dddo</Title>
+			<Shortcut>dddo</Shortcut>
+			<Description>Code snippet for dump with options: Desharp.Debug.Dump(obj, new Desharp.DumpOptions {...});</Description>
+			<Author>Tom Flídr</Author>
+			<SnippetTypes>
+				<SnippetType>Expansion</SnippetType>
+			</SnippetTypes>
+		</Header>
+		<Snippet>
+			<Declarations>
+				<Literal Editable="false">
+					<ID>DesharpDebug</ID>
+					<Function>SimpleTypeName(global::Desharp.Debug)</Function>
+				</Literal>
+				<Literal>
+					<ID>obj</ID>
+					<Default>obj</Default>
+					<ToolTip>Any C# object to dump into HDD log.</ToolTip>
+				</Literal>
+				<Literal>
+					<ID>depth</ID>
+					<Default>4</Default>
+					<ToolTip>First argument C# object dumping depth.</ToolTip>
+				</Literal>
+				<Literal>
+					<ID>return</ID>
+					<Default>false</Default>
+					<ToolTip>Return dumped object as string.</ToolTip>
+				</Literal>
+				<Literal>
+					<ID>snippetEnd</ID>
+					<Default></Default>
+					<ToolTip>Snippet end.</ToolTip>
+				</Literal>
+			</Declarations>
+			<Code Language="csharp"><![CDATA[$DesharpDebug$.Dump($obj$, new Desharp.DumpOptions {
+	Depth = $depth$,
+	Return = $return$
+});$snippetEnd$]]></Code>
+		</Snippet>
+	</CodeSnippet>
+</CodeSnippets>
