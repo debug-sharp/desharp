@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Text.RegularExpressions;
 using Desharp.Core;
 using System.Linq;
+using Desharp.Renderers;
 
 namespace Desharp.Completers {
 	public class StackTrace {
@@ -28,24 +29,23 @@ namespace Desharp.Completers {
 			StackTraceItem stackTraceItem;
 			StackTraceItem? errorFile = null;
 			List<StackTraceItem> stackTraceItems = new List<StackTraceItem>();
-			bool[] debugFiles = new bool[]{false, false, false};
 			int counter = 0;
 
 			foreach (StackFrame stackItem in stackTrace.GetFrames()) {
 				fileName = stackItem.GetFileName();
 				if (fileName == null) fileName = "";
+				fileName = fileName.Replace('\\', '/');
 
 				if (fileName.Length > 0) {
-					debugFiles[0] = fileName.IndexOf(StackTrace.SELF_FILENAME) > -1 && fileName.IndexOf(StackTrace.SELF_FILENAME) == fileName.Length - StackTrace.SELF_FILENAME.Length;
-					debugFiles[1] = fileName.IndexOf(Debug.SELF_FILENAME) > -1 && fileName.IndexOf(Debug.SELF_FILENAME) == fileName.Length - Debug.SELF_FILENAME.Length;
-					if (debugFiles[0] || debugFiles[1] || debugFiles[2]) continue;
+					if (fileName.IndexOf(StackTrace.SELF_FILENAME) > -1 && fileName.IndexOf(StackTrace.SELF_FILENAME) == fileName.Length - StackTrace.SELF_FILENAME.Length) continue;
+					if (fileName.IndexOf(Exceptions.SELF_FILENAME) > -1 && fileName.IndexOf(Exceptions.SELF_FILENAME) == fileName.Length - Exceptions.SELF_FILENAME.Length) continue;
+					if (fileName.IndexOf(Debug.SELF_FILENAME) > -1 && fileName.IndexOf(Debug.SELF_FILENAME) == fileName.Length - Debug.SELF_FILENAME.Length) continue;
 				}
 
 				line = stackItem.GetFileLineNumber().ToString().Trim();
 				column = stackItem.GetFileColumnNumber().ToString().Trim();
 				method = stackItem.GetMethod().ToString().Trim();
-
-				if (fileName.Length == 0) fileName = Renderers.Exceptions.GetExternalCodeDescription();
+				
 				if (line.Length == 0) line = "?";
 
 				stackTraceItem = new StackTraceItem {
@@ -56,7 +56,7 @@ namespace Desharp.Completers {
 				};
 				if (
 					!errorFile.HasValue && 
-					fileName != Renderers.Exceptions.GetExternalCodeDescription() && 
+					fileName.Length > 0 && 
 					line != "?"
 				) {
 					errorFile = stackTraceItem;
@@ -89,7 +89,7 @@ namespace Desharp.Completers {
 			if (errorFile == null && !fileSystemLog) {
 				foreach (StackTraceItem stackTraceItem in stackTraceItems) {
 					if (
-						stackTraceItem.File != Renderers.Exceptions.GetExternalCodeDescription() &&
+						stackTraceItem.File.ToString().Length > 0 &&
 						stackTraceItem.Line != "?"
 					) {
 						errorFile = stackTraceItem;
@@ -285,7 +285,7 @@ namespace Desharp.Completers {
 			Regex r3 = new Regex(@"(.*)\.(cs|vb):([^\s]+)\s([0-9]*)$");
 			for (int i = 0; i < rawStackTraceLines.Length; i++) {
 				method = "";
-				fileName = Renderers.Exceptions.GetExternalCodeDescription();
+				fileName = "";
 				line = "?";
 				// here stack trace line should contains: conjunction + method with params + conjunction + file + conjunction + : + line
 				// 'at App.Controllers.WebsiteController.OnActionExecuting(ActionExecutingContext filterContext) in c:\inetpub\wwwroot\MVC-a-01\MVC-a-04\Controllers\WebsiteController.cs:line 20'
@@ -309,7 +309,9 @@ namespace Desharp.Completers {
 					method = methodAndPossibleFileNameAndLine;
 				}
 
-				if (fileName is string && fileName.LastIndexOf(StackTrace.SELF_FILENAME) == fileName.Length - StackTrace.SELF_FILENAME.Length) continue;
+				//if (fileName.LastIndexOf(Debug.SELF_FILENAME) == fileName.Length - Debug.SELF_FILENAME.Length) continue;
+				//if (fileName.LastIndexOf(Exceptions.SELF_FILENAME) == fileName.Length - Exceptions.SELF_FILENAME.Length) continue;
+
 				fileName = fileName.Replace('\\', '/');
 				result.Add(new StackTraceItem {
 					File = fileName,

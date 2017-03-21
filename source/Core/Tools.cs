@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Diagnostics;
 using System.Reflection;
+using System.Resources;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -61,7 +62,12 @@ namespace Desharp.Core {
 		}
 		internal static string RelativeSourceFullPath (string fileName) {
 			int appRootPos = fileName.IndexOf(Dispatcher.AppRoot);
-			if (appRootPos == 0) fileName = fileName.Substring(Dispatcher.AppRoot.Length);
+			if (appRootPos == 0) {
+				fileName = fileName.Substring(Dispatcher.AppRoot.Length);
+			} else if (Dispatcher.SourcesRoot.Length > 0) {
+				appRootPos = fileName.IndexOf(Dispatcher.SourcesRoot);
+				if (appRootPos == 0) fileName = fileName.Substring(Dispatcher.SourcesRoot.Length);
+			}
 			return fileName;
 		}
 		public static string GetClientIpAddress () {
@@ -101,6 +107,9 @@ namespace Desharp.Core {
             if (HttpContext.Current == null) return 0; // windows, unit testing
             return HttpContext.Current.Timestamp.Ticks;
         }
+		public static long GetProcessId () {
+			return Process.GetCurrentProcess().Id;
+		}
 		public static long GetThreadId () {
             return Thread.CurrentThread.ManagedThreadId;
 		}

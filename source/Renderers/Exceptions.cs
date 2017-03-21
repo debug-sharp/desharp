@@ -7,18 +7,20 @@ using Desharp.Core;
 using System.Web.Script.Serialization;
 using Desharp.Completers;
 using System.Web.UI;
+using System.Collections;
 
 namespace Desharp.Renderers {
     internal class Exceptions {
+		internal const string SELF_FILENAME = "Exceptions.cs";
 		internal static List<string> RenderExceptions (Exception e, bool fileSystemLog = true, bool htmlOut = false, bool catched = true) {
 			List<string> result = new List<string>();
-			Dictionary<string, ExceptionToRender> exceptions = Completers.StackTrace.CompleteInnerExceptions(e, catched);
+			Dictionary<string, ExceptionToRender> exceptions = StackTrace.CompleteInnerExceptions(e, catched);
 			List<string[]> headers = new List<string[]>();
 			if (Dispatcher.EnvType == EnvType.Web) headers = HttpHeaders.CompletePossibleHttpHeaders();
 			int i = 0;
 			foreach (var item in exceptions) {
 				//if (item.Value.Exception.StackTrace == null) continue; // why ??!!?????!? exception has always a stacktrace hasn't it?
-				RenderingCollection preparedResult = Completers.StackTrace.RenderStackTraceForException(
+				RenderingCollection preparedResult = StackTrace.RenderStackTraceForException(
 					item.Value, fileSystemLog, htmlOut, i
 				);
 				preparedResult.Headers = headers;
@@ -30,51 +32,57 @@ namespace Desharp.Renderers {
 			return result;
 		}
 		internal static string RenderCurrentApplicationPoint (string message = "", string exceptionType = "", bool fileSystemLog = true, bool htmlOut = false) {
-			RenderingCollection preparedResult = Completers.StackTrace.CompleteStackTraceForCurrentApplicationPoint(message, exceptionType, fileSystemLog, htmlOut);
+			RenderingCollection preparedResult = StackTrace.CompleteStackTraceForCurrentApplicationPoint(message, exceptionType, fileSystemLog, htmlOut);
 			List<string[]> headers = new List<string[]>();
 			if (Dispatcher.EnvType == EnvType.Web) {
 				headers = HttpHeaders.CompletePossibleHttpHeaders();
 			}
 			preparedResult.Headers = headers;
-			return Renderers.Exceptions._renderStackRecordResult(preparedResult, fileSystemLog, htmlOut);
+			return Exceptions._renderStackRecordResult(preparedResult, fileSystemLog, htmlOut);
 		}
-		internal static string GetExternalCodeDescription () {
-			return "External code";
-		}
-
 		private static string _renderStackRecordResult(RenderingCollection preparedResult, bool fileSystemLog = true, bool htmlOut = false) {
 			bool webEnv = Dispatcher.EnvType == EnvType.Web;
-			string headersStr = Exceptions._renderDataTableRows(preparedResult.Headers, fileSystemLog, false);
-			
 			string dateStr = String.Format("{0:yyyy-MM-dd HH:mm:ss:fff}", DateTime.Now);
 			string errorFileStr = "";
+			string headersStr;
 			string stackTraceStr;
-			if (webEnv && htmlOut && !fileSystemLog) {
-				if (preparedResult.ErrorFileStackTrace.HasValue) {
-					errorFileStr = ErrorFile.Render(preparedResult.ErrorFileStackTrace.Value, StackTraceFormat.Html);
+			if (htmlOut) { 
+				if (webEnv && !fileSystemLog) {
+					headersStr = Exceptions._renderDataTableRows(preparedResult.Headers, htmlOut, false);
+					if (preparedResult.ErrorFileStackTrace.HasValue) {
+						errorFileStr = ErrorFile.Render(preparedResult.ErrorFileStackTrace.Value, StackTraceFormat.Html);
+					}
+					stackTraceStr = Exceptions._renderStackTrace(preparedResult.AllStackTraces, htmlOut, StackTraceFormat.Html, fileSystemLog);
+					return Exceptions._renderStackRecordResultHtmlResponse(
+						preparedResult, errorFileStr, stackTraceStr, headersStr, dateStr
+					);
+				} else {
+					headersStr = Exceptions._renderDataTableRows(preparedResult.Headers, false, false);
+					stackTraceStr = Exceptions._renderStackTrace(preparedResult.AllStackTraces, htmlOut, StackTraceFormat.Json, fileSystemLog);
+					return Exceptions._renderStackRecordResultHtmlLog(
+						preparedResult, stackTraceStr, headersStr, dateStr
+					);
 				}
-				stackTraceStr = Exceptions._renderStackTrace(preparedResult.AllStackTraces, StackTraceFormat.Html, fileSystemLog);
-				return Exceptions._renderStackRecordResultHtmlResponse(
-					preparedResult, errorFileStr, stackTraceStr, headersStr, dateStr
-				);
-			} else if (htmlOut && fileSystemLog) {
-				stackTraceStr = Exceptions._renderStackTrace(preparedResult.AllStackTraces, StackTraceFormat.Html, fileSystemLog);
-				return Exceptions._renderStackRecordResultHtmlLog(
-					preparedResult, stackTraceStr, headersStr, dateStr
-				);
-			} else if (!webEnv && !htmlOut && !fileSystemLog) {
-				if (preparedResult.ErrorFileStackTrace.HasValue) {
-					errorFileStr = ErrorFile.Render(preparedResult.ErrorFileStackTrace.Value, StackTraceFormat.Text);
-				}
-				stackTraceStr = Exceptions._renderStackTrace(preparedResult.AllStackTraces, StackTraceFormat.Text, fileSystemLog);
-				return Exceptions._renderStackRecordResultConsoleText(
-					preparedResult, "Thread ID : " + Tools.GetThreadId().ToString(), errorFileStr, stackTraceStr, headersStr, dateStr
-				);
 			} else {
-				stackTraceStr = Exceptions._renderStackTrace(preparedResult.AllStackTraces, StackTraceFormat.Json, fileSystemLog);
-				return Exceptions._renderStackRecordResultLoggerText(
-					preparedResult, "Thread ID: " + Tools.GetThreadId().ToString(), errorFileStr, stackTraceStr, headersStr, dateStr
-				);
+				headersStr = Exceptions._renderDataTableRows(preparedResult.Headers, htmlOut, false);
+				List<string> processAndThreadId = new List<string>() { "Process ID: " + Tools.GetProcessId().ToString() };
+				if (!webEnv && !fileSystemLog) {
+					if (preparedResult.ErrorFileStackTrace.HasValue) {
+						errorFileStr = ErrorFile.Render(preparedResult.ErrorFileStackTrace.Value, StackTraceFormat.Text);
+					}
+					stackTraceStr = Exceptions._renderStackTrace(preparedResult.AllStackTraces, htmlOut, StackTraceFormat.Text, fileSystemLog);
+					processAndThreadId.Add("Thread ID : " + Tools.GetThreadId().ToString());
+					return Exceptions._renderStackRecordResultConsoleText(
+						preparedResult, String.Join(Environment.NewLine + "   ", processAndThreadId.ToArray()), errorFileStr, stackTraceStr, headersStr, dateStr
+					);
+				} else {
+					stackTraceStr = Exceptions._renderStackTrace(preparedResult.AllStackTraces, htmlOut, StackTraceFormat.Json, fileSystemLog);
+					if (webEnv) processAndThreadId.Add("Request ID: " + Tools.GetRequestId().ToString());
+					processAndThreadId.Add("Thread ID: " + Tools.GetThreadId().ToString());
+					return Exceptions._renderStackRecordResultLoggerText(
+						preparedResult, String.Join(" | ", processAndThreadId.ToArray()), errorFileStr, stackTraceStr, headersStr, dateStr
+					);
+				}
 			}
         }
 		private static string _renderStackRecordResultHtmlResponse (
@@ -84,20 +92,20 @@ namespace Desharp.Renderers {
 			string headersStr,
 			string dateStr
 		) {
-			string linkValue = "ht" + "tps://www.google.com/search?sourceid=desharp&gws_rd=us&q="
+			string linkValue = "https://www.google.com/search?sourceid=desharp&gws_rd=us&q="
 				+ HttpUtility.UrlEncode(preparedResult.ExceptionMessage);
 			string causedByMsg = preparedResult.CausedByMessage;
 			if (causedByMsg.Length > 50) causedByMsg = causedByMsg.Substring(0, 50) + "...";
 			string result = @"<div class=""exception"">"
 				+ @"<div class=""head"">"
-					+ @"<div class=""type"">" + preparedResult.ExceptionType + " (Hash code: " + preparedResult.ExceptionHash + ")</div>"
+					+ @"<div class=""type"">" + preparedResult.ExceptionType + " (Hash Code: " + preparedResult.ExceptionHash + ")</div>"
 					+ @"<a href=""" + linkValue + @""" target=""_blank"">"
 							+ preparedResult.ExceptionMessage
 					+ "</a>"
 					+ @"<div class=""info"">"
 						+ "Catched: " + (preparedResult.Catched ? "yes" : "no")
 						+ (preparedResult.CausedByHash.Length > 0 
-							? ", Caused by: " + preparedResult.CausedByType + " (Hash code: " + preparedResult.CausedByHash + ", Message: " + causedByMsg + ")" 
+							? ", Caused By: " + preparedResult.CausedByType + " (Hash Code: " + preparedResult.CausedByHash + ", Message: " + causedByMsg + ")" 
 							: "")
 					+ "</div>"
 				+ "</div>"
@@ -108,7 +116,7 @@ namespace Desharp.Renderers {
 			}
 			result += Exceptions._renderHtmlDataTable(
 				"Loaded assemblies:", 
-				Exceptions._renderDataTableRows(LoadedAssemblies.CompleteLoadedAssemblies(), false, true)
+				Exceptions._renderDataTableRows(LoadedAssemblies.CompleteLoadedAssemblies(), true, true)
 			);
 			result += Exceptions._renderHtmlResponseFooterInfo();
 			result += "</div>";
@@ -120,21 +128,38 @@ namespace Desharp.Renderers {
 			string headersStr,
 			string dateStr
 		) {
-			string linkValue = "ht" + "tps://www.google.com/webhp?hl=en&amp;sourceid=desharp&amp;q="
-				+ HttpUtility.UrlEncode(preparedResult.ExceptionMessage);
-			string result = @"<div class=""record"">"
-				+ @"<a href=""" + linkValue + @""" target=""_blank"" class=""control"">"
-					+ @"<span class=""req"">Request ID: " + Tools.GetRequestId().ToString() + "</span>"
-					+ @"<span class=""thread"">Thread ID: " + Tools.GetThreadId().ToString() + "</span>"
-					+ @"<span class=""date"">Date: " + dateStr + "</span>"
-					+ @"<span class=""type"">" + preparedResult.ExceptionType + "</span>"
-					+ @"<span class=""msg"">" + preparedResult.ExceptionMessage + "</span>"
-				+ "</a>"
-				+ stackTraceStr;
-			if (preparedResult.Headers.Count > 0) {
-				result += Exceptions._renderHtmlDataTable("HTTP Headers:", headersStr);
+			JavaScriptSerializer jsonSerializer = new JavaScriptSerializer();
+			bool valueRecording = preparedResult.ExceptionType == "Value";
+			string result = @"<div class=""record" + (valueRecording ? " value" : " exception") + @""">"
+				+ @"<div class=""control"">"
+					+ @"<div class=""date"">" + dateStr + "</div>";
+			if (valueRecording) {
+				result += @"<div class=""process"">" + Tools.GetProcessId().ToString() + "</div>"
+					+ ((Dispatcher.EnvType == EnvType.Web) ? @"<div class=""request"">" + Tools.GetRequestId().ToString() + "</div>" : "")
+					+ @"<div class=""thread"">" + Tools.GetThreadId().ToString() + "</div>"
+					+ @"<div class=""desharp-dump"">" + preparedResult.ExceptionMessage + "</div>";
+			} else {
+				result += @"<div class=""catched"">" + (preparedResult.Catched ? "yes" : "no") + "</div>"
+					+ @"<div class=""type"">" + preparedResult.ExceptionType + " (" + preparedResult.ExceptionHash + ")</div>"
+					+ @"<div class=""msg"">" + preparedResult.ExceptionMessage + "</div>";
 			}
-			result += "</div>";
+			result += @"</div><div class=""json-data"">";
+			string dataStr = "{";
+			if (!valueRecording) {
+				dataStr += "processId: " + Tools.GetProcessId().ToString();
+				if (Dispatcher.EnvType == EnvType.Web) dataStr += ",requestId:" + Tools.GetRequestId().ToString();
+				dataStr += ",threadId:" + Tools.GetThreadId().ToString();
+			}
+			if (!valueRecording && preparedResult.CausedByType != null && preparedResult.CausedByType.Length > 0) {
+				if (dataStr != "{") dataStr += ",";
+				dataStr += "causedByType:" + jsonSerializer.Serialize(preparedResult.CausedByType)
+					+ ",causedByHash:" + jsonSerializer.Serialize(preparedResult.CausedByHash);
+			}
+			if (dataStr != "{") dataStr += ",";
+			dataStr += "callstack:" + stackTraceStr;
+			if (preparedResult.Headers.Count > 0) dataStr += ",headers:" + headersStr;
+			dataStr += "}";
+			result += dataStr + "</div></div>";
 			return result;
 		}
 		private static string _renderStackRecordResultConsoleText (
@@ -145,12 +170,15 @@ namespace Desharp.Renderers {
 			string headersStr,
 			string dateStr
 		) {
-			string result = preparedResult.ExceptionType + ":";
+			string result = preparedResult.ExceptionType + " (Hash Code: " + preparedResult.ExceptionHash + "):";
 			result += System.Environment.NewLine + "   Message   : " + preparedResult.ExceptionMessage;
 			result += System.Environment.NewLine + "   Time      : " + dateStr;
 			result += System.Environment.NewLine + "   " + threadOrRequestIdStr;
+			if (preparedResult.CausedByType != null && preparedResult.CausedByType.Length > 0) {
+				result += System.Environment.NewLine + "   Cuased By : " + preparedResult.CausedByType + " (Hash Code: " + preparedResult.CausedByHash + ")";
+			}
 			if (errorFileStr.Length > 0) {
-				string file = preparedResult.ErrorFileStackTrace.Value.File;
+				string file = Tools.RelativeSourceFullPath(preparedResult.ErrorFileStackTrace.Value.File.ToString());
 				string line = preparedResult.ErrorFileStackTrace.Value.Line;
 				result += System.Environment.NewLine + "   File      : " + file + ":" + line
 					+ System.Environment.NewLine + errorFileStr;
@@ -169,18 +197,27 @@ namespace Desharp.Renderers {
 			Regex r1 = new Regex(@"\r");
 			Regex r2 = new Regex(@"\n");
 			string message = r1.Replace(preparedResult.ExceptionMessage, "");
-			message = r2.Replace(message, '\\' + "n");
+			message = r2.Replace(message.Trim(), '\\' + "n");
 			string result = "Time: " + dateStr + " | " + threadOrRequestIdStr;
+			if (preparedResult.ExceptionType == "Value") {
+				result += " | Value: " + message;
+			} else {
+				result += " | Type: " + preparedResult.ExceptionType + " (Hash Code: " + preparedResult.ExceptionHash + ")"
+					+ " | Catched: " + (preparedResult.Catched ? "yes" : "no")
+					+ " | Message: " + message;
+				if (preparedResult.CausedByType != null && preparedResult.CausedByType.Length > 0)
+					result += " | Caused By: " + preparedResult.CausedByType + " (Hash Code: " + preparedResult.CausedByHash + ")";
+			}
 			if (stackTraceStr.Length > 0) result += " | Callstack: " + stackTraceStr;
-			if (headersStr.Length > 0) result += " | Request Headers: " + stackTraceStr;
-			result += " | Type: " + preparedResult.ExceptionType + " | Message: " + message;
+			if (headersStr.Length > 0) result += " | Request Headers: " + headersStr;
 			return result;
 		}
-		private static string _renderDataTableRows (List<string[]> headers, bool fileSystemLog = true, bool firstRowAsHead = false) {
+		private static string _renderDataTableRows (List<string[]> data, bool htmlOut = false, bool firstRowAsHead = false) {
 			StringBuilder result = new StringBuilder();
-			if (Dispatcher.GetCurrent().Output == OutputType.Html) {
+			if (data.Count == 0) return "";
+			if (htmlOut) {
 				int index = 0;
-				foreach (string[] rowData in headers) {
+				foreach (string[] rowData in data) {
 					result.Append("<tr>");
 					for (int i = 0, l = rowData.Length; i < l; i += 1) {
 						if (index == 0 && firstRowAsHead) {
@@ -193,26 +230,41 @@ namespace Desharp.Renderers {
 					index++;
 				}
 			} else {
-				try {
-					result.Append(
-						new JavaScriptSerializer().Serialize(headers)
-					);
-				} catch (Exception e) { }
+				if (data.Count > 0 && data[0].Length == 2) {
+					Dictionary<string, string> dataDct = new Dictionary<string, string>();
+					foreach (string[] dataItem in data) dataDct.Add(dataItem[0], dataItem[1]);
+					result.Append(new JavaScriptSerializer().Serialize(dataDct));
+				} else {
+					result.Append(new JavaScriptSerializer().Serialize(data));
+				}
 			}
 			return result.ToString();
 		}
 		private static string _renderHtmlDataTable (string title, string tableRows) {
 			return @"<div class=""table""><b class=""title"">" + title + @"</b><div class=""data"" ><table>" + tableRows + "</table></div></div>";
 		}
-		private static string _renderStackTrace (List<StackTraceItem> stackTrace, StackTraceFormat format, bool fileSystemLog = true) {
+		private static string _renderStackTrace (List<StackTraceItem> stackTrace, bool htmlOut, StackTraceFormat format, bool fileSystemLog = true) {
 			List<string> result = new List<string>();
 			int counter = 0;
 			int[] textLengths = new int[] { 0, 0};
-			if (format == StackTraceFormat.Text) {
+			if (format != StackTraceFormat.Html) {
+				List<StackTraceItem> newStackTrace = new List<StackTraceItem>();
+				StackTraceItem newStackTraceItem;
 				foreach (StackTraceItem stackTraceItem in stackTrace) {
-					if (stackTraceItem.Method.Length > textLengths[0]) textLengths[0] = stackTraceItem.Method.Length;
-					if (stackTraceItem.File.Length > textLengths[1]) textLengths[1] = stackTraceItem.File.Length;
+					newStackTraceItem = new StackTraceItem(stackTraceItem);
+					if (newStackTraceItem.Method.Length > textLengths[0]) textLengths[0] = newStackTraceItem.Method.Length;
+					if (htmlOut && format == StackTraceFormat.Json && newStackTraceItem.File.ToString().Length > 0) {
+						newStackTraceItem.File = new string[] {
+							newStackTraceItem.File.ToString(),
+							Tools.RelativeSourceFullPath(newStackTraceItem.File.ToString())
+						};
+					} else {
+						newStackTraceItem.File = Tools.RelativeSourceFullPath(newStackTraceItem.File.ToString());
+					}
+					if (newStackTraceItem.File.ToString().Length > textLengths[1]) textLengths[1] = newStackTraceItem.File.ToString().Length;
+					newStackTrace.Add(newStackTraceItem);
 				}
+				stackTrace = newStackTrace;
 			}
 			foreach (StackTraceItem stackTraceItem in stackTrace) {
 				result.Add(
@@ -234,14 +286,14 @@ namespace Desharp.Renderers {
 		}
 		private static string _renderStackTraceLine(StackTraceItem stackTraceItem, StackTraceFormat format, int[] textLengths) {
 			string result = "";
-			bool fileDefined = stackTraceItem.File.Length > 0 && stackTraceItem.File != Exceptions.GetExternalCodeDescription();
+			string fileNameLink = "";
+			bool fileDefined = stackTraceItem.File.ToString().Length > 0 && stackTraceItem.File.ToString().Length > 0;
 			if (format == StackTraceFormat.Html) {
-				string fileNameLink = "";
 				if (fileDefined) {
-					fileNameLink = @"<a href=""editor://open/?file=" + HttpUtility.UrlEncode(stackTraceItem.File)
+					fileNameLink = @"<a href=""editor://open/?file=" + HttpUtility.UrlEncode(stackTraceItem.File.ToString())
 						+ "&line=" + stackTraceItem.Line
 						+ "&editor=" + Tools.Editor
-						+ @""">" + Tools.RelativeSourceFullPath(stackTraceItem.File) + "</a>";
+						+ @""">" + Tools.RelativeSourceFullPath(stackTraceItem.File.ToString()) + "</a>";
 				}
 				result = (fileNameLink.Length > 0 ? @"<tr class=""known""> " : "<tr>")
 					+ @"<td class=""file"">" + fileNameLink + "</td>"
@@ -251,11 +303,11 @@ namespace Desharp.Renderers {
 			} else if (format == StackTraceFormat.Text) {
 				if (fileDefined) {
 					result = stackTraceItem.Method + Tools.SpaceIndent(textLengths[0] - stackTraceItem.Method.Length, false)
-						+ " " + stackTraceItem.File + Tools.SpaceIndent(textLengths[1] - stackTraceItem.File.Length, false)
+						+ " " + stackTraceItem.File + Tools.SpaceIndent(textLengths[1] - stackTraceItem.File.ToString().Length, false)
 						+ " " + stackTraceItem.Line;
 				} else {
 					result = stackTraceItem.Method + Tools.SpaceIndent(textLengths[0] - stackTraceItem.Method.Length, false)
-						+ " " + stackTraceItem.File + Exceptions.GetExternalCodeDescription();
+						+ " " + stackTraceItem.File;
 				}
 			} else if (format == StackTraceFormat.Json) {
 				JavaScriptSerializer jsonSerializer = new JavaScriptSerializer();

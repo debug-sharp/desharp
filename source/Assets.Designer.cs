@@ -61,11 +61,53 @@ namespace Desharp {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to /* bottom right bar for windows */
-        ///#desharp-bar{position:absolute;z-index:9999990;right:0;bottom:0;}
-        ///#desharp-bar.invisible .bars,#desharp-bar.invisible .win{visibility:hidden;}
-        ///#desharp-bar.hidden .bars,#desharp-bar.hidden .win{display:none;}
-        ///#desharp-bar .bars{position:fixed;z-index:9999992;right:0;bottom:0;border:1px solid #c9c9c9;background:#edeae0;opacity:.9;transition:opacity 0.2s;will-change:opacity,right,bottom;-moz-border-radius:3px;-khtml-border-radius:3px;-opera-border-radius:3px;-ms-border-r [rest of string was truncated]&quot;;.
+        ///   Looks up a localized string similar to #desharp{position:absolute;z-index:9999991;right:0;bottom:0;}
+        ///#desharp.invisible .bars,#desharp.invisible .win,#desharp .invisible{visibility:hidden;}
+        ///#desharp.hidden .bars,#desharp.hidden .win{display:none;}
+        ///#desharp .bars .item,#desharp .bars .btn,#desharp .win,#desharp .win *,.desharp-unbox-win,.desharp-unbox-win *,#desharp .screen,#desharp .screen *,.desharp-dump,.desharp-dump *{font-family:&apos;Consolas&apos;,courier new !important;font-weight:bold;}
+        ///#desharp .bars{position:fixed;z-index:9999994;right:0;bot [rest of string was truncated]&quot;;.
+        /// </summary>
+        internal static string bar_css {
+            get {
+                return ResourceManager.GetString("bar_css", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to #desharp .screen{position:fixed;z-index:9999990;width:100%;height:100%;top:0;left:0;overflow:auto;background:#fff;}
+        ///#desharp .screen.hidden{display:none;}
+        ///body.desharp-screen{overflow:hidden !important;}
+        ////* exception file */
+        ///#desharp .file{width:auto;margin:0 20px 0 20px;}
+        ///#desharp .file .title{padding:15px 0 5px 0;}
+        ///#desharp .file .title b,
+        ///#desharp .file .title a{display:block;}
+        ///#desharp .file .title b{color:#328adc;font-size:24px;margin-bottom:5px;}
+        ///#desharp .file .title a{color:#328adc;font-siz [rest of string was truncated]&quot;;.
+        /// </summary>
+        internal static string bar_exception_css {
+            get {
+                return ResourceManager.GetString("bar_exception_css", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to #desharp .win{position:absolute;z-index:9999992;right:100px;bottom:122px;-moz-border-radius:4px;-khtml-border-radius:4px;-opera-border-radius:4px;-ms-border-radius:4px;-webkit-border-radius:4px;border-radius:4px;background:rgba(255,255,255,0.9);#background:#fff;#border-width:1px;#border-style:solid;#border-top-color:#ccc;#border-left-color:#ccc;#border-bottom-color:#888;#border-right-color:#888;/*ie7-*/}
+        ///@media all\0{/*ie8*/#desharp .win{#background:#fff;#border-width:1px;#border-style:solid;#border-top-co [rest of string was truncated]&quot;;.
+        /// </summary>
+        internal static string bar_window_css {
+            get {
+                return ResourceManager.GetString("bar_window_css", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to .desharp-dump,.desharp-dump *{font-size:15px;vertical-align:top;}
+        ///.desharp-dump s{display:inline-block;text-decoration:none;line-height:17px !important;}
+        ///.desharp-dump div.item{white-space:nowrap;line-height:0;}
+        ///#desharp .desharp-dump div.item{height:0;width:0;overflow:hidden;}
+        ///.desharp-dump span{display:inline-block;line-height:17px;}
+        ///#desharp .desharp-dump span.click{cursor:pointer;border-bottom:1px dotted #999;padding-bottom:2px;padding-right:10px;background-color:transparent;background-repeat:no-re [rest of string was truncated]&quot;;.
         /// </summary>
         internal static string dumps_css {
             get {
@@ -74,7 +116,7 @@ namespace Desharp {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to (function(a,b,c){a.map(function(d,e){c=c.replace(new RegExp(d,&apos;g&apos;),b[e])});new Function(c)()})(&apos;#%@`~&apos;.split(&apos;&apos;),&apos;function(|this|var |return|\\&apos;.split(&apos;|&apos;),&apos;window.Desharp=#H,ra,v,sa,C,fa,ta,ua,ga,ha,ia,V,x,m,P,z,W,va,ja,wa,D,E,xa,K,ya,za,Q,t,ka,Aa,I,Ba,Ca,Da,la,Ea,Pa,Fa,A,Ga,Qa,ma,na,Ra,Ha,y,F,Sa,X,R,S,Y,Z,aa,L,ba,Ta,T,Ia,G,Ja,M,Ka,La,ca,Ma,U,Na,Ua,da,oa,Oa,B,h,w,ea,pa,q,p,N){function O(a,b,c,d,e,k,n){@g=%||{},u=f.T(k);g.a=N;g.A=N;g.aa=d;g.f=a;g.c=b;g.g=c;g.Bb=e;g.J=&quot;Function&quot;==u?1:&quot;String&quot;==u&amp;&amp;0&lt;k[m]?2:0; [rest of string was truncated]&quot;;.
+        ///   Looks up a localized string similar to (function(a,b,c){a.map(function(d,e){c=c.replace(new RegExp(d,&apos;g&apos;),b[e])});new Function(c)()})(&apos;#%@`~&apos;.split(&apos;&apos;),&apos;function(|this|var |return|\\&apos;.split(&apos;|&apos;),&apos;window.Desharp=#J,sa,v,ta,D,ia,ua,va,X,ja,ka,K,y,r,M,A,Y,wa,la,xa,E,F,ya,N,za,Aa,R,u,ma,Ba,G,Ca,Da,Ea,na,Fa,Sa,Ga,B,Ha,Ta,oa,pa,Ua,Ia,w,H,Va,Z,S,T,aa,ba,ca,I,da,ea,U,Ja,z,Ka,L,La,Ma,fa,Na,V,Oa,Wa,O,qa,Pa,Qa,Ra,C,n,x,ga,ra,p,q,W){function P(a,b,c,d,e,f,k,g){@m=%||{};m.a=W;m.u=W;m.aa=d;m.f=a;m.c=b;m.g=c;m.Eb=e;m.o=f;m.K=k;m.b=g;m.da=p;m.ta=p;m.ka=p;m.ha=p [rest of string was truncated]&quot;;.
         /// </summary>
         internal static string dumps_js {
             get {
@@ -83,17 +125,50 @@ namespace Desharp {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to html,body{font-size:12px;font-family:&apos;Consolas&apos;,courier new;font-weight:bold;}
-        ///body{border-top:1px solid #ccc;}
-        ///.desharp-dump{display:block;padding:2px;text-decoration:none;border-bottom:1px solid #ccc;}
-        ///a.desharp-dump-control{display:block;padding:2px;text-decoration:none;}
+        ///   Looks up a localized string similar to &lt;!DOCTYPE html&gt;&lt;!-- &quot;&apos; --&gt;&lt;/script&gt;&lt;/style&gt;&lt;/noscript&gt;&lt;/xmp&gt;
+        ///&lt;meta charset=&quot;utf-8&quot; /&gt;
+        ///&lt;meta name=&quot;robots&quot; content=&quot;noindex&quot; /&gt;
+        ///&lt;title&gt;Server Error&lt;/title&gt;
+        ///&lt;style&gt;
+        ///#desharp{background:#fff;width:500px;margin:70px auto;padding:10px 20px;}
+        ///#desharp h1,#desharp p{font-family:&apos;Arial&apos;,Helvetica,sans-serif;line-height:1.5em;background:none;color:#333;}
+        ///#desharp h1{font-weight:bold;font-size:47px;margin:.6em 0;}
+        ///#desharp p{font-size:21px;margin:1.5em 0;}
+        ///#desharp small{font-size:60%;color:#999;}
+        ///&lt;/style&gt;        /// [rest of string was truncated]&quot;;.
+        /// </summary>
+        internal static string error {
+            get {
+                return ResourceManager.GetString("error", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to #desharp .exception .head{background:#c30000;padding:20px;text-shadow:1px 1px 0 rgba(0, 0, 0, 0.4);border-bottom:1px solid #ccc;}
+        ///#desharp .exception .head .type,#desharp .exception .head .info{color:#fff;font-size:14px;}
+        ///#desharp .exception .head a{display:block;font-size:28px;color:#fff;text-decoration:none;letter-spacing:-0.5px;line-height:1.15em !important;margin:20px 0;text-align:left;}
+        ////* callstack and headers table */
+        ///#desharp .calls table{display:block;border-collapse:collapse;margin:0;width:100 [rest of string was truncated]&quot;;.
+        /// </summary>
+        internal static string exception_css {
+            get {
+                return ResourceManager.GetString("exception_css", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to html,body,.record .desharp-dump,.record .desharp-dump *{font-size:12px;}
+        ///html,body{font-family:&apos;Consolas&apos;,courier new;font-weight:bold;}
+        ///body{margin:0;padding:5px;}
         ///
-        ///span.desharp-dump-id,span.desharp-dump-msg{cursor:pointer;}
-        ///span.desharp-dump-id{color:#666;}
-        ///
-        ///span.desharp-dump-msg{background:#fdf5d0;color:#000;}
-        ///span.desharp-dump-msg,span.desharp-dump-msg *{font-size:15px !important;}
-        ///sp [rest of string was truncated]&quot;;.
+        ///.record{border-bottom:1px solid #aaa;}
+        ///.record:first-child{border-top:1px solid #aaa;}
+        ///.record.value{}
+        ///.record.exception{}
+        ///.record.opened{}
+        ///.record .control{padding:3px 10px;cursor:pointer;}
+        ///.record .control:hover,.record .control:focus{background:#f6f6f6;}
+        ///.control .date{display:inline-block;color:#666;white-space:nowrap;padding-top:2px [rest of string was truncated]&quot;;.
         /// </summary>
         internal static string logs_css {
             get {

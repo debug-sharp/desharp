@@ -48,7 +48,9 @@
       <DependentUpon>Assets.resx</DependentUpon>
     </Compile>
     <Compile Include="Completers\LoadedAssemblies.cs" />
+    <Compile Include="Core\AppExitWatcher.cs" />
     <Compile Include="Core\Dispatcher.cs" />
+    <Compile Include="Core\Enums\AppExitType.cs" />
     <Compile Include="Core\Enums\PanelIconType.cs" />
     <Compile Include="Core\Enums\PanelType.cs" />
     <Compile Include="Core\Enums\StackTraceFormat.cs" />
@@ -93,6 +95,19 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
+    <None Include="Assets\exception.css" />
+    <None Include="Assets\src\src\dumps.css" />
+    <None Include="Assets\src\src\bar.css" />
+    <None Include="Assets\src\src\bar-window.css" />
+    <None Include="Assets\src\src\bar-exception.css" />
+    <None Include="Assets\src\src\exception.css" />
+    <None Include="Assets\src\src\logs.css" />
+    <Content Include="Assets\src\tests\logs-exception.php" />
+    <Content Include="Assets\src\tests\logs-info.php" />
+    <None Include="Assets\bar-window.css" />
+    <None Include="Assets\bar.css" />
+    <None Include="Assets\bar-exception.css" />
+    <Content Include="Assets\error.html" />
     <Content Include="Assets\src\dev-tools\bin\compiler-help.txt" />
     <Content Include="Assets\src\dev-tools\bin\string.js" />
     <Content Include="Assets\src\dev-tools\build.js" />

@@ -28,6 +28,9 @@ namespace Desharp {
 			double r = new TimeSpan(DateTime.Now.Ticks - Tools.GetRequestId()).TotalSeconds;
             return Math.Round(r * 1000) / 1000;
         }
+		public static Exception GetLastError () {
+			return Dispatcher.GetCurrent().LastError;
+		}
 		public static void Time(string msg = "") {
 			if (Dispatcher.GetCurrent().Enabled != true) return;
 			Debug.Dump((msg.Length > 0 ? msg + ": " : "") + Debug.GetProcessingTime());
@@ -42,7 +45,7 @@ namespace Desharp {
 			Dispatcher dispatcher = Dispatcher.GetCurrent();
 			if (dispatcher.Enabled != true) return;
 			bool htmlOut = dispatcher.Output == OutputType.Html && Dispatcher.EnvType == EnvType.Web;
-		    string renderedException = Renderers.Exceptions.RenderCurrentApplicationPoint(
+		    string renderedException = Exceptions.RenderCurrentApplicationPoint(
                 "Script has been stopped.", "Exception", false, htmlOut
             );
             if (Dispatcher.EnvType == EnvType.Web){
@@ -54,12 +57,13 @@ namespace Desharp {
 		}
 		public static string Dump (Exception e, DumpOptions? options = null) {
 			Dispatcher dispatcher = Dispatcher.GetCurrent();
+			dispatcher.LastError = e;
 			if (dispatcher.Enabled != true) return "";
 			if (!options.HasValue) options = new DumpOptions { Return = false, Depth = 0, MaxLength = 0 };
 			DumpOptions optionsValue = options.Value;
 			string dumpResult = "";
 			List<string> exceptionResult = new List<string>();
-			bool htmlOut = dispatcher.Output == OutputType.Html && Dispatcher.EnvType == EnvType.Web;
+			bool htmlOut = dispatcher.Output == OutputType.Html || Dispatcher.EnvType == EnvType.Web;
 			if (e == null) {
 				dumpResult = Dumper.Dump(null);
 			} else if (e is Exception) {
@@ -92,7 +96,7 @@ namespace Desharp {
 			if (dispatcher.Enabled != true) return "";
 			string result;
 			StringBuilder resultItems = new StringBuilder();
-			bool htmlOut = dispatcher.Output == OutputType.Html && Dispatcher.EnvType == EnvType.Web;
+			bool htmlOut = dispatcher.Output == OutputType.Html || Dispatcher.EnvType == EnvType.Web;
 			if (args == null) args = new object[] { null };
 			if (args.GetType().FullName != "System.Object[]") args = new object[] { args };
 			for (int i = 0; i < args.Length; i++) {
@@ -115,7 +119,7 @@ namespace Desharp {
 			if (!optionsValue.MaxLength.HasValue) optionsValue.MaxLength = 0;
 			if (!optionsValue.Return.HasValue) optionsValue.Return = false;
 			string result = "";
-			bool htmlOut = dispatcher.Output == OutputType.Html && Dispatcher.EnvType == EnvType.Web;
+			bool htmlOut = dispatcher.Output == OutputType.Html || Dispatcher.EnvType == EnvType.Web;
 			try {
 				result = Dumper.Dump(obj, htmlOut, optionsValue.Depth.Value, optionsValue.MaxLength.Value);
 			} catch (Exception e) {
@@ -142,14 +146,13 @@ namespace Desharp {
 		}
 		public static void Log (Exception e) {
 			Dispatcher dispatcher = Dispatcher.GetCurrent();
-			if (dispatcher.Enabled != true) return;
+			dispatcher.LastError = e;
 			bool htmlOut = dispatcher.Output == OutputType.Html;
-			List<string> renderedExceptions = Renderers.Exceptions.RenderExceptions(e, true, htmlOut, true);
-			foreach (string renderedException in renderedExceptions) FileLog.Log(renderedException, "exception");
+			List<string> renderedExceptions = Exceptions.RenderExceptions(e, true, htmlOut, true);
+			foreach (string renderedException in renderedExceptions) FileLog.Log(renderedException + Environment.NewLine, "exception");
 		}
 		public static void Log (object obj, Level level = Level.INFO, int maxDepth = 0, int maxLength = 0) {
 			Dispatcher dispatcher = Dispatcher.GetCurrent();
-			if (dispatcher.Enabled != true) return;
 			bool htmlOut = dispatcher.Output == OutputType.Html;
 			string renderedObj;
 			if (level == Level.JAVASCRIPT) {
@@ -168,8 +171,8 @@ namespace Desharp {
 					// remove begin <div class="item"> end </div>
 					renderedObj = renderedObj.Substring(Dumper.HtmlDumpWrapper[0].Length, renderedObj.Length - (Dumper.HtmlDumpWrapper[0].Length + Dumper.HtmlDumpWrapper[1].Length));
 				}
-				renderedObj = Renderers.Exceptions.RenderCurrentApplicationPoint(
-					htmlOut ? "" : renderedObj, htmlOut ? renderedObj : "Value", true, htmlOut
+				renderedObj = Exceptions.RenderCurrentApplicationPoint(
+					renderedObj, "Value", true, htmlOut
 				) + Environment.NewLine;
 			}
 			FileLog.Log(renderedObj, LevelValues.Values[level]);

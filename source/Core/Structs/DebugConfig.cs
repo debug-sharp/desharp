@@ -5,6 +5,7 @@ namespace Desharp {
         public int? Depth;
         public bool? Enabled;
 		public string Directory;
+		public string ErrorPage;
 		public int? LogWriteMilisecond;
 		public OutputType OutputType;
 		public EnvType EnvType;

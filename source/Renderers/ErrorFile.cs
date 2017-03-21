@@ -12,7 +12,7 @@ namespace Desharp.Renderers {
 		private static int[] _errorFileLineDisplayArea = new int[2]{4, 4};
 		internal static string Render (StackTraceItem errorFileStackTrace, StackTraceFormat format) {
 			string result = "";
-			string rawFileContent = ErrorFile._readErrorFile(errorFileStackTrace.File);
+			string rawFileContent = ErrorFile._readErrorFile(errorFileStackTrace.File.ToString());
 			rawFileContent = rawFileContent.Replace("\r", "");
 			string[] allFileLines = Regex.Split(rawFileContent, "\n");
 			int[] linesCount = ErrorFile._errorFileLineDisplayArea;
@@ -50,7 +50,7 @@ namespace Desharp.Renderers {
 						num = i,
 					});
 				}
-				result = ErrorFile.RenderErrorLines(errorFileStackTrace.File, lineInt, columnInt, linesToRender, format);
+				result = ErrorFile.RenderErrorLines(errorFileStackTrace.File.ToString(), lineInt, columnInt, linesToRender, format);
 			}
 			return result;
 		}

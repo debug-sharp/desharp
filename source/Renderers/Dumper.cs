@@ -49,9 +49,7 @@ namespace Desharp.Renderers {
 				result = Dumper._dumpNameValueCollection(obj, level, htmlOut, ids, maxDepth, maxLength, sequence);
 			} else if (Detector.IsDictionary(obj)) {
 				result = Dumper._dumpDictionary(obj, level, htmlOut, ids, maxDepth, maxLength, sequence);
-			} /*else if (Detector.IsDictionaryInnerCollection(obj)) {
-				result = Dumper._dumpDictionaryInnerCollection(obj, level, htmlOut, ids, maxDepth, maxLength, sequence);
-			} */else if (Detector.IsDbResult(obj)) {
+			} else if (Detector.IsDbResult(obj)) {
 				result = Dumper._dumpDbResult(obj, level, htmlOut, ids, maxDepth, maxLength, sequence);
 			} else if (Detector.IsEnum(obj)) {
 				result = Dumper._dumpEnum(obj, level, htmlOut, sequence);
@@ -97,6 +95,8 @@ namespace Desharp.Renderers {
 								gtaStrs.Add(gta[i].Name.ToString());
 							}
 							typeStr = typeStr + lowerAndbiggerThenChars[0] + String.Join(",", gtaStrs.ToArray()) + lowerAndbiggerThenChars[1];
+							backSingleQuotPos = typeName.IndexOf('`');
+							if (backSingleQuotPos > -1) typeName = typeName.Substring(0, backSingleQuotPos);
 							if (typeStr.IndexOf(typeName) == -1) {
 								backSingleQuotPos = typeName.IndexOf('`');
 								if (backSingleQuotPos > -1) typeName = typeName.Substring(0, backSingleQuotPos);
@@ -182,38 +182,44 @@ namespace Desharp.Renderers {
 			return result;
 		}
 		private static string _dumpTypeObject (Type obj, int level, bool htmlOut, string sequence) {
-			string htmlValue = obj == null ? Dumper._getNullCode(htmlOut) : obj.FullName;
+			string renderedValue = obj == null ? Dumper._getNullCode(htmlOut) : obj.FullName;
 			DumpType type = Dumper.GetDumpTypes(obj, "", htmlOut, false, sequence);
 			string result = "";
 			if (htmlOut) {
-				result = @"<span class=""" + type.Text + @""">" + htmlValue + "</span>&nbsp;" + type.ValueTypeCode;
+				result = @"<span class=""" + type.Text + @""">" + renderedValue + "</span>&nbsp;" + type.ValueTypeCode;
 			} else {
-				result = htmlValue + " [" + type.Text + "]";
+				result = renderedValue + " [" + type.Text + "]";
 			}
 			return result;
 		}
 		private static string _dumpPrimitiveType (object obj, int level, bool htmlOut, int maxLength, string sequence) {
-			string htmlValue = "";
+			string renderedValue = "";
 			if (obj == null) {
-				htmlValue = Dumper._getNullCode(htmlOut);
+				renderedValue = Dumper._getNullCode(htmlOut);
 			} else {
-				htmlValue = obj.ToString();
+				renderedValue = obj.ToString();
 				if (obj is char) {
-					if (htmlOut) htmlValue = "'" + Tools.HtmlEntities(htmlValue) + "'";
+					if (htmlOut) {
+						renderedValue = "'" + Tools.HtmlEntities(renderedValue) + "'";
+					} else {
+						renderedValue = "'" + renderedValue + "'";
+					}
 				} else if (obj is string) {
 					bool tooLong = false;
-					if (htmlValue.Length > maxLength) {
+					if (renderedValue.Length > maxLength) {
 						tooLong = true;
-						htmlValue = htmlValue.Substring(0, maxLength) + "...";
+						renderedValue = renderedValue.Substring(0, maxLength) + "...";
 					}
 					if (htmlOut) {
-						htmlValue = @"""" + Tools.HtmlEntities(htmlValue) + @"""";
-						if (tooLong) htmlValue = htmlValue.Substring(0, htmlValue.Length - 4) + @"<span class=""too-deep"">...</span>""";
+						renderedValue = @"""" + Tools.HtmlEntities(renderedValue) + @"""";
+						if (tooLong) renderedValue = renderedValue.Substring(0, renderedValue.Length - 4) + @"<span class=""too-deep"">...</span>""";
+					} else {
+						renderedValue = @"""" + renderedValue + @"""";
 					}
 				} else if (obj is bool) {
-					htmlValue = htmlValue.ToLower();
+					renderedValue = renderedValue.ToLower();
 				} else if (obj is double || obj is float || obj is decimal) {
-					htmlValue = htmlValue.Replace(',', '.'); // Microsoft .NET environment ToString() translates double/float/decimal into shit form with comma
+					renderedValue = renderedValue.Replace(',', '.'); // Microsoft .NET environment ToString() translates double/float/decimal into shit form with comma
 				} else if (obj is byte || obj is sbyte) {
 					byte byteAbs;
 					string sign = " ";
@@ -230,7 +236,7 @@ namespace Desharp.Renderers {
 					string hex = BitConverter.ToString(byteArr);
 					string str = System.Text.Encoding.ASCII.GetString(byteArr);
 					if (htmlOut) str = Tools.HtmlEntities(str);
-					htmlValue = "HEX:" + sign + hex + ", ASCII:" + sign + "'" + str + "', DEC:" + sign + dec;
+					renderedValue = "HEX:" + sign + hex + ", ASCII:" + sign + "'" + str + "', DEC:" + sign + dec;
 				} 
 			}
             DumpType type = (obj is string) 
@@ -238,9 +244,9 @@ namespace Desharp.Renderers {
 				: Dumper.GetDumpTypes(obj, "", htmlOut, false, sequence);
             string result = "";
             if (htmlOut) {
-                result = @"<span class=""" + type.NameCssClass + @""">" + htmlValue + "</span>&nbsp;" + type.ValueTypeCode;
+                result = @"<span class=""" + type.NameCssClass + @""">" + renderedValue + "</span>&nbsp;" + type.ValueTypeCode;
             } else {
-                result = htmlValue + " [" + type.Text + "]";
+                result = renderedValue + " [" + type.Text + "]";
             }
             return result;
         }
@@ -414,48 +420,12 @@ namespace Desharp.Renderers {
 					if (keyStr.Length > allKeysMaxLength) allKeysMaxLength = keyStr.Length;
 				}
 				foreach (string[] dctItem in dctItems) {
-					result += System.Environment.NewLine + tabsStr + dctItem[0] + Tools.SpaceIndent(allKeysMaxLength - dctItem[0].Length, htmlOut) + ": " + dctItem[1];
+					result += System.Environment.NewLine + tabsStr + dctItem[0] 
+						+ Tools.SpaceIndent(allKeysMaxLength - dctItem[0].Length, htmlOut) + ": " + dctItem[1];
 				}
 			}
 			return result;
         }
-        /*private static string _dumpDictionaryInnerCollection (object obj, int level, bool htmlOut, List<int> ids, int maxDepth, int maxLength, string sequence) {
-            string result = "";
-            int length = 0;
-            List<string> objList = new List<string>();
-            if (obj is Dictionary<string, object>.KeyCollection) {
-                Dictionary<string, object>.KeyCollection objKeyCol = obj as Dictionary<string, object>.KeyCollection;
-                objList = objKeyCol.ToList();
-            } else if (obj is Dictionary<string, object>.ValueCollection) {
-                Dictionary<string, object>.ValueCollection objValCol = obj as Dictionary<string, object>.ValueCollection;
-                foreach (var item in objValCol) {
-                    objList.Add(item.ToString());
-                }
-            }
-            length = objList.Count;
-            DumpType type = Dumper.GetDumpTypes(obj, length.ToString(), htmlOut, false, sequence);
-            result += type.ValueTypeCode;
-			string dumpedChild;
-			object child;
-            string keyStr;
-			if (htmlOut) result += @"<div class=""item dump dump-" + sequence + obj.GetHashCode().ToString() + @""">";
-			string tabsStr = Dumper._tabsIndent(level + 1, htmlOut);
-			for (int i = 0; i < length; i++) {
-                child = objList[i];
-                keyStr = i.ToString();
-				dumpedChild = Dumper._dumpRecursive(child, htmlOut, maxDepth, maxLength, level + 1, new List<int>(ids), sequence);
-				if (htmlOut) {
-                    result += (i > 0 ? "<br />" : "") + tabsStr
-						+ @"<span class=""int"">" + keyStr + "</span>"
-                        + "<s>:&nbsp;</s>" + dumpedChild;
-                } else {
-                    result += System.Environment.NewLine + tabsStr
-						+ keyStr + ": " + dumpedChild;
-                }
-			}
-			if (htmlOut) result += "</div>";
-			return result;
-		}*/
         private static string _dumpEnumerable (object obj, int level, bool htmlOut, List<int> ids, int maxDepth, int maxLength, string sequence) {
             string result = "";
             int length = 0;

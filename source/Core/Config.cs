@@ -13,7 +13,9 @@ namespace Desharp.Core {
 		internal const string APP_SETTINGS_LEVELS = "Desharp:Levels"; // exception,-debug,info,notice,warning,error,critical,alert,emergency,-javascript
 		internal const string APP_SETTINGS_PANELS = "Desharp:Panels"; // Desharp.Panels.Session,Desharp.Panels.Routing
 		internal const string APP_SETTINGS_DIRECTORY = "Desharp:Directory"; // ~/logs
-        internal const string APP_SETTINGS_DEPTH = "Desharp:Depth"; // 5
+		internal const string APP_SETTINGS_WRITE_MILISECONDS = "Desharp:WriteMiliseconds"; // 0
+		internal const string APP_SETTINGS_ERROR_PAGE = "Desharp:ErrorPage"; // ~/path/to/custom/error-page-500.html
+		internal const string APP_SETTINGS_DEPTH = "Desharp:Depth"; // 3
 		internal const string APP_SETTINGS_MAX_LENGTH = "Desharp:MaxLength"; // 1024
 		private static Dictionary<string, string> _appSettings = new Dictionary<string, string>();
 		static Config () {
@@ -61,6 +63,12 @@ namespace Desharp.Core {
 				return null;
 			}
 		}
+		internal static string GetErrorPage () {
+			if (Config._appSettings.ContainsKey(Config.APP_SETTINGS_ERROR_PAGE)) {
+				return Config._appSettings[Config.APP_SETTINGS_ERROR_PAGE].Trim();
+			}
+			return "";
+		}
 		internal static OutputType? GetOutput () {
 			if (Config._appSettings.ContainsKey(Config.APP_SETTINGS_OUTPUT)) {
 				string rawValue = Config._appSettings[Config.APP_SETTINGS_OUTPUT].Trim().ToLower();
@@ -107,6 +115,16 @@ namespace Desharp.Core {
 				}
 			}
 			return result;
+		}
+		internal static int GetLogWriteMilisecond () {
+			if (Config._appSettings.ContainsKey(Config.APP_SETTINGS_WRITE_MILISECONDS)) {
+				string rawValue = Config._appSettings[Config.APP_SETTINGS_WRITE_MILISECONDS].Trim();
+				rawValue = new Regex("[^0-9]").Replace(rawValue, "");
+				if (rawValue.Length > 0) {
+					return Int32.Parse(rawValue);
+				}
+			}
+			return 0;
 		}
 		internal static string GetDirectory () {
 			if (Config._appSettings.ContainsKey(Config.APP_SETTINGS_DIRECTORY)) {

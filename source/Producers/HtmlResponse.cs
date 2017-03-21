@@ -11,26 +11,23 @@ namespace Desharp.Producers {
     public class HtmlResponse {
         private static string _assets;
         static HtmlResponse () {
-            ResourceManager rm = new ResourceManager("Desharp.Assets", Assembly.GetExecutingAssembly());
-            string cssContent = rm.GetString("dumps_css");
-            string jsContent = rm.GetString("dumps_js");
             HtmlResponse._assets = System.Environment.NewLine
-                + "<style>" + cssContent + "</style>"
+                + "<style>" + Assets.bar_css + Assets.bar_window_css + Assets.bar_exception_css + Assets.exception_css + Assets.dumps_css + "</style>"
                 + System.Environment.NewLine
-                + "<script>" + jsContent + "</script>";
+                + "<script>" + Assets.dumps_js + "</script>";
         }
         public static void SendRenderedExceptions (string renderedExceptions, string exceptionType) {
             HttpContext.Current.Response.ContentType = "text/html";
             HttpContext.Current.Response.Write(
                 "<!DOCTYPE HTML>" + System.Environment.NewLine
-                + "<html lang=\"en-US\">" + System.Environment.NewLine 
+                + @"<html lang=""en-US"">" + System.Environment.NewLine 
                     + "<head>"
-                        + "<meta charset=\"UTF-8\">" 
-                        + "<title>" + exceptionType + "</title>"
+                        + @"<meta charset=""UTF-8"" />"
+						+ "<title>" + exceptionType + "</title>"
                         + "<script>document.title='" + HttpUtility.JavaScriptStringEncode(exceptionType) + "';</script>"
                         + HtmlResponse._assets
                     + "</head>" + System.Environment.NewLine
-                    + "<body class=\"debug-exception\">"
+                    + @"<body class=""debug-exception"">"
                         + renderedExceptions
                     + "</body>"
                 + "</html>"
@@ -38,11 +35,10 @@ namespace Desharp.Producers {
 			Dispatcher.GetCurrent().WebAssetsInserted = true;
             HttpContext.Current.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
 		}
-		internal static void WriteExceptionsToResponse () {
-			
-		}
 		internal static void TransmitStaticErrorPage () {
-			
+			HttpResponse response = HttpContext.Current.Response;
+			response.StatusCode = 500;
+			response.Write(Dispatcher.WebStaticErrorPage);
 		}
 		public static void WriteDebugBarToResponse (List<List<RenderedPanel>> allRequestRenderedPanels = null) {
 			HttpResponse response = HttpContext.Current.Response;

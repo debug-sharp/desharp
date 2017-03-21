@@ -35,6 +35,9 @@ namespace Desharp {
 			application.Error += delegate (object o, EventArgs e) {
 				Dispatcher.GetCurrent().WebRequestError();
 			};
+			application.Disposed += delegate (object o, EventArgs e) {
+				Dispatcher.Disposed();
+			};
 		}
     }
 }
