@@ -63,7 +63,7 @@ namespace Desharp {
 			DumpOptions optionsValue = options.Value;
 			string dumpResult = "";
 			List<string> exceptionResult = new List<string>();
-			bool htmlOut = dispatcher.Output == OutputType.Html || Dispatcher.EnvType == EnvType.Web;
+			bool htmlOut = Dispatcher.EnvType == EnvType.Web;
 			if (e == null) {
 				dumpResult = Dumper.Dump(null);
 			} else if (e is Exception) {
@@ -96,7 +96,7 @@ namespace Desharp {
 			if (dispatcher.Enabled != true) return "";
 			string result;
 			StringBuilder resultItems = new StringBuilder();
-			bool htmlOut = dispatcher.Output == OutputType.Html || Dispatcher.EnvType == EnvType.Web;
+			bool htmlOut = Dispatcher.EnvType == EnvType.Web;
 			if (args == null) args = new object[] { null };
 			if (args.GetType().FullName != "System.Object[]") args = new object[] { args };
 			for (int i = 0; i < args.Length; i++) {
@@ -119,7 +119,7 @@ namespace Desharp {
 			if (!optionsValue.MaxLength.HasValue) optionsValue.MaxLength = 0;
 			if (!optionsValue.Return.HasValue) optionsValue.Return = false;
 			string result = "";
-			bool htmlOut = dispatcher.Output == OutputType.Html || Dispatcher.EnvType == EnvType.Web;
+			bool htmlOut = Dispatcher.EnvType == EnvType.Web;
 			try {
 				result = Dumper.Dump(obj, htmlOut, optionsValue.Depth.Value, optionsValue.MaxLength.Value);
 			} catch (Exception e) {
@@ -149,12 +149,14 @@ namespace Desharp {
 			dispatcher.LastError = e;
 			bool htmlOut = dispatcher.Output == OutputType.Html;
 			List<string> renderedExceptions = Exceptions.RenderExceptions(e, true, htmlOut, true);
+			if (Dispatcher.Levels["exception"] == 2) Mailer.Notify(String.Join(Environment.NewLine, renderedExceptions), "exception", htmlOut);
 			foreach (string renderedException in renderedExceptions) FileLog.Log(renderedException + Environment.NewLine, "exception");
 		}
 		public static void Log (object obj, Level level = Level.INFO, int maxDepth = 0, int maxLength = 0) {
 			Dispatcher dispatcher = Dispatcher.GetCurrent();
 			bool htmlOut = dispatcher.Output == OutputType.Html;
 			string renderedObj;
+			string logLevelValue = LevelValues.Values[level];
 			if (level == Level.JAVASCRIPT) {
 				if (!(obj is Dictionary<string, string>)) {
 					Debug.Log(new Exception("To log javascript exceptions, call: Desharp.Debug.Log(data as Dictionary<string, string>, Level.JAVASCRIPT);"));
@@ -174,8 +176,9 @@ namespace Desharp {
 				renderedObj = Exceptions.RenderCurrentApplicationPoint(
 					renderedObj, "Value", true, htmlOut
 				) + Environment.NewLine;
+				if (Dispatcher.Levels[logLevelValue] == 2) Mailer.Notify(renderedObj, logLevelValue, htmlOut);
 			}
-			FileLog.Log(renderedObj, LevelValues.Values[level]);
+			FileLog.Log(renderedObj, logLevelValue);
 		}
 	}
 }

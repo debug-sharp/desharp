@@ -24,6 +24,9 @@ namespace Desharp {
 			application.PostRequestHandlerExecute += delegate (object o, EventArgs e) {
 				Dispatcher.GetCurrent().WebRequestSessionEnd();
 			};
+			application.PreSendRequestHeaders += delegate (object o, EventArgs e) {
+				FireCS.CloseHeaders();
+			};
 			application.EndRequest += delegate (object o, EventArgs e) {
 				// be carefull, EndRequest event is sometimes called twice (...if there is exception in your application)
 				Dispatcher dispatcher = Dispatcher.GetCurrent(false);

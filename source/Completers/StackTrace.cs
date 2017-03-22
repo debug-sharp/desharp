@@ -176,6 +176,7 @@ namespace Desharp.Completers {
 					if (exceptions.ContainsKey(triggeredExceptionKey)) {
 						triggeredException = item.Value[2] as Exception;
 					}
+					if (reversedResult.ContainsKey(triggeredExceptionKey)) continue;
 					reversedResult.Add(triggeredExceptionKey, new ExceptionToRender {
 						Exception = triggeredException,
 						CausedBy = causedByException,

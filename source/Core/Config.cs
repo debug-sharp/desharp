@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Web.Script.Serialization;
 
 namespace Desharp.Core {
 	internal class Config {
@@ -17,6 +18,7 @@ namespace Desharp.Core {
 		internal const string APP_SETTINGS_ERROR_PAGE = "Desharp:ErrorPage"; // ~/path/to/custom/error-page-500.html
 		internal const string APP_SETTINGS_DEPTH = "Desharp:Depth"; // 3
 		internal const string APP_SETTINGS_MAX_LENGTH = "Desharp:MaxLength"; // 1024
+		internal const string APP_SETTINGS_NOTIFY_SETTINGS = "Desharp:NotifySettings"; // { host: 'smtp.mailbox.com', port: 587, ssl: true, user: 'username', password: '1234', from: 'desharp@app.com', to: 'username@mailbox.com', priority: 'high', timeout: 30000 }
 		private static Dictionary<string, string> _appSettings = new Dictionary<string, string>();
 		static Config () {
 			string itemKey;
@@ -87,30 +89,31 @@ namespace Desharp.Core {
 			}
 			return result;
 		}
-		internal static Dictionary<string, bool> GetLevels () {
-			Dictionary<string, bool> result = new Dictionary<string, bool>();
+		internal static Dictionary<string, int> GetLevels () {
+			Dictionary<string, int> result = new Dictionary<string, int>();
+			List<string> allPossiblelevels = LevelValues.Values.Values.ToList<string>();
+			allPossiblelevels.Add("exception");
+			foreach (string levelKey in allPossiblelevels) result.Add(levelKey, 0);
 			if (Config._appSettings.ContainsKey(Config.APP_SETTINGS_LEVELS)) {
 				string rawValue = Config._appSettings[Config.APP_SETTINGS_LEVELS].Trim().ToLower();
 				Regex r = new Regex(@"[^a-z\,\-\+]");
 				rawValue = r.Replace(rawValue, "");
 				List<string> rawItems = rawValue.Split(',').ToList<string>();
 				string key;
-				bool value;
+				int value;
 				foreach (string rawItem in rawItems) {
 					if (rawItem.Substring(0, 1) == "-") {
 						key = rawItem.Substring(1);
-						value = false;
+						value = 0;
 					} else if (rawItem.Substring(0, 1) == "+") {
 						key = rawItem.Substring(1);
-						value = true;
+						value = 2;
 					} else {
 						key = rawItem;
-						value = true;
+						value = 1;
 					}
 					if (result.ContainsKey(key)) {
 						result[key] = value;
-					} else {
-						result.Add(key, value);
 					}
 				}
 			}
@@ -151,6 +154,35 @@ namespace Desharp.Core {
 				}
 			}
 			return 0;
+		}
+		internal static Dictionary<string, object> GetNotifySettings () {
+			Dictionary<string, object> result = new Dictionary<string, object>();
+			if (Config._appSettings.ContainsKey(Config.APP_SETTINGS_NOTIFY_SETTINGS)) {
+				string rawJson = Config._appSettings[Config.APP_SETTINGS_NOTIFY_SETTINGS].Trim();
+				try {
+					// remove all new lines and tabs
+					Regex r1 = new Regex("[\r\n\t]");
+					rawJson = r1.Replace(rawJson, "");
+					// fix all keys with missing begin and end double quotes
+					Regex r2 = new Regex(@"([^""])([a-zA-Z0-9_]+):");
+					rawJson = r2.Replace(rawJson, @"$1""$2"":");
+					// change all values with single quots to double quots
+					Regex r3 = new Regex(@"'([^']*)'");
+					rawJson = r3.Replace(rawJson, @"""$1""");
+					// remove all double dots with leading space to double dots only
+					Regex r4 = new Regex(@""":\s");
+					rawJson = r4.Replace(rawJson, @""":");
+					// remove all spaces between value and another key
+					Regex r5 = new Regex(@""",\s+""");
+					rawJson = r5.Replace(rawJson, "");
+					Regex r6 = new Regex(@"""\s+\}");
+					rawJson = r6.Replace(rawJson, "");
+					// so let's deserialize string data
+					JavaScriptSerializer jsonSerializer = new JavaScriptSerializer();
+					result = jsonSerializer.Deserialize<Dictionary<string, object>>(rawJson);
+				} catch (Exception e) { }
+			}
+			return result;
 		}
 	}
 }

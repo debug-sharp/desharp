@@ -91,7 +91,7 @@ namespace Desharp.Core {
 			return false;
 		}
 		public static Assembly GetWindowsEntryAssembly () {
-			return System.AppDomain.CurrentDomain.GetType().Assembly;
+			return Assembly.GetEntryAssembly();
 		}
 		public static Assembly GetWebEntryAssembly () {
 			if (HttpContext.Current == null || HttpContext.Current.ApplicationInstance == null) {

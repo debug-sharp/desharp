@@ -71,6 +71,7 @@
     <Compile Include="Panels\Exceptions.cs" />
     <Compile Include="Panels\Routing.cs" />
     <Compile Include="Panels\Session.cs" />
+    <Compile Include="Core\Mailer.cs" />
     <Compile Include="Renderers\ErrorFile.cs" />
     <Compile Include="Renderers\JavascriptExceptionData.cs" />
     <Compile Include="Core\Structs\DebugConfig.cs" />
@@ -82,7 +83,7 @@
     <Compile Include="Core\Structs\DumpType.cs" />
     <Compile Include="Completers\Detector.cs" />
     <Compile Include="Renderers\Dumper.cs" />
-    <Compile Include="FireLogger.cs" />
+    <Compile Include="FireCS.cs" />
     <Compile Include="Producers\FileLog.cs" />
     <Compile Include="Renderers\Exceptions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

@@ -13,7 +13,6 @@ namespace Desharp.Producers {
 		protected const string LOGS_EXT_TEXT = ".log";
 		protected const string LOGS_NUMBERING_SEPARATOR = "-";
 		protected const int MAX_LOG_FILE_SIZE = 50000000; // 50 MB
-		protected static Dictionary<string, bool> levels;
 		protected static string[] htmlLogFileBegin;
 		protected volatile static Dictionary<string, StringBuilder> stores;
 		protected volatile static List<string> loadedStores;
@@ -22,8 +21,7 @@ namespace Desharp.Producers {
 		protected static object writingLock = new object { };
 		protected static Thread writeThread = null;
 		internal static void Init () {
-			FileLog.levels = Config.GetLevels();
-            FileLog.stores = new Dictionary<string, StringBuilder>();
+			FileLog.stores = new Dictionary<string, StringBuilder>();
 			FileLog.writing = false;
 			FileLog.loadedStores = new List<string>();
 			foreach (var item in LevelValues.Values) {
@@ -59,13 +57,9 @@ namespace Desharp.Producers {
 			FileLog.writeAllStores(Dispatcher.GetCurrent().Output == OutputType.Html);
 		}
 		internal static void Log (string content, string level) {
-			if (FileLog.levels.Count > 0) {
-				if (!FileLog.levels.ContainsKey(level) || (FileLog.levels.ContainsKey(level) && !FileLog.levels[level])) return;
-			}
-			if (FileLog.stores.ContainsKey(level)) {
-				lock (FileLog.storesLock) {
-					FileLog.stores[level].Append(content);
-				}
+			if (Dispatcher.Levels[level] == 0) return;
+			lock (FileLog.storesLock) {
+				FileLog.stores[level].Append(content);
 			}
 			if (FileLog.writeThread == null) FileLog.writeImmediately(level);
 		}

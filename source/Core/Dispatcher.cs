@@ -24,6 +24,7 @@ namespace Desharp.Core {
 		internal static int DumpMaxLength = 1024;
 		internal static bool? EnabledGlobal = null;
 		internal static OutputType? OutputGlobal = null;
+		internal static Dictionary<string, int> Levels;
 		internal static string WebStaticErrorPage;
 
 		protected static List<string> webHtmlXmlMimeTypes = new List<string>() {
@@ -32,14 +33,7 @@ namespace Desharp.Core {
 		};
 		protected static Dictionary<long, Dispatcher> dispatchers = new Dictionary<long, Dispatcher>();
 		protected static Dictionary<string, Type> webBarRegisteredPanels = new Dictionary<string, Type>();
-
-		internal FireLogger WebFireLogger {
-			get {
-				if (this.webFireLogger == null) this.webFireLogger = new FireLogger();
-				return this.webFireLogger;
-			}
-		}
-
+		
 		internal Exception LastError = null;
 		internal int DumperSequence = 0;
 		internal string CurrentlyRendererView = "";
@@ -53,11 +47,16 @@ namespace Desharp.Core {
 		protected bool webHtmlXmlOutput = false;
 		protected bool webTransmitErrorPage = false;
 		protected List<List<RenderedPanel>> webReqEndSession = null;
-		protected FireLogger webFireLogger = null;
 		protected Dictionary<string, Panels.Abstract> webBarPanels = null;
 		protected List<string> webExceptions = null;
 
 		static Dispatcher () {
+			int cfgDepth = Config.GetDepth();
+			if (cfgDepth > 0) Dispatcher.DumpDepth = cfgDepth;
+			int cfgMaxLength = Config.GetMaxLength();
+			if (cfgMaxLength > 0) Dispatcher.DumpMaxLength = cfgMaxLength;
+			Dispatcher.Levels = Config.GetLevels();
+			Dispatcher.LogWriteMilisecond = Config.GetLogWriteMilisecond();
 			if (HttpRuntime.AppDomainAppId != null && HostingEnvironment.IsHosted) {
 				Dispatcher.EnvType = EnvType.Web;
 				Dispatcher.AppRoot = HttpContext.Current.Server.MapPath("~").Replace('\\', '/').TrimEnd('/');
@@ -70,20 +69,22 @@ namespace Desharp.Core {
 				Dispatcher.AppRoot = System.IO.Path.GetDirectoryName(
 					System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName
 				).Replace('\\', '/').TrimEnd('/');
-				bool exited = false;
-				AppDomain.CurrentDomain.ProcessExit += delegate (object o, EventArgs e) {
-					Dispatcher.Disposed();
-					exited = true;
-				};
 				AppDomain.CurrentDomain.UnhandledException += delegate (object o, UnhandledExceptionEventArgs e) {
 					Debug.Log(e.ExceptionObject as Exception);
 					if (e.IsTerminating) Dispatcher.Disposed();
 				};
-				AppExitWatcher.SetConsoleCtrlHandler(new HandlerRoutine((type) => {
-					if (exited) return true;
-					Dispatcher.Disposed();
-					return true;
-				}), true);
+				if (Dispatcher.LogWriteMilisecond > 0) {
+					bool exited = false;
+					AppDomain.CurrentDomain.ProcessExit += delegate (object o, EventArgs e) {
+						Dispatcher.Disposed();
+						exited = true;
+					};
+					AppExitWatcher.SetConsoleCtrlHandler(new HandlerRoutine((type) => {
+						if (exited) return true;
+						Dispatcher.Disposed();
+						return true;
+					}), true);
+				}
 			}
 			if (Tools.IsWindows()) Dispatcher.AppRoot = Dispatcher.AppRoot.Substring(0, 1).ToUpper() + Dispatcher.AppRoot.Substring(1);
 			if (
@@ -96,14 +97,9 @@ namespace Desharp.Core {
 			} else {
 				Dispatcher.SourcesRoot = "";
 			}
-			int cfgDepth = Config.GetDepth();
-			if (cfgDepth > 0) Dispatcher.DumpDepth = cfgDepth;
-			int cfgMaxLength = Config.GetMaxLength();
-			if (cfgMaxLength > 0) Dispatcher.DumpMaxLength = cfgMaxLength;
 			Dispatcher.staticInitEnabledGlobal();
 			Dispatcher.staticInitOutputGlobal();
 			Dispatcher.staticInitDirectory(Config.GetDirectory());
-			Dispatcher.LogWriteMilisecond = Config.GetLogWriteMilisecond();
 			FileLog.Init();
 		}
 		internal static Dispatcher GetCurrent (bool createIfNecessary = true) {
