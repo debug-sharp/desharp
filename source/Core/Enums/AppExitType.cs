@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
-namespace Desharp {
+﻿namespace Desharp {
 	internal enum AppExitType {
 		CTRL_C_EVENT = 0,
 		CTRL_BREAK_EVENT,

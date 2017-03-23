@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
-namespace Desharp.Panels {
+﻿namespace Desharp.Panels {
 	public class Routing: Abstract {
 		public static string PanelName = "routing";
 		public new int[] DefaultWindowSizes {

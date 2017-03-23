@@ -21,6 +21,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <DocumentationFile>bin\Debug\Desharp.XML</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -96,49 +97,30 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Assets\exception.css" />
-    <None Include="Assets\src\src\dumps.css" />
-    <None Include="Assets\src\src\bar.css" />
-    <None Include="Assets\src\src\bar-window.css" />
-    <None Include="Assets\src\src\bar-exception.css" />
-    <None Include="Assets\src\src\exception.css" />
-    <None Include="Assets\src\src\logs.css" />
-    <Content Include="Assets\src\tests\logs-exception.php" />
-    <Content Include="Assets\src\tests\logs-info.php" />
-    <None Include="Assets\bar-window.css" />
-    <None Include="Assets\bar.css" />
-    <None Include="Assets\bar-exception.css" />
-    <Content Include="Assets\error.html" />
-    <Content Include="Assets\src\dev-tools\bin\compiler-help.txt" />
-    <Content Include="Assets\src\dev-tools\bin\string.js" />
-    <Content Include="Assets\src\dev-tools\build.js" />
-    <Content Include="Assets\src\src\arrow-down.png" />
-    <Content Include="Assets\src\src\arrow-right.png" />
-    <Content Include="Assets\src\src\arrow-up.png" />
-    <Content Include="Assets\src\src\close.png" />
-    <Content Include="Assets\src\src\dumps.js" />
-    <Content Include="Assets\src\src\logs.js" />
-    <Content Include="Assets\src\src\unbox.png" />
-    <Content Include="Assets\src\tests\dumps-min.php" />
-    <Content Include="Assets\src\tests\dumps.php" />
-    <None Include="Assets\dumps.css" />
-    <None Include="Assets\dumps.js" />
-    <None Include="Assets\logs.css" />
-    <None Include="Assets\logs.js" />
-    <Content Include="Assets\src\install.js" />
-    <None Include="Assets\src\dev-tools\build.cmd" />
-    <None Include="Assets\src\dev-tools\build.sh" />
-    <None Include="Assets\src\package.json" />
-    <None Include="example.config" />
+    <None Include="content\App.config.transform" />
+    <None Include="Desharp.nuspec" />
+    <None Include="content\Web.config.transform" />
+    <None Include="_CreateNewNuGetPackage\DoNotModify\NuGet.exe" />
+    <None Include="content\App.config.example" />
+    <None Include="packages.config" />
+    <None Include="_CreateNewNuGetPackage\Config.ps1" />
+    <None Include="_CreateNewNuGetPackage\DoNotModify\CreateNuGetPackage.ps1" />
+    <None Include="_CreateNewNuGetPackage\DoNotModify\New-NuGetPackage.ps1" />
+    <None Include="_CreateNewNuGetPackage\DoNotModify\UploadNuGetPackage.ps1" />
+    <None Include="_CreateNewNuGetPackage\RunMeToUploadNuGetPackage.cmd" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Assets\src\dev-tools\bin\compiler\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PreBuildEvent>cd $(ProjectDir)/Assets/src/dev-tools
 build.cmd
 </PreBuildEvent>
+  </PropertyGroup>
+  <PropertyGroup>
+    <PostBuildEvent>REM Create a NuGet package for this project and place the .nupkg file in the project's output directory.
+REM If you see this in Visual Studio's Error List window, check the Output window's Build tab for the actual error.
+ECHO Creating NuGet package in Post-Build event...
+PowerShell -NoProfile -ExecutionPolicy Bypass -Command "&amp; '$(ProjectDir)_CreateNewNuGetPackage\DoNotModify\CreateNuGetPackage.ps1' -ProjectFilePath '$(ProjectPath)' -OutputDirectory '$(TargetDir)' -BuildConfiguration '$(ConfigurationName)' -BuildPlatform '$(PlatformName)'"</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

@@ -93,7 +93,6 @@ namespace Desharp.Core {
 			Dictionary<string, int> result = new Dictionary<string, int>();
 			List<string> allPossiblelevels = LevelValues.Values.Values.ToList<string>();
 			allPossiblelevels.Add("exception");
-			foreach (string levelKey in allPossiblelevels) result.Add(levelKey, 0);
 			if (Config._appSettings.ContainsKey(Config.APP_SETTINGS_LEVELS)) {
 				string rawValue = Config._appSettings[Config.APP_SETTINGS_LEVELS].Trim().ToLower();
 				Regex r = new Regex(@"[^a-z\,\-\+]");
@@ -116,6 +115,11 @@ namespace Desharp.Core {
 						result[key] = value;
 					}
 				}
+			}
+			int allLevelsDefaultValue = result.Count > 0 ? 0 : 1;
+			foreach (string levelKey in allPossiblelevels) {
+				if (!result.ContainsKey(levelKey))
+					result.Add(levelKey, allLevelsDefaultValue);
 			}
 			return result;
 		}

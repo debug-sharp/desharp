@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Desharp</name>
+    </assembly>
+    <members>
+        <member name="M:Desharp.Debug.Enabled(System.Nullable{System.Boolean})">
+            <summary>Enable or disable variables dumping from application code environment for all threads.</summary>
+            <param name="enabled">true to enable, false to disable, if not defined, no changes will be made.</param>
+            <returns>bool about enabled/disabled dumping state</returns>
+        </member>
+    </members>
+</doc>

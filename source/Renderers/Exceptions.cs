@@ -7,7 +7,6 @@ using Desharp.Core;
 using System.Web.Script.Serialization;
 using Desharp.Completers;
 using System.Web.UI;
-using System.Collections;
 
 namespace Desharp.Renderers {
     internal class Exceptions {

@@ -3,11 +3,8 @@ using System.Web;
 using System.Text;
 using System.Collections.Generic;
 using Desharp.Core;
-using Desharp.Completers;
 using Desharp.Producers;
 using Desharp.Renderers;
-using System.Threading;
-using System.Linq;
 
 namespace Desharp {
     public class Debug {
@@ -17,6 +14,9 @@ namespace Desharp {
 		static Debug () {
 			Dispatcher.GetCurrent();
 		}
+		/// <summary>Enable or disable variables dumping from application code environment for all threads.</summary>
+		/// <param name="enabled">true to enable, false to disable, if not defined, no changes will be made.</param>
+		/// <returns>bool about enabled/disabled dumping state</returns>
 		public static bool Enabled (bool? enabled = null) {
 			if (enabled.HasValue) Dispatcher.GetCurrent().Enabled = enabled.Value;
 			return Dispatcher.GetCurrent().Enabled == true;

@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Web;
-
-namespace Desharp.Panels {
+﻿namespace Desharp.Panels {
 	public abstract class Abstract {
 		public abstract string Name { get; }
 		public bool AddIfEmpty { get { return false; } }

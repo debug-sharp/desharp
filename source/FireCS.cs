@@ -65,10 +65,8 @@ using Desharp.Core;
 
 */
 
-namespace Desharp
-{
-    public class FireCS
-	{
+namespace Desharp {
+    public class FireCS {
 		internal const string SELF_FILENAME = "FireCS.cs";
 		internal const string LOG = "LOG";
 		internal const string DEBUG = "DEBUG";
@@ -98,12 +96,6 @@ namespace Desharp
 				return r;
 			}
 		}
-		public static FireCSLogger Enable(bool enable = true) {
-			return FireCS.Current.Enable(enable);
-		}
-		public static FireCSLogger Disable(bool disable = true) {
-			return FireCS.Current.Disable(disable);
-		}
 		public static FireCSLogger LogCallStackInfo(bool logCallStackInfo = true) {
 			return FireCS.Current.LogCallStackInfo(logCallStackInfo);
 		}
@@ -132,9 +124,7 @@ namespace Desharp
 			return FireCS.Current.Exception(exception);
 		}
 	}
-	public class FireCSLogger
-	{
-		private bool _enabled = true;
+	public class FireCSLogger {
 		private bool _logCallStackInfo = false;
 		private bool _baseHeadersInitialized = false;
 		private int _logCounter = 0;
@@ -150,14 +140,7 @@ namespace Desharp
 		public FireCSLogger() {
 			this._serializer = new JavaScriptSerializer();
 		}
-		public FireCSLogger Enable(bool enable = true) {
-            this._enabled = enable;
-			return this;
-        }
-		public FireCSLogger Disable(bool disable = true) {
-			this._enabled = !disable;
-			return this;
-		}
+		
 		public FireCSLogger LogCallStackInfo(bool logCallStackInfo = true) {
 			this._logCallStackInfo = logCallStackInfo;
 			return this;
@@ -181,6 +164,7 @@ namespace Desharp
 			return this.Log(FireCS.ERROR, obj);
 		}
 		public FireCSLogger Log(string logType, object obj) {
+			if (Dispatcher.GetCurrent().Enabled != true) return this;
 			dynamic callStackInfo = this._getCallStackInfo();
 			dynamic header = new {
 				Type = logType,
@@ -190,6 +174,7 @@ namespace Desharp
 			return this._renderHeaders(new FireCSLog(logType, header, obj));
 		}
 		public FireCSLogger Exception(Exception exception) {
+			if (Dispatcher.GetCurrent().Enabled != true) return this;
 			dynamic callStackInfo = this._getCallStackInfo();
 			dynamic header = null;
 			dynamic defaultHeader = new {
@@ -223,6 +208,7 @@ namespace Desharp
 			return this;
 		}
 		public FireCSLogger Table(string label, object obj) {
+			if (Dispatcher.GetCurrent().Enabled != true) return this;
 			dynamic callStackInfo = this._getCallStackInfo();
 			dynamic header = new {
 				Type = FireCS.TABLE,
@@ -233,7 +219,8 @@ namespace Desharp
 			return this._renderHeaders(new FireCSLog(FireCS.TABLE, header, obj));
 		}
 		internal FireCSLogger CloseHeaders () {
-			if (!this._enabled) return this;
+			Dispatcher dispatcher = Dispatcher.GetCurrent(false);
+			if (dispatcher == null || dispatcher.Enabled != true) return this;
 			HttpContext context = HttpContext.Current;
 			if (context != null) { // context could be null in unit testing threads
 				if (this._logCounter > 0) {
@@ -246,7 +233,6 @@ namespace Desharp
 			return this;
 		}
 		private FireCSLogger _renderHeaders(FireCSLog log) {
-			if (!this._enabled) return this;
 			HttpContext context = HttpContext.Current;
 			if (context != null) { // context could be null in unit testing threads
 				this._appendBaseHeadersIfNecessary(context.Response);

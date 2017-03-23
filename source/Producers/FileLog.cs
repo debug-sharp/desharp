@@ -3,8 +3,6 @@ using System.IO;
 using System.Text;
 using System.Collections.Generic;
 using Desharp.Core;
-using System.Resources;
-using System.Reflection;
 using System.Threading;
 
 namespace Desharp.Producers {
