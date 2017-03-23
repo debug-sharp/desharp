@@ -51,15 +51,17 @@ You can dump or log:
 ## Dump additional info
 
 All dump or log calls have automaticly rendered:
-- thread/request id
+- process/thread/request id
 - current time from `DateTime.Now`
-- call stack, where was `Debug.Dump()` or Debug.Log() used
+- callstack, where was `Debug.Dump()` or Debug.Log() used or where `Exception` happend
+- if exception has been caused by another exception (inner exceptions), there is rendered source exception object hash
 - if source code is possible by *.PDB file, there is rendered:
-  - a few lines from source code, where was `Debug.Dump()` or `Debug.Log()` used 
+  - a few lines from source code, where was `Debug.Dump()` or `Debug.Log()` used or where `Exception` happend
 - if environment is web application, there is rendered:
   - request URL
   - all http request headers
   - client IP
+- if environment is web application, for dump browser output are rendered loaded assemblies
 
 
 ## Configuration
