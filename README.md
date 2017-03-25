@@ -22,30 +22,31 @@ try {
   throw new Exception("Something wrong!");
 } catch (Exception e) {
   Debug.Dump(e);  // print exception by Console.WriteLine(); or append into html response as floating window
-  Debug.Log(e);   // store exception in hard drive in exception.log
+  Debug.Log(e);   // store dumped exception in exception.log or exception.html file on HDD
 }
 ```
 
 ## Dump outputs
 
-- console window for console application
-- Visual Studio console for Windows Forms or WPF application
+- console window for console applications
+- Visual Studio console for Windows Forms or WPF applications
 - floating window in html response for web applications
-- headers formated for FilePHP browser extension for web applications
-- file logs
+- special HTTP headers for FilePHP browser extension for web applications
+- file logs in text/html formats
 
 
 ## Dump possibilities
 
 You can dump or log:
 - any variables
-  - primitive variables and it's primitive arrays
-  - `Lists`, `Arrays` and `Dictionaries` (`IList`, `IEnumerable` and `IDictionary`)
+  - primitive variables and it's primitive arrays like: `char`, `int[]` and more 
+  - `Lists`, `Arrays` or `Dictionaries` (`IList`, `IEnumerable`, `ICollection`, `IDictionary`...)
   - database results (`DataSet`, `DataTable`, `DataRow`)
-  - **custom classes** with properties and fields
+  - **any custom class instances** with rendered property and field values
   - **anonymous objects**
   - much more... you can try:-)
 - exceptions
+  - all inner exceptions inside will be also dumped or logged
 
 
 ## Dump additional info
