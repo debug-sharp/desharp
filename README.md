@@ -1,6 +1,6 @@
-# Desharp - C# .NET Debugging Tool
+# Desharp - C#/VB .NET Debugging Tool
 
-.NET debuging utility to dump or log structuralized variables, exceptions, stack traces and much more into console, visual studio console, into html web response as floating window or into html/text log files.
+C#/VB .NET debuging utility to dump or log structuralized variables, exceptions, stack traces and much more into console, visual studio console, into html web response as floating window or into html/text log files on HDD.
 
 ## Instalation
 ```nuget
