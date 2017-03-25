@@ -13,7 +13,7 @@ PM> Install-Package Desharp
 ```cs
 var list = new List<string>() { "a", "b", "c" });
 Debug.Dump(list);  // print list by Console.WriteLine(); or append into html response as floating window
-Debug.Log(list);   // store list in hard drive in exception.log
+Debug.Log(list);   // store dumped list in debug.log or debug.html file on HDD
 ```
 
 ### Dump/log `Exception`
