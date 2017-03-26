@@ -89,7 +89,12 @@ You can configure by `app.config`/`web.config` or directly by calling `Debug.Con
 
 ### Configuration examples
 
-Console, Windows forms or WPF application `app.config`:
+#### Console, Windows forms or WPF application `App.config`:
+- after instaling Desharp Nuget package, there are automaticly added appSettings keys bellow into your App.config:
+  - `<add key="Desharp:Enabled" value="1" />`
+  - `<add key="Desharp:Output" value="html" />`
+  - `<add key="Desharp:Levels" value="+exception,debug,info,-notice,-warning,+error,+critical,alert,+emergency,javascript" />`
+  - `<add key="Desharp:Directory" value="~/logs" />`
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
 <configuration>
@@ -168,7 +173,14 @@ Console, Windows forms or WPF application `app.config`:
 </configuration>
 ```
 
-Website application `web.config`:
+#### Website application `Web.config`:
+- after instaling Desharp Nuget package, there are automaticly added new Desharp http module and appSettings keys bellow into your Web.config:
+  - `<add key="Desharp:Enabled" value="1" />`
+  - `<add key="Desharp:Output" value="html" />`
+  - `<add key="Desharp:DebugIps" value="127.0.0.1,::1" />`
+  - `<add key="Desharp:Levels" value="+exception,debug,info,-notice,-warning,+error,+critical,alert,+emergency,javascript" />`
+  - `<add key="Desharp:Panels" value="Desharp.Panels.Session" />`
+  - `<add key="Desharp:Directory" value="~/logs" />`
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
 <configuration>
