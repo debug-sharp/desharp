@@ -1,5 +1,9 @@
 # Desharp - C#/VB .NET Debugging Tool
 
+[![Latest Stable Version](https://img.shields.io/badge/Stable-v1.0.1-brightgreen.svg?style=plastic)](https://github.com/tomFlidr/desharp/releases)
+[![License](https://img.shields.io/badge/Licence-BSD-brightgreen.svg?style=plastic)](https://mvccore.github.io/docs/mvccore/4.0.0/LICENCE.md)
+![.NET Version](https://img.shields.io/badge/.NET->=4.0-brightgreen.svg?style=plastic)
+
 C#/VB .NET debuging utility to dump or log structuralized variables, exceptions, stack traces and much more into console, visual studio console, into html web response as floating window or into html/text log files on HDD.
 
 ## Instalation
@@ -7,7 +11,12 @@ C#/VB .NET debuging utility to dump or log structuralized variables, exceptions,
 PM> Install-Package Desharp
 ```
 
-## Examples
+## Usage and examples
+
+### Code snippets
+To use long Desharp calls more comfortable, install [Visual Studio code snippets](https://github.com/tomFlidr/desharp-codesnippets) for desharp to create proper shortcuts
+More info [about code snippets for Visual Studio](https://code.visualstudio.com/docs/editor/userdefinedsnippets).
+
 
 ### Dump/log any variable
 ```cs
