@@ -47,6 +47,6 @@ Temporary Items
 .apdisk
 
 
-source/obj/Debug
-source/obj/Release
-source/Assets/src
+obj/Debug
+obj/Release
+Assets/src

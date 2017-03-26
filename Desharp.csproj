@@ -1,0 +1,136 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{4F63D16B-A1E9-45A9-AC2F-831A1220B2B9}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Desharp</RootNamespace>
+    <AssemblyName>Desharp</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <DocumentationFile>bin\Debug\Desharp.XML</DocumentationFile>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
+    <DocumentationFile>bin\Debug\Desharp.XML</DocumentationFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Web" />
+    <Reference Include="System.Web.Extensions" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Assets.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Assets.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Completers\LoadedAssemblies.cs" />
+    <Compile Include="Core\AppExitWatcher.cs" />
+    <Compile Include="Core\Dispatcher.cs" />
+    <Compile Include="Core\Enums\AppExitType.cs" />
+    <Compile Include="Core\Enums\PanelIconType.cs" />
+    <Compile Include="Core\Enums\PanelType.cs" />
+    <Compile Include="Core\Enums\StackTraceFormat.cs" />
+    <Compile Include="Core\Module.cs" />
+    <Compile Include="Core\Structs\DumpOptions.cs" />
+    <Compile Include="Core\Structs\ExceptionToRender.cs" />
+    <Compile Include="Core\Structs\RenderedPanel.cs" />
+    <Compile Include="Core\WinDebuggerAttaching.cs" />
+    <Compile Include="Debug.cs" />
+    <Compile Include="Core\Config.cs" />
+    <Compile Include="Completers\HttpHeaders.cs" />
+    <Compile Include="Completers\StackTrace.cs" />
+    <Compile Include="Core\Enums\EnvironmentType.cs" />
+    <Compile Include="Core\Enums\Level.cs" />
+    <Compile Include="Core\Enums\OutputType.cs" />
+    <Compile Include="Panels\Dumps.cs" />
+    <Compile Include="Panels\Abstract.cs" />
+    <Compile Include="Panels\Exceptions.cs" />
+    <Compile Include="Panels\Routing.cs" />
+    <Compile Include="Panels\Session.cs" />
+    <Compile Include="Core\Mailer.cs" />
+    <Compile Include="Renderers\ErrorFile.cs" />
+    <Compile Include="Renderers\JavascriptExceptionData.cs" />
+    <Compile Include="Core\Structs\DebugConfig.cs" />
+    <Compile Include="Core\Structs\LevelValues.cs" />
+    <Compile Include="Core\Structs\StackTraceItem.cs" />
+    <Compile Include="Core\Structs\RenderingCollection.cs" />
+    <Compile Include="Producers\HtmlResponse.cs" />
+    <Compile Include="Core\Tools.cs" />
+    <Compile Include="Core\Structs\DumpType.cs" />
+    <Compile Include="Completers\Detector.cs" />
+    <Compile Include="Renderers\Dumper.cs" />
+    <Compile Include="FireCS.cs" />
+    <Compile Include="Producers\FileLog.cs" />
+    <Compile Include="Renderers\Exceptions.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Assets.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <SubType>Designer</SubType>
+      <LastGenOutput>Assets.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="content\App.config.transform" />
+    <None Include="Desharp.nuspec" />
+    <None Include="content\Web.config.transform" />
+    <None Include="_CreateNewNuGetPackage\DoNotModify\NuGet.exe" />
+    <None Include="content\App.config.example" />
+    <None Include="packages.config" />
+    <None Include="_CreateNewNuGetPackage\Config.ps1" />
+    <None Include="_CreateNewNuGetPackage\DoNotModify\CreateNuGetPackage.ps1" />
+    <None Include="_CreateNewNuGetPackage\DoNotModify\New-NuGetPackage.ps1" />
+    <None Include="_CreateNewNuGetPackage\DoNotModify\UploadNuGetPackage.ps1" />
+    <None Include="_CreateNewNuGetPackage\RunMeToUploadNuGetPackage.cmd" />
+  </ItemGroup>
+  <ItemGroup />
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PreBuildEvent>IF EXIST $(ProjectDir)Assets\node_modules\desharp-assets (
+   CD $(ProjectDir)Assets\node_modules\desharp-assets\dev-tools
+   build.cmd
+)</PreBuildEvent>
+  </PropertyGroup>
+  <PropertyGroup>
+    <PostBuildEvent>REM Create a NuGet package for this project and place the .nupkg file in the project's output directory.
+REM If you see this in Visual Studio's Error List window, check the Output window's Build tab for the actual error.
+ECHO Creating NuGet package in Post-Build event...
+PowerShell -NoProfile -ExecutionPolicy Bypass -Command "&amp; '$(ProjectDir)_CreateNewNuGetPackage\DoNotModify\CreateNuGetPackage.ps1' -ProjectFilePath '$(ProjectPath)' -OutputDirectory '$(TargetDir)' -BuildConfiguration '$(ConfigurationName)' -BuildPlatform '$(PlatformName)'"</PostBuildEvent>
+  </PropertyGroup>
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
