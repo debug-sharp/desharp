@@ -67,7 +67,7 @@
     <Compile Include="Core\Config.cs" />
     <Compile Include="Completers\HttpHeaders.cs" />
     <Compile Include="Completers\StackTrace.cs" />
-    <Compile Include="Core\Enums\EnvironmentType.cs" />
+    <Compile Include="Core\Enums\EnvType.cs" />
     <Compile Include="Core\Enums\Level.cs" />
     <Compile Include="Core\Enums\LogFormat.cs" />
     <Compile Include="Panels\Dumps.cs" />
@@ -103,6 +103,7 @@
     <None Include="content\App.config.transform" />
     <None Include="Desharp.nuspec" />
     <None Include="content\Web.config.transform" />
+    <None Include="README.md" />
     <None Include="_CreateNewNuGetPackage\DoNotModify\NuGet.exe" />
     <None Include="content\App.config.example" />
     <None Include="packages.config" />

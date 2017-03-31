@@ -196,7 +196,10 @@ namespace Desharp.Core {
 				if (!(System.IO.Directory.Exists(Dispatcher.Directory))) {
 					try {
 						System.IO.Directory.CreateDirectory(Dispatcher.Directory);
-					} catch (Exception e) { }
+					} catch (Exception e) {
+						Dispatcher.Directory = Dispatcher.AppRoot;
+						Debug.Dump(e);
+					}
 				}
 			}
 		}
