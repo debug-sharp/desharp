@@ -12,10 +12,21 @@ using System.Collections.Specialized;
 using System.Text;
 
 namespace Desharp.Renderers {
+	/// <summary>
+	/// Reflection class to dump any type value into string representation by Desharp.Renderers.Dumper.Dump(value);
+	/// </summary>
 	public class Dumper {
 		internal static string[] HtmlDumpWrapper = new string[] { @"<div class=""desharp-dump"">", "</div>" };
 		internal static string[] TooLongIndicator = new string[] { @"<span class=""too-deep"">...</span>", "..." };
-		internal static string Dump (object obj, bool htmlOut = false, int maxDepth = 0, int maxLength = 0) {
+		/// <summary>
+		/// Dump any type value into string representation and returns itg, this is direct dumper, no Desharp configuration will be used to process this dump.
+		/// </summary>
+		/// <param name="obj">Any type value to dump into string</param>
+		/// <param name="htmlOut">True to dump values as HTML, false to dump as TEXT.</param>
+		/// <param name="maxDepth">How many levels at maximum in complex type variables will be iterated throw to dump all it's properties, fields and other values.</param>
+		/// <param name="maxLength">If any dumped string length is larger than this value, it will be cutted into this max length.</param>
+		/// <returns>Returns HTML or TEXT representation of any called value.</returns>
+		public static string Dump (object obj, bool htmlOut = false, int maxDepth = 0, int maxLength = 0) {
 			if (maxDepth == 0) maxDepth = Dispatcher.DumpDepth;
 			if (maxLength == 0) maxLength = Dispatcher.DumpMaxLength;
 			string newDumpSequence = Dispatcher.GetCurrent().DumperSequence.ToString();

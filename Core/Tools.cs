@@ -10,6 +10,9 @@ using System.Threading;
 using System.Web;
 
 namespace Desharp.Core {
+	/// <summary>
+	/// Usefull static functions used by Desharp assembly internaly, but it should be used for any general purposes.
+	/// </summary>
     public class Tools {
 		internal static string Editor = "";
 		private const string _EDITOR_DEFAULT = "MSVS2015";
@@ -69,6 +72,9 @@ namespace Desharp.Core {
 			}
 			return fileName;
 		}
+		/// <summary>
+		/// Return client request IP address, in IPv4 or in IPv6 format, depends on client.
+		/// </summary>
 		public static string GetClientIpAddress () {
             string clientIpAddress = "";
             NameValueCollection serverVariables = System.Web.HttpContext.Current.Request.ServerVariables;
@@ -80,6 +86,10 @@ namespace Desharp.Core {
             if (string.IsNullOrEmpty(clientIpAddress)) clientIpAddress = serverVariables["REMOTE_ADDR"];
             return clientIpAddress;
         }
+		/// <summary>
+		/// Returns true if called assembly is builded as Debug release.
+		/// </summary>
+		/// <param name="assembly">Assembly to check for build mode.</param>
 		public static bool IsAssemblyBuildAsDebug (Assembly assembly = null) {
 			if (assembly == null) return false;
 			object[] customAttributes = assembly.GetCustomAttributes(typeof(DebuggableAttribute), false);
@@ -89,9 +99,15 @@ namespace Desharp.Core {
 			}
 			return false;
 		}
+		/// <summary>
+		/// Get desktop application entry assembly written by developer, no .NET framework system assembly.
+		/// </summary>
 		public static Assembly GetWindowsEntryAssembly () {
 			return Assembly.GetEntryAssembly();
 		}
+		/// <summary>
+		/// Get web application hosted in IIS server entry assembly written by developer, no .NET framework system assembly.
+		/// </summary>
 		public static Assembly GetWebEntryAssembly () {
 			if (HttpContext.Current == null || HttpContext.Current.ApplicationInstance == null) {
 				return null;
@@ -102,20 +118,40 @@ namespace Desharp.Core {
 			}
 			return type == null ? null : type.Assembly;
 		}
+		/// <summary>
+		/// Get web request id, by HttpContext.Current.Timestamp.Ticks;
+		/// </summary>
+		/// <returns></returns>
 		public static long GetRequestId () {
             if (HttpContext.Current == null) return 0; // windows, unit testing
             return HttpContext.Current.Timestamp.Ticks;
         }
+		/// <summary>
+		/// Get system process id, standardly displayed integer in Task manager.
+		/// </summary>
 		public static long GetProcessId () {
 			return Process.GetCurrentProcess().Id;
 		}
+		/// <summary>
+		/// Get .NET thread id of current process thread.
+		/// </summary>
 		public static long GetThreadId () {
             return Thread.CurrentThread.ManagedThreadId;
 		}
+		/// <summary>
+		/// Convert any sstring or HTML into safe javascript string value representation.
+		/// </summary>
+		/// <param name="value">Any string to escape for safe javascript string.</param>
+		/// <returns>Safe javascript string.</returns>
 		public static string JavascriptString (string value) {
 			return HttpUtility.JavaScriptStringEncode(value, false)
 				.Replace("\\u003c", "<").Replace("\\u003e", ">").Replace("\\u0026", "&");
 		}
+		/// <summary>
+		/// Convert any string into HTML entities where necessary.
+		/// </summary>
+		/// <param name="value">Any string value to process.</param>
+		/// <returns>Safe HTML string.</returns>
 		public static string HtmlEntities (string value) {
 			value = HttpUtility.JavaScriptStringEncode(value);
 			Regex r = new Regex(@"\\u([0-9a-f]{4})");
@@ -140,6 +176,10 @@ namespace Desharp.Core {
 			}
 			return value;
 		}
+		/// <summary>
+		/// Create MD5 hash from any string value.
+		/// </summary>
+		/// <param name="s">String value to hash.</param>
         public static string Md5 (string s) {
             System.Security.Cryptography.MD5 md5Hash = System.Security.Cryptography.MD5.Create();
             byte[] data = md5Hash.ComputeHash(System.Text.Encoding.UTF8.GetBytes(s));
@@ -149,6 +189,11 @@ namespace Desharp.Core {
             }
             return sBuilder.ToString();
         }
+		/// <summary>
+		/// Return string with so many spaces as defined by first param.
+		/// </summary>
+		/// <param name="spaces">number of spaces in result string.</param>
+		/// <param name="htmlOut">If true, all spaces will be rendered as &nbsp; entity.</param>
 		public static string SpaceIndent (int spaces = 0, bool htmlOut = true) {
 			string s = "";
 			for (var i = 0; i < spaces; i++) {
@@ -156,6 +201,9 @@ namespace Desharp.Core {
 			}
 			return s;
 		}
+		/// <summary>
+		/// Determinate if platform is windows OS - PlatformID.Win32NT | Win32S | Win32Windows | WinCE;
+		/// </summary>
 		public static bool IsWindows () {
 			return Environment.OSVersion.Platform == PlatformID.Win32NT ||
 				Environment.OSVersion.Platform == PlatformID.Win32S ||

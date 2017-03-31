@@ -12,7 +12,7 @@ using System.Web.SessionState;
 using static Desharp.Core.AppExitWatcher;
 
 namespace Desharp.Core {
-	public class Dispatcher {
+	internal class Dispatcher {
 
 		internal static EnvType EnvType;
 		internal static string AppRoot;
@@ -23,7 +23,7 @@ namespace Desharp.Core {
 		internal static int DumpDepth = 3;
 		internal static int DumpMaxLength = 1024;
 		internal static bool? EnabledGlobal = null;
-		internal static OutputType? OutputGlobal = null;
+		internal static LogFormat? OutputGlobal = null;
 		internal static Dictionary<string, int> Levels;
 		internal static string WebStaticErrorPage;
 
@@ -37,8 +37,9 @@ namespace Desharp.Core {
 		internal Exception LastError = null;
 		internal int DumperSequence = 0;
 		internal string CurrentlyRendererView = "";
-		internal OutputType Output;
+		internal LogFormat Output;
 		internal bool? Enabled = null;
+		internal Dictionary<string, double> Timers = new Dictionary<string, double>();
 		internal bool WebAssetsInserted = false;
 		internal int WebRequestState = 0;
 		internal double WebRequestEndTime = 0;
@@ -169,11 +170,11 @@ namespace Desharp.Core {
 			}
 		}
 		protected static void staticInitOutputGlobal () {
-			OutputType? strictConfigValue = Config.GetOutput();
+			LogFormat? strictConfigValue = Config.GetLogFormat();
 			if (strictConfigValue.HasValue) {
 				Dispatcher.OutputGlobal = strictConfigValue;
 			} else {
-				Dispatcher.OutputGlobal = OutputType.Text;
+				Dispatcher.OutputGlobal = LogFormat.Text;
 			}
 		}
 		protected static void staticInitDirectory (string dirRelOrFullPath = "") {
@@ -256,7 +257,7 @@ namespace Desharp.Core {
 		internal void Configure (DebugConfig cfg) {
 			if (cfg.EnvType != EnvType.Auto) Dispatcher.EnvType = cfg.EnvType;
 			if (cfg.Enabled.HasValue) this.Enabled = cfg.Enabled.Value;
-			if (cfg.OutputType != OutputType.Auto) this.Output = cfg.OutputType;
+			if (cfg.LogFormat != LogFormat.Auto) this.Output = cfg.LogFormat;
 			if (cfg.Directory != null && cfg.Directory.Length > 0) Dispatcher.staticInitDirectory(cfg.Directory);
 			if (cfg.ErrorPage != null && cfg.ErrorPage.Length > 0) Dispatcher.staticInitWebErrorPage(cfg.ErrorPage);
 			if (cfg.Depth != null && cfg.Depth.Value > 0) Dispatcher.DumpDepth = cfg.Depth.Value;

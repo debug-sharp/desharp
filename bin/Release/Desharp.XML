@@ -4,10 +4,24 @@
         <name>Desharp</name>
     </assembly>
     <members>
+        <member name="F:Desharp.Debug.SESSION_STORAGE_KEY">
+            <summary>
+            
+            </summary>
+        </member>
         <member name="M:Desharp.Debug.Enabled(System.Nullable{System.Boolean})">
             <summary>Enable or disable variables dumping from application code environment for all threads.</summary>
             <param name="enabled">true to enable, false to disable, if not defined, no changes will be made.</param>
             <returns>bool about enabled/disabled dumping state</returns>
+            <example>
+            To determinate if dumps printing to output is enabled or not:
+            <code>bool dumpsPrintedToOtuput = Desharp.Debug.Enabled();</code>
+            To enable/disable dumps printing to output:
+            <code>
+            Desharp.Debug.Enabled(true); // enabled
+            Desharp.Debug.Enabled(true); // disabled
+            </code>
+            </example>
         </member>
     </members>
 </doc>

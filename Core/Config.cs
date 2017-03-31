@@ -71,11 +71,11 @@ namespace Desharp.Core {
 			}
 			return "";
 		}
-		internal static OutputType? GetOutput () {
+		internal static LogFormat? GetLogFormat () {
 			if (Config._appSettings.ContainsKey(Config.APP_SETTINGS_OUTPUT)) {
 				string rawValue = Config._appSettings[Config.APP_SETTINGS_OUTPUT].Trim().ToLower();
-				if (rawValue == "html") return OutputType.Html;
-				if (rawValue == "text") return OutputType.Text;
+				if (rawValue == "html") return LogFormat.Html;
+				if (rawValue == "text") return LogFormat.Text;
 			}
 			return null;
 		}

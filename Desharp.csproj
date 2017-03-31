@@ -69,7 +69,7 @@
     <Compile Include="Completers\StackTrace.cs" />
     <Compile Include="Core\Enums\EnvironmentType.cs" />
     <Compile Include="Core\Enums\Level.cs" />
-    <Compile Include="Core\Enums\OutputType.cs" />
+    <Compile Include="Core\Enums\LogFormat.cs" />
     <Compile Include="Panels\Dumps.cs" />
     <Compile Include="Panels\Abstract.cs" />
     <Compile Include="Panels\Exceptions.cs" />

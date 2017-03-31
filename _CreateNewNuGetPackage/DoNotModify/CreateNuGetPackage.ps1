@@ -173,7 +173,7 @@ function Ensure-AssemblyFileExistsWhereNuGetExpectsItToBe([string]$ProjectFilePa
 		if (!$assemblyName) { $assemblyName = [string]::Empty }
 		
 		# Get the type of project being built, so we can determine what file extension it should have.
-		$assemblyType = Get-XmlElementsTextValue -XmlDocument $projectFileXml -ElementPath "Project.PropertyGroup.OutputType"
+		$assemblyType = Get-XmlElementsTextValue -XmlDocument $projectFileXml -ElementPath "Project.PropertyGroup.LogFormat"
 		if (!$assemblyType) { $assemblyType = [string]::Empty }
 		
 		# Attach the file extension to the assembly name based on the type of project this is. Either a Library or Executable.

@@ -39,7 +39,7 @@ namespace Desharp.Producers {
 		}
 		internal static void InitCyclicWritingIfNecessary () {
 			if (Dispatcher.LogWriteMilisecond > 0 && FileLog.writeThread == null) {
-				bool htmlOut = Dispatcher.GetCurrent().Output == OutputType.Html;
+				bool htmlOut = Dispatcher.GetCurrent().Output == LogFormat.Html;
 				FileLog.writeThread = new Thread(() => {
 					while (true) { 
 						Thread.Sleep(Dispatcher.LogWriteMilisecond);
@@ -52,7 +52,7 @@ namespace Desharp.Producers {
 		}
 		internal static void Disposed () {
 			if (FileLog.writeThread != null) FileLog.writeThread.Abort();
-			FileLog.writeAllStores(Dispatcher.GetCurrent().Output == OutputType.Html);
+			FileLog.writeAllStores(Dispatcher.GetCurrent().Output == LogFormat.Html);
 		}
 		internal static void Log (string content, string level) {
 			if (Dispatcher.Levels[level] == 0) return;
@@ -72,7 +72,7 @@ namespace Desharp.Producers {
 					FileLog.loadedStores = new List<string>();
 				}
 			}
-			if (levelsToWrite.Length > 0) FileLog.writeStores(Dispatcher.GetCurrent().Output == OutputType.Html, levelsToWrite);
+			if (levelsToWrite.Length > 0) FileLog.writeStores(Dispatcher.GetCurrent().Output == LogFormat.Html, levelsToWrite);
 		}
 		protected static void writeStores (bool htmlOut, params string[] levels) {
 			Dictionary<string, string> stores = FileLog.duplicateStores(levels);

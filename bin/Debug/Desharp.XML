@@ -4,10 +4,474 @@
         <name>Desharp</name>
     </assembly>
     <members>
+        <member name="T:Desharp.Core.Tools">
+            <summary>
+            Usefull static functions used by Desharp assembly internaly, but it should be used for any general purposes.
+            </summary>
+        </member>
+        <member name="M:Desharp.Core.Tools.GetClientIpAddress">
+            <summary>
+            Return client request IP address, in IPv4 or in IPv6 format, depends on client.
+            </summary>
+        </member>
+        <member name="M:Desharp.Core.Tools.IsAssemblyBuildAsDebug(System.Reflection.Assembly)">
+            <summary>
+            Returns true if called assembly is builded as Debug release.
+            </summary>
+            <param name="assembly">Assembly to check for build mode.</param>
+        </member>
+        <member name="M:Desharp.Core.Tools.GetWindowsEntryAssembly">
+            <summary>
+            Get desktop application entry assembly written by developer, no .NET framework system assembly.
+            </summary>
+        </member>
+        <member name="M:Desharp.Core.Tools.GetWebEntryAssembly">
+            <summary>
+            Get web application hosted in IIS server entry assembly written by developer, no .NET framework system assembly.
+            </summary>
+        </member>
+        <member name="M:Desharp.Core.Tools.GetRequestId">
+            <summary>
+            Get web request id, by HttpContext.Current.Timestamp.Ticks;
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Desharp.Core.Tools.GetProcessId">
+            <summary>
+            Get system process id, standardly displayed integer in Task manager.
+            </summary>
+        </member>
+        <member name="M:Desharp.Core.Tools.GetThreadId">
+            <summary>
+            Get .NET thread id of current process thread.
+            </summary>
+        </member>
+        <member name="M:Desharp.Core.Tools.JavascriptString(System.String)">
+            <summary>
+            Convert any sstring or HTML into safe javascript string value representation.
+            </summary>
+            <param name="value">Any string to escape for safe javascript string.</param>
+            <returns>Safe javascript string.</returns>
+        </member>
+        <member name="M:Desharp.Core.Tools.HtmlEntities(System.String)">
+            <summary>
+            Convert any string into HTML entities where necessary.
+            </summary>
+            <param name="value">Any string value to process.</param>
+            <returns>Safe HTML string.</returns>
+        </member>
+        <member name="M:Desharp.Core.Tools.Md5(System.String)">
+            <summary>
+            Create MD5 hash from any string value.
+            </summary>
+            <param name="s">String value to hash.</param>
+        </member>
+        <!-- Badly formed XML comment ignored for member "M:Desharp.Core.Tools.SpaceIndent(System.Int32,System.Boolean)" -->
+        <member name="M:Desharp.Core.Tools.IsWindows">
+            <summary>
+            Determinate if platform is windows OS - PlatformID.Win32NT | Win32S | Win32Windows | WinCE;
+            </summary>
+        </member>
+        <member name="T:Desharp.PanelIconType">
+            <summary>
+            Panel icon type for custom web debug panel.
+            </summary>
+        </member>
+        <member name="F:Desharp.PanelIconType.None">
+            <summary>
+            Debug panels without icon.
+            </summary>
+        </member>
+        <member name="F:Desharp.PanelIconType.Class">
+            <summary>
+            For panel icons defined in internal Desharp response css code.
+            </summary>
+        </member>
+        <member name="F:Desharp.PanelIconType.Code">
+            <summary>
+            For panel icons defined in custom class as HTML code.
+            </summary>
+        </member>
+        <member name="T:Desharp.PanelType">
+            <summary>
+            Desharp web panel type.
+            </summary>
+        </member>
+        <member name="F:Desharp.PanelType.BarText">
+            <summary>
+            Web debug panel with text context, in bar, no window, no actions on mouse over or click.
+            </summary>
+        </member>
+        <member name="F:Desharp.PanelType.BarBtnWithJsHandler">
+            <summary>
+            Web debug panel with js handler, you can specify any js function call in panel content.
+            </summary>
+        </member>
+        <member name="F:Desharp.PanelType.BarBtnAndWindow">
+            <summary>
+            Web debug panel with floating window with custom HTML content, used for most cases.
+            </summary>
+        </member>
+        <member name="F:Desharp.PanelType.BarBtnAndScreen">
+            <summary>
+            Web debug panel with rendered content showed on whole browser screen, used for exceptions panel.
+            </summary>
+        </member>
+        <member name="T:Desharp.DumpOptions">
+            <summary>
+            Dump options for Desharp.Debug.Dump() calls to optimize how values or exceptions should be rendered or how to work with rendered results.
+            </summary>
+        </member>
+        <member name="F:Desharp.DumpOptions.Depth">
+            <summary>
+            How many levels in complex type variables will be iterated throw to dump all it's properties, fields and other values.
+            </summary>
+        </member>
+        <member name="F:Desharp.DumpOptions.MaxLength">
+            <summary>
+            If any dumped string length is larger than this value, it will be cutted into this max length.
+            </summary>
+        </member>
+        <member name="F:Desharp.DumpOptions.Return">
+            <summary>
+            Set true if you want to return dumped string as result of Desharp.Debug.Dump() function call.
+            </summary>
+        </member>
+        <member name="T:Desharp.Debug">
+            <summary>
+            Desharp main class:<br /><para /><ul>
+            <li> Dump any object/exception to application output.</li><para />
+            <li> Store any dumped object/exception in text/html log files.</li><para />
+            <li> Enable/disable objects dumping to output.</li><para />
+            <li> Configure desharp from running application environment.</li>
+            </ul></summary>
+        </member>
+        <member name="F:Desharp.Debug.Version">
+            <summary>
+            Desharp assembly Version.
+            </summary>
+        </member>
+        <member name="F:Desharp.Debug.SESSION_STORAGE_KEY">
+            <summary>
+            Session storrage key to store Desharp data inside Web app session storrage.
+            </summary>
+        </member>
         <member name="M:Desharp.Debug.Enabled(System.Nullable{System.Boolean})">
             <summary>Enable or disable variables dumping from application code environment for all threads.</summary>
-            <param name="enabled">true to enable, false to disable, if not defined, no changes will be made.</param>
+            <param name="enabled">true to enable, false to disable, if no param defined, no changes will be made.</param>
             <returns>bool about enabled/disabled dumping state</returns>
+            <example>
+            To determinate if dumps printing to output is enabled or not:
+            <code>bool dumpsPrintedToOtuput = Desharp.Debug.Enabled();</code>
+            To enable/disable dumps printing to output:
+            <code>
+            Desharp.Debug.Enabled(true);  // to enable dumps print in output
+            Desharp.Debug.Enabled(false); // to disable dumps print in output
+            </code>
+            </example>
+        </member>
+        <member name="M:Desharp.Debug.Configure(Desharp.DebugConfig)">
+            <summary>
+            Configure Desharp assembly from running application environment and override any XML config settings or automaticly detected settings.
+            </summary>
+            <param name="cfg">Specialized Desharp configuration collection - just create new instance with public fields of that.</param>
+            <example>
+            <code>Desharp.Debug.Configure(new Desharp.DebugConfig {
+            	Enabled = true,				// enable dumps printing to app output
+            	Depth = 3,				// dumped objects max. depth
+            	Directory = "~/logs",			// file logs directory rel./abs. path
+            	LogFormat = Desharp.LogFormat.Html,	// file logs format - text or html
+            	...
+            });</code>
+            </example>
+        </member>
+        <member name="M:Desharp.Debug.GetLastError">
+            <summary>
+            Return last uncatched Exception in request, mostly used in web applications by rendering error page to know something about Exception before.
+            </summary>
+            <returns>Last Exception instance, including original exception callstack and possible inner exceptions.</returns>
+        </member>
+        <member name="M:Desharp.Debug.GetProcessingTime">
+            <summary>
+            Return spended request processing time for web applications or return application up time for all other platforms.
+            </summary>
+            <returns>Returned values is number of seconds with 3 decimal places after comma with miliseconds.</returns>
+        </member>
+        <member name="M:Desharp.Debug.Timer(System.String,System.Boolean,Desharp.Level)">
+            <summary>
+            Prints to ouput or into log file number of seconds from last timer call under called name in seconds with 3 floating point decimal spaces.<br /><para />
+            If no name specified or name is empty string, there is returned:<para /><ul>
+            <li> web applications - number of seconds from request beggining</li><para />
+            <li> desktop applications - number of seconds from application start</li><para />
+            </ul></summary>
+            <param name="name">Timer name, used as key to find last Timer() call from internal dictionary to print the timespan in app output or log file.</param>
+            <param name="returnTimerSeconds">If true, do not print or log timer value - only return the time span difference decimal value as result of this function.</param>
+            <param name="logLevel">Use log level to specify log file used when dump printing into output is disabled, "debug.log" used by default.</param>
+            <returns>If returnTimerSeconds param is true, return the time span difference decimal from the last Timer() call under called name or return zero if returnTimerSeconds param is false (by default).</returns>
+        </member>
+        <member name="M:Desharp.Debug.Assert(System.Boolean,System.String,Desharp.Level)">
+            <summary>
+            Print to output if enabled or log into file if first param is true - use it always if you want to know if something is equal and what it is, described by second param.
+            </summary>
+            <param name="assertion">Comparation you need to process by yourself in method param space.</param>
+            <param name="message">Any text message to describe previous coomparation.</param>
+            <param name="logLevel">Log level, used only when printing to output is disabled, "default.log" used by default.</param>
+        </member>
+        <member name="M:Desharp.Debug.Stop">
+            <summary>
+            Stop threaad processing by exception writen into output, stop request for web applications, stop current thread for desktop applications.
+            </summary>
+        </member>
+        <member name="M:Desharp.Debug.Dump(System.Exception,System.Nullable{Desharp.DumpOptions})">
+            <summary>
+            Dump exception instance to application output if output printing is enabled. It renders:<para /><ul>
+            <li>exception message, hash id, type<para /></li>
+            <li>file where exception has been thrown<para /></li>
+            <li>thread callstack<para /></li>
+            <li>all inner exceptions after this exception in the same way<para /></li>
+            </ul></summary>
+            <param name="exception">Exception instance to print.</param>
+            <param name="options">Dump options to change if rendered exception will be printed into app output or returned as rendered string value.</param>
+            <returns>Returns empty string if debug printing is disabled  DumpOptions say to not return trendered value, else rendered exception is returned.</returns>
+        </member>
+        <member name="M:Desharp.Debug.Dump(System.Object[])">
+            <summary>
+            Dump any values to application output, in web applications into debug bar, in desktop applications into console.
+            </summary>
+            <param name="args">Infinite number of values to dump into application output.</param>
+            <returns>All dumped values are always returned as rendered string.</returns>
+        </member>
+        <member name="M:Desharp.Debug.Dump(System.Object,System.Nullable{Desharp.DumpOptions})">
+            <summary>
+            Dump any type value to application output, in web applications into debug bar, in desktop applications into console.
+            </summary>
+            <param name="obj">Any type value to dump into application output.</param>
+            <param name="options">Dump options to specify dump depth, max. strings length and returning dumped result as string.</param>
+            <returns>Returns empty string by default or dumped variable string if you specify returning boolean in DumpOptions.</returns>
+        </member>
+        <member name="M:Desharp.Debug.DumpAndDie(System.Object,System.Nullable{Desharp.DumpOptions})">
+            <summary>
+            Dump any type value to direct application output and stop request/thread, in web applications dump into direct response body, in desktop applications into console.
+            </summary>
+            <param name="obj">Any type value to dump into application output.</param>
+            <param name="options">Dump options to specify dump depth, max. strings length and returning dumped result as string.</param>
+            <returns>Returns empty string by default or dumped variable string if you specify returning boolean in DumpOptions.</returns>
+        </member>
+        <member name="M:Desharp.Debug.Log(System.Exception)">
+            <summary>
+            Log exception instance into exceptions.log|.html file:<para /><ul>
+            <li>exception message, hash id, type<para /></li>
+            <li>file where exception has been thrown<para /></li>
+            <li>thread callstack<para /></li>
+            <li>all inner exceptions after this exception in the same way<para /></li>
+            </ul></summary>
+            <param name="exception">Exception instance to print.</param>
+        </member>
+        <member name="M:Desharp.Debug.Log(System.Object,Desharp.Level,System.Int32,System.Int32)">
+            <summary>
+            Log any type value to application *.log|*.html file, specified by level param.
+            </summary>
+            <param name="obj">Any type value to dump into application output.</param>
+            <param name="level">Log level to specify log file name and log level to write dumped variable or not by config settings.</param>
+            <param name="maxDepth">How many levels in complex type variables will be iterated throw to dump all it's properties, fields and other values.</param>
+            <param name="maxLength">If any dumped string length is larger than this value, it will be cutted into this max length.</param>
+            <returns>Returns empty string by default or dumped variable string if you specify returning boolean in DumpOptions.</returns>
+        </member>
+        <member name="T:Desharp.EnvType">
+            <summary>
+            Application general environment - should be only defined as web or desktop.
+            </summary>
+        </member>
+        <member name="F:Desharp.EnvType.Auto">
+            <summary>
+            Environment will be defined by Desharp assembly at first Desharp call.
+            </summary>
+        </member>
+        <member name="F:Desharp.EnvType.Windows">
+            <summary>
+            Environment for desktop applications - WPF, Winforms, console apps and other - generaly not web.
+            </summary>
+        </member>
+        <member name="F:Desharp.EnvType.Web">
+            <summary>
+            Environment for web applications hosted in IIS server.
+            </summary>
+        </member>
+        <member name="T:Desharp.Level">
+            <summary>
+            Application logging levels to define log filename used for Desharp.Debug.Log() calls and to define if log message will be written or not by config settings.
+            </summary>
+        </member>
+        <member name="F:Desharp.Level.DEBUG">
+            <summary>
+            debug.log|debug.html, mostly used as default log file.
+            </summary>
+        </member>
+        <member name="F:Desharp.Level.INFO">
+            <summary>
+            info.log|info.html
+            </summary>
+        </member>
+        <member name="F:Desharp.Level.NOTICE">
+            <summary>
+            notice.log|notice.html
+            </summary>
+        </member>
+        <member name="F:Desharp.Level.WARNING">
+            <summary>
+            warning.log|warning.html
+            </summary>
+        </member>
+        <member name="F:Desharp.Level.ERROR">
+            <summary>
+            error.log|error.html
+            </summary>
+        </member>
+        <member name="F:Desharp.Level.CRITICAL">
+            <summary>
+            critical.log|critical.html
+            </summary>
+        </member>
+        <member name="F:Desharp.Level.ALERT">
+            <summary>
+            alert.log|alert.html
+            </summary>
+        </member>
+        <member name="F:Desharp.Level.EMERGENCY">
+            <summary>
+            emergency.log|emergency.html
+            </summary>
+        </member>
+        <member name="F:Desharp.Level.JAVASCRIPT">
+            <summary>
+            javascript.log|javascript.html, usually used to store javascript errors from client's browser by window.onerror() global handler.
+            </summary>
+        </member>
+        <member name="T:Desharp.LogFormat">
+            <summary>
+            Specify log files format - should be only text or html.
+            </summary>
+        </member>
+        <member name="F:Desharp.LogFormat.Auto">
+            <summary>
+            Log format will be determinated automaticly at first Desharp assembly use.
+            </summary>
+        </member>
+        <member name="F:Desharp.LogFormat.Html">
+            <summary>
+            All log messages will be written in HTML into *.html file
+            </summary>
+        </member>
+        <member name="F:Desharp.LogFormat.Text">
+            <summary>
+            All log messages will be written in TEXT into *.log file
+            </summary>
+        </member>
+        <member name="T:Desharp.Panels.Abstract">
+            <summary>
+            Web debug bar panel base class.
+            </summary>
+        </member>
+        <member name="P:Desharp.Panels.Abstract.Name">
+            <summary>
+            Unique bar panel name, required.
+            </summary>
+        </member>
+        <member name="P:Desharp.Panels.Abstract.AddIfEmpty">
+            <summary>
+            If true, panel will be displayed also in cases when it's content is empty string, false to not display the panel if empty string, false by default.
+            </summary>
+        </member>
+        <member name="P:Desharp.Panels.Abstract.DefaultWindowSizes">
+            <summary>
+            Default window sizes when panel floating window is displayed at first time, 300x200 by default.
+            </summary>
+        </member>
+        <member name="P:Desharp.Panels.Abstract.PanelType">
+            <summary>
+            Panel type, behaviour. You can specify various types, bar panel with custom resizeable floating window defined with custom content by default.
+            </summary>
+        </member>
+        <member name="P:Desharp.Panels.Abstract.PanelIconType">
+            <summary>
+            Panel icon type, should by "css class" for internal desharp panels or "code" for panels defined icon in IconValue property as HTML code with base64 encoded image in <img /> tag.
+            </summary>
+        </member>
+        <member name="P:Desharp.Panels.Abstract.IconValue">
+            <summary>
+            Icon value, should be css class for internal Desharp panels or HTML code icon value as <img /> tag with base64 encoded icon image.
+            </summary>
+        </member>
+        <member name="M:Desharp.Panels.Abstract.#ctor">
+            <summary>
+            Constructor, nothing special, just point for you to start any custom code every request.
+            </summary>
+        </member>
+        <member name="M:Desharp.Panels.Abstract.SessionBegin">
+            <summary>
+            Called at session begin request event, called before Controller/action execution.
+            </summary>
+        </member>
+        <member name="M:Desharp.Panels.Abstract.SessionEnd">
+            <summary>
+            Called at session end request event, called after Controller/action execution.
+            </summary>
+        </member>
+        <member name="M:Desharp.Panels.Abstract.RenderBarText">
+            <summary>
+            Render text content for web bar button.
+            </summary>
+            <returns>Text content for web bar button</returns>
+        </member>
+        <member name="M:Desharp.Panels.Abstract.RenderWindowContent">
+            <summary>
+            Render any string content for bar floating window, if content will be empty string, bar panel wil not be rendered by default.
+            </summary>
+            <returns>Bar panel floating window content.</returns>
+        </member>
+        <member name="T:Desharp.Renderers.Dumper">
+            <summary>
+            Reflection class to dump any type value into string representation by Desharp.Renderers.Dumper.Dump(value);
+            </summary>
+        </member>
+        <member name="M:Desharp.Renderers.Dumper.Dump(System.Object,System.Boolean,System.Int32,System.Int32)">
+            <summary>
+            Dump any type value into string representation and returns itg, this is direct dumper, no Desharp configuration will be used to process this dump.
+            </summary>
+            <param name="obj">Any type value to dump into string</param>
+            <param name="htmlOut">True to dump values as HTML, false to dump as TEXT.</param>
+            <param name="maxDepth">How many levels at maximum in complex type variables will be iterated throw to dump all it's properties, fields and other values.</param>
+            <param name="maxLength">If any dumped string length is larger than this value, it will be cutted into this max length.</param>
+            <returns>Returns HTML or TEXT representation of any called value.</returns>
+        </member>
+        <member name="T:Desharp.DebugConfig">
+            <summary>
+            Desharp configuration collection for Desharp.Debug.Configure(); calls.
+            </summary>
+        </member>
+        <member name="F:Desharp.DebugConfig.Depth">
+            <summary>How many levels in complex type variables will be iterated throw to dump all it's properties, fields and other values.</summary>
+        </member>
+        <member name="F:Desharp.DebugConfig.Enabled">
+            <summary>Dumped objects printing to output enabled/disabled.</summary>
+        </member>
+        <member name="F:Desharp.DebugConfig.Directory">
+            <summary>Relative or absolute path into directory where all log files and mail notify boolean files will be stored.</summary>
+        </member>
+        <member name="F:Desharp.DebugConfig.ErrorPage">
+            <summary>Custom static error page file to send as web application response if any not catched exception will be thrown.</summary>
+        </member>
+        <member name="F:Desharp.DebugConfig.LogWriteMilisecond">
+            <summary>Miliseconds for interval to write Desharp.Debug.Log(); results from RAM into HDD to optimize application performance.</summary>
+        </member>
+        <member name="F:Desharp.DebugConfig.LogFormat">
+            <summary>Application logs content format, should be HTML or TEXT.</summary>
+        </member>
+        <member name="F:Desharp.DebugConfig.EnvType">
+            <summary>Application environment - usually automaticly determinated by Desharp asembly - change this value only when you REALY know what you are doing!!!</summary>
+        </member>
+        <member name="F:Desharp.DebugConfig.Panels">
+            <summary>Custom web debug panel types, implementing Desharp.Panels.Abstract to create their instances for each web request where debuging enabled.</summary>
         </member>
     </members>
 </doc>

@@ -6,7 +6,7 @@ using System.Text;
 using System.Web;
 
 namespace Desharp.Producers {
-    public class HtmlResponse {
+    internal class HtmlResponse {
         private static string _assets;
         static HtmlResponse () {
             HtmlResponse._assets = System.Environment.NewLine

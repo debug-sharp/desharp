@@ -7,7 +7,7 @@ using System.Linq;
 using Desharp.Renderers;
 
 namespace Desharp.Completers {
-	public class StackTrace {
+	internal class StackTrace {
 		internal const string SELF_FILENAME = "StackTrace.cs";
 		private static Dictionary<long, string> _renderedViews = new Dictionary<long, string>();
 		internal static void SetLastRenderedView (string viewAbsolutePath) {

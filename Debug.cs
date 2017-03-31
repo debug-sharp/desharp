@@ -6,10 +6,25 @@ using Desharp.Core;
 using Desharp.Producers;
 using Desharp.Renderers;
 using System.Reflection;
+using System.Diagnostics;
+using System.Globalization;
 
 namespace Desharp {
-    public class Debug {
+	/// <summary>
+	/// Desharp main class:<br /><para /><ul>
+	/// <li> Dump any object/exception to application output.</li><para />
+	/// <li> Store any dumped object/exception in text/html log files.</li><para />
+	/// <li> Enable/disable objects dumping to output.</li><para />
+	/// <li> Configure desharp from running application environment.</li>
+	/// </ul></summary>
+	public class Debug {
+		/// <summary>
+		/// Desharp assembly Version.
+		/// </summary>
 		public static Version Version;
+		/// <summary>
+		/// Session storrage key to store Desharp data inside Web app session storrage.
+		/// </summary>
 		public const string SESSION_STORAGE_KEY = "$$$Desharp";
 		internal const string SELF_FILENAME = "Debug.cs";
 		static Debug () {
@@ -17,36 +32,130 @@ namespace Desharp {
 			Dispatcher.GetCurrent();
 		}
 		/// <summary>Enable or disable variables dumping from application code environment for all threads.</summary>
-		/// <param name="enabled">true to enable, false to disable, if not defined, no changes will be made.</param>
+		/// <param name="enabled">true to enable, false to disable, if no param defined, no changes will be made.</param>
 		/// <returns>bool about enabled/disabled dumping state</returns>
+		/// <example>
+		/// To determinate if dumps printing to output is enabled or not:
+		/// <code>bool dumpsPrintedToOtuput = Desharp.Debug.Enabled();</code>
+		/// To enable/disable dumps printing to output:
+		/// <code>
+		/// Desharp.Debug.Enabled(true);  // to enable dumps print in output
+		/// Desharp.Debug.Enabled(false); // to disable dumps print in output
+		/// </code>
+		/// </example>
 		public static bool Enabled (bool? enabled = null) {
 			if (enabled.HasValue) Dispatcher.GetCurrent().Enabled = enabled.Value;
 			return Dispatcher.GetCurrent().Enabled == true;
 		}
+		/// <summary>
+		/// Configure Desharp assembly from running application environment and override any XML config settings or automaticly detected settings.
+		/// </summary>
+		/// <param name="cfg">Specialized Desharp configuration collection - just create new instance with public fields of that.</param>
+		/// <example>
+		/// <code>Desharp.Debug.Configure(new Desharp.DebugConfig {
+		/// 	Enabled = true,				// enable dumps printing to app output
+		/// 	Depth = 3,				// dumped objects max. depth
+		/// 	Directory = "~/logs",			// file logs directory rel./abs. path
+		/// 	LogFormat = Desharp.LogFormat.Html,	// file logs format - text or html
+		/// 	...
+		/// });</code>
+		/// </example>
 		public static void Configure (DebugConfig cfg) {
 			Dispatcher.GetCurrent().Configure(cfg);
 		}
-		public static double GetProcessingTime() {
-			double r = new TimeSpan(DateTime.Now.Ticks - Tools.GetRequestId()).TotalSeconds;
-            return Math.Round(r * 1000) / 1000;
-        }
+		/// <summary>
+		/// Return last uncatched Exception in request, mostly used in web applications by rendering error page to know something about Exception before.
+		/// </summary>
+		/// <returns>Last Exception instance, including original exception callstack and possible inner exceptions.</returns>
 		public static Exception GetLastError () {
 			return Dispatcher.GetCurrent().LastError;
 		}
-		public static void Time(string msg = "") {
-			if (Dispatcher.GetCurrent().Enabled != true) return;
-			Debug.Dump((msg.Length > 0 ? msg + ": " : "") + Debug.GetProcessingTime());
+		/// <summary>
+		/// Return spended request processing time for web applications or return application up time for all other platforms.
+		/// </summary>
+		/// <returns>Returned values is number of seconds with 3 decimal places after comma with miliseconds.</returns>
+		public static double GetProcessingTime () {
+			long nowTicks = (Dispatcher.EnvType == EnvType.Windows)
+				? Process.GetCurrentProcess().StartTime.Ticks
+				: Tools.GetRequestId();
+			double r = new TimeSpan(nowTicks - DateTime.Now.Ticks).TotalSeconds;
+			return Math.Round(r * 1000) / 1000;
         }
-		public static void Assert(bool assertion, string message = "") {
-			if (Dispatcher.GetCurrent().Enabled != true) return;
-			Debug.Dump(String.Format(
+		/// <summary>
+		/// Prints to ouput or into log file number of seconds from last timer call under called name in seconds with 3 floating point decimal spaces.<br /><para />
+		/// If no name specified or name is empty string, there is returned:<para /><ul>
+		/// <li> web applications - number of seconds from request beggining</li><para />
+		/// <li> desktop applications - number of seconds from application start</li><para />
+		/// </ul></summary>
+		/// <param name="name">Timer name, used as key to find last Timer() call from internal dictionary to print the timespan in app output or log file.</param>
+		/// <param name="returnTimerSeconds">If true, do not print or log timer value - only return the time span difference decimal value as result of this function.</param>
+		/// <param name="logLevel">Use log level to specify log file used when dump printing into output is disabled, "debug.log" used by default.</param>
+		/// <returns>If returnTimerSeconds param is true, return the time span difference decimal from the last Timer() call under called name or return zero if returnTimerSeconds param is false (by default).</returns>
+		public static double Timer (string name = null, bool returnTimerSeconds = false, Level logLevel = Level.DEBUG) {
+			long nowTicks = DateTime.Now.Ticks;
+			double result = 0;
+			bool nameIsNullOrEmpty = String.IsNullOrEmpty(name);
+			if (nameIsNullOrEmpty) {
+				result = nowTicks - Debug.GetProcessingTime();
+			} else {
+				Dictionary<string, double> timers = Dispatcher.GetCurrent().Timers;
+				if (timers.ContainsKey(name)) {
+					result = nowTicks - timers[name];
+					timers[name] = nowTicks;
+				} else {
+					result = 0;
+					timers.Add(name, nowTicks);
+				}
+			}
+			Dispatcher dispatcher = Dispatcher.GetCurrent();
+			if (!returnTimerSeconds) {
+				string dumpResult = (nameIsNullOrEmpty ? "" : name + ": ") 
+					+ String.Format(CultureInfo.InvariantCulture, "{0:0,0.000}", result) + " s";
+				bool htmlOut = Dispatcher.EnvType == EnvType.Web;
+				if (htmlOut) {
+					dumpResult = @"<div class=""timer"">" + dumpResult + "</div>";
+					if (dispatcher.Enabled == true) {
+						dumpResult = Dumper.HtmlDumpWrapper[0] + dumpResult + Dumper.HtmlDumpWrapper[1];
+					}
+				} else if (dispatcher.Enabled == true) {
+					dumpResult += Environment.NewLine;
+				}
+				if (dispatcher.Enabled == true) {
+					dispatcher.WriteDumpToOutput(dumpResult);
+				} else {
+					dumpResult = Exceptions.RenderCurrentApplicationPoint(
+						dumpResult, "Value", true, htmlOut
+					) + Environment.NewLine;
+					FileLog.Log(dumpResult, LevelValues.Values[logLevel]);
+				}
+				return 0;
+			} else {
+				return result;
+			}
+		}
+		/// <summary>
+		/// Print to output if enabled or log into file if first param is true - use it always if you want to know if something is equal and what it is, described by second param.
+		/// </summary>
+		/// <param name="assertion">Comparation you need to process by yourself in method param space.</param>
+		/// <param name="message">Any text message to describe previous coomparation.</param>
+		/// <param name="logLevel">Log level, used only when printing to output is disabled, "default.log" used by default.</param>
+		public static void Assert (bool assertion, string message = "", Level logLevel = Level.DEBUG) {
+			string result = String.Format(
 				(message.Length > 0 ? "{0}: ({1})" : "{0}{1}"), message, (assertion ? "true" : "false")
-			));
+			);
+			if (Dispatcher.GetCurrent().Enabled == true) {
+				Debug.Dump(result);
+			} else {
+				Debug.Log(result, logLevel);
+			}
         }
+		/// <summary>
+		/// Stop threaad processing by exception writen into output, stop request for web applications, stop current thread for desktop applications.
+		/// </summary>
 		public static void Stop () {
 			Dispatcher dispatcher = Dispatcher.GetCurrent();
 			if (dispatcher.Enabled != true) return;
-			bool htmlOut = dispatcher.Output == OutputType.Html && Dispatcher.EnvType == EnvType.Web;
+			bool htmlOut = dispatcher.Output == LogFormat.Html && Dispatcher.EnvType == EnvType.Web;
 		    string renderedException = Exceptions.RenderCurrentApplicationPoint(
                 "Script has been stopped.", "Exception", false, htmlOut
             );
@@ -57,27 +166,37 @@ namespace Desharp {
 			}
 			dispatcher.Stop();
 		}
-		public static string Dump (Exception e, DumpOptions? options = null) {
+		/// <summary>
+		/// Dump exception instance to application output if output printing is enabled. It renders:<para /><ul>
+		/// <li>exception message, hash id, type<para /></li>
+		/// <li>file where exception has been thrown<para /></li>
+		/// <li>thread callstack<para /></li>
+		/// <li>all inner exceptions after this exception in the same way<para /></li>
+		/// </ul></summary>
+		/// <param name="exception">Exception instance to print.</param>
+		/// <param name="options">Dump options to change if rendered exception will be printed into app output or returned as rendered string value.</param>
+		/// <returns>Returns empty string if debug printing is disabled  DumpOptions say to not return trendered value, else rendered exception is returned.</returns>
+		public static string Dump (Exception exception, DumpOptions? options = null) {
 			Dispatcher dispatcher = Dispatcher.GetCurrent();
-			dispatcher.LastError = e;
+			dispatcher.LastError = exception;
 			if (dispatcher.Enabled != true) return "";
 			if (!options.HasValue) options = new DumpOptions { Return = false, Depth = 0, MaxLength = 0 };
 			DumpOptions optionsValue = options.Value;
 			string dumpResult = "";
 			List<string> exceptionResult = new List<string>();
 			bool htmlOut = Dispatcher.EnvType == EnvType.Web;
-			if (e == null) {
+			if (exception == null) {
 				dumpResult = Dumper.Dump(null);
-			} else if (e is Exception) {
+			} else if (exception is Exception) {
 				if (!optionsValue.CatchedException.HasValue) {
 					optionsValue.CatchedException = true;
 				}
-				exceptionResult = Exceptions.RenderExceptions(e, false, htmlOut, optionsValue.CatchedException.Value);
+				exceptionResult = Exceptions.RenderExceptions(exception, false, htmlOut, optionsValue.CatchedException.Value);
 			} else {
 				if (!optionsValue.Depth.HasValue) optionsValue.Depth = 0;
 				if (!optionsValue.MaxLength.HasValue) optionsValue.MaxLength = 0;
 				if (!optionsValue.Return.HasValue) optionsValue.Return = false;
-				dumpResult = Dumper.Dump(e, htmlOut, optionsValue.Depth.Value, optionsValue.MaxLength.Value);
+				dumpResult = Dumper.Dump(exception, htmlOut, optionsValue.Depth.Value, optionsValue.MaxLength.Value);
 			}
 			if (!optionsValue.Return.HasValue || (optionsValue.Return.HasValue && !optionsValue.Return.Value)) {
 				if (dumpResult.Length == 0 && exceptionResult.Count > 0) {
@@ -93,6 +212,11 @@ namespace Desharp {
 				return dumpResult;
 			}
 		}
+		/// <summary>
+		/// Dump any values to application output, in web applications into debug bar, in desktop applications into console.
+		/// </summary>
+		/// <param name="args">Infinite number of values to dump into application output.</param>
+		/// <returns>All dumped values are always returned as rendered string.</returns>
 		public static string Dump (params object[] args) {
 			Dispatcher dispatcher = Dispatcher.GetCurrent();
 			if (dispatcher.Enabled != true) return "";
@@ -112,6 +236,12 @@ namespace Desharp {
 			dispatcher.WriteDumpToOutput(result);
 			return result;
 		}
+		/// <summary>
+		/// Dump any type value to application output, in web applications into debug bar, in desktop applications into console.
+		/// </summary>
+		/// <param name="obj">Any type value to dump into application output.</param>
+		/// <param name="options">Dump options to specify dump depth, max. strings length and returning dumped result as string.</param>
+		/// <returns>Returns empty string by default or dumped variable string if you specify returning boolean in DumpOptions.</returns>
 		public static string Dump (object obj, DumpOptions? options = null) {
 			Dispatcher dispatcher = Dispatcher.GetCurrent();
 			if (dispatcher.Enabled != true) return "";
@@ -133,10 +263,18 @@ namespace Desharp {
 			}
 			return result;
 		}
+		/// <summary>
+		/// Dump any type value to direct application output and stop request/thread, in web applications dump into direct response body, in desktop applications into console.
+		/// </summary>
+		/// <param name="obj">Any type value to dump into application output.</param>
+		/// <param name="options">Dump options to specify dump depth, max. strings length and returning dumped result as string.</param>
+		/// <returns>Returns empty string by default or dumped variable string if you specify returning boolean in DumpOptions.</returns>
 		public static string DumpAndDie (object obj, DumpOptions? options = null) {
 			if (!options.HasValue) options = new DumpOptions { Return = true, Depth = 0, MaxLength = 0 };
 			DumpOptions optionsValue = options.Value;
+			DumpOptions optionsValueClone = options.Value;
 			if (!optionsValue.Return.HasValue) optionsValue.Return = true;
+			if (!optionsValueClone.Return.HasValue) optionsValueClone.Return = false;
 			string result = Debug.Dump(obj, optionsValue);
 			if (Dispatcher.EnvType == EnvType.Web) {
 				HttpContext.Current.Response.Write(result);
@@ -144,19 +282,35 @@ namespace Desharp {
 				Console.Write(result);
 			}
 			Dispatcher.GetCurrent().Stop();
-			return "";
+			return optionsValueClone.Return == true ? result : "";
 		}
-		public static void Log (Exception e) {
+		/// <summary>
+		/// Log exception instance into exceptions.log|.html file:<para /><ul>
+		/// <li>exception message, hash id, type<para /></li>
+		/// <li>file where exception has been thrown<para /></li>
+		/// <li>thread callstack<para /></li>
+		/// <li>all inner exceptions after this exception in the same way<para /></li>
+		/// </ul></summary>
+		/// <param name="exception">Exception instance to print.</param>
+		public static void Log (Exception exception) {
 			Dispatcher dispatcher = Dispatcher.GetCurrent();
-			dispatcher.LastError = e;
-			bool htmlOut = dispatcher.Output == OutputType.Html;
-			List<string> renderedExceptions = Exceptions.RenderExceptions(e, true, htmlOut, true);
+			dispatcher.LastError = exception;
+			bool htmlOut = dispatcher.Output == LogFormat.Html;
+			List<string> renderedExceptions = Exceptions.RenderExceptions(exception, true, htmlOut, true);
 			if (Dispatcher.Levels["exception"] == 2) Mailer.Notify(String.Join(Environment.NewLine, renderedExceptions), "exception", htmlOut);
 			foreach (string renderedException in renderedExceptions) FileLog.Log(renderedException + Environment.NewLine, "exception");
 		}
+		/// <summary>
+		/// Log any type value to application *.log|*.html file, specified by level param.
+		/// </summary>
+		/// <param name="obj">Any type value to dump into application output.</param>
+		/// <param name="level">Log level to specify log file name and log level to write dumped variable or not by config settings.</param>
+		/// <param name="maxDepth">How many levels in complex type variables will be iterated throw to dump all it's properties, fields and other values.</param>
+		/// <param name="maxLength">If any dumped string length is larger than this value, it will be cutted into this max length.</param>
+		/// <returns>Returns empty string by default or dumped variable string if you specify returning boolean in DumpOptions.</returns>
 		public static void Log (object obj, Level level = Level.INFO, int maxDepth = 0, int maxLength = 0) {
 			Dispatcher dispatcher = Dispatcher.GetCurrent();
-			bool htmlOut = dispatcher.Output == OutputType.Html;
+			bool htmlOut = dispatcher.Output == LogFormat.Html;
 			string renderedObj;
 			string logLevelValue = LevelValues.Values[level];
 			if (level == Level.JAVASCRIPT) {
@@ -172,7 +326,7 @@ namespace Desharp {
                     renderedObj = e.Message;
                 }
 				if (htmlOut && renderedObj.Length > Dumper.HtmlDumpWrapper[0].Length && renderedObj.IndexOf(Dumper.HtmlDumpWrapper[0]) == 0) {
-					// remove begin <div class="item"> end </div>
+					// remove begin: <div class="desharp-dump"> and end: </div>
 					renderedObj = renderedObj.Substring(Dumper.HtmlDumpWrapper[0].Length, renderedObj.Length - (Dumper.HtmlDumpWrapper[0].Length + Dumper.HtmlDumpWrapper[1].Length));
 				}
 				renderedObj = Exceptions.RenderCurrentApplicationPoint(
