@@ -94,6 +94,7 @@ namespace Desharp.Core {
 			result.IsBodyHtml = htmlOut;
 			result.SubjectEncoding = System.Text.Encoding.UTF8;
 			result.BodyEncoding = System.Text.Encoding.UTF8;
+			result.Priority = MailPriority.Normal;
 			if (notifySettings.ContainsKey("priority")) {
 				string priority = notifySettings["priority"].ToString();
 				if (priority == "high") result.Priority = MailPriority.High;
@@ -135,13 +136,15 @@ namespace Desharp.Core {
 			smtp.DeliveryMethod = SmtpDeliveryMethod.Network;
 			if (notifySettings.ContainsKey("ssl")) {
 				smtp.EnableSsl = Boolean.Parse(notifySettings["ssl"].ToString());
+			} else {
+				smtp.EnableSsl = false;
 			}
+			int timeout = 10000;
 			if (notifySettings.ContainsKey("timeout")) {
 				string timeoutStr = notifySettings["timeout"].ToString();
-				int timeout = 10000;
 				Int32.TryParse(timeoutStr, out timeout);
-				smtp.Timeout = timeout;
 			}
+			smtp.Timeout = timeout;
 			return smtp;
 		}
 		protected static bool failFileExist () {

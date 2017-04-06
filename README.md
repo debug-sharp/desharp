@@ -111,7 +111,7 @@ You can configure by `app.config`/`web.config` or directly by calling `Debug.Con
         
         <!-- 
             Web debug panel enabled od console priniting enabled
-            - not required, but practical to useing it
+            - not required, recomanded
             - possible values: 1, 0, true, false
             - if not configured - enabled is only when VS debugger is attached or entry assembly is builded as Debug
             - if disabled - all Debug.Log() calls are still enabled, see more option "Desharp:Levels"
@@ -127,7 +127,7 @@ You can configure by `app.config`/`web.config` or directly by calling `Debug.Con
         
         <!--
             Loggin levels to enable/disable to write on hard drive and also to enable/disable for email notification
-            - not required, but practical to useing it
+            - not required, recomanded
             - possible values: exception, debug, info, notice, warning, error, critical, alert, emergency, javascript
             - if not configured, all logging levels are enabled for logging, not enabled for email notification
             - if at least one level is configured, then all other configured levels are disabled for logging and for email notification
@@ -138,8 +138,33 @@ You can configure by `app.config`/`web.config` or directly by calling `Debug.Con
         <add key="Desharp:Levels" value="+exception,debug,info,-notice,-warning,+error,+critical,alert,+emergency,javascript" />
         
         <!--
+            Logged messages notification by configured levels
+            - not required, recomanded in production mode
+            - possible values: 
+                - host: required, mail server smtp domain | IPv4 | IPv6
+                - port: not required, 25 by default
+                - ssl: not required, false by default
+                - from: required if no username and password specified, email address to specify sender, if no value specified, there is used username
+                - username and password: required if no from sender specified, mail server username/password for sender account, always necessary to use together
+                - to: required, recepient email adress or adresses separated by semicolon ';'
+                - priority: not required, possible values: 'low' | 'normal' | 'high', 'normal' by defaut
+                - timeout: not required, time cpecified in miliseconds, 10000 by default (10 seconds)
+        -->
+        <add key="Desharp:NotifySettings" value="{
+            host: 'smtp.host.com',
+            port: 25,
+            ssl: false,
+            user: 'username',
+            password: 'secret',
+            from: 'username@host.com',
+            to: 'mydaily@mailbox.com;myother@mailbox.com',
+            priority: 'high',
+            timeout: 30000
+        }" />
+        
+        <!--
             Absolute or relative path from application root directory
-            - not required, but practical to useing it
+            - not required, recomanded
             - relative path from app root has to start with '~/' like: '~/path/to/logs'
             - if not configured, all log files are written into application root directory
         -->
@@ -147,7 +172,7 @@ You can configure by `app.config`/`web.config` or directly by calling `Debug.Con
         
         <!--
             Milisecond timeout how often logged messages or exceptions are written from RAM to HDD
-            - not required, but very good for speed optimalization in production mode
+            - not required, recomanded for speed optimalization in production mode
             - possible values - use digits to define any miliseconds number
             - if not configured, all messages or exceptions are written in singleton background thread immediately
         -->
@@ -155,7 +180,7 @@ You can configure by `app.config`/`web.config` or directly by calling `Debug.Con
         
         <!--
             C# object dumping depth
-            - not required, but very good for speed optimalization in production mode
+            - not required, recomanded for speed optimalization in production mode
             - possible values: just digit like 3, 4 or 5
             - if not configured, 3 by default
         -->
@@ -163,7 +188,7 @@ You can configure by `app.config`/`web.config` or directly by calling `Debug.Con
         
         <!--
             Max length for dumped string values
-            - not required, but very good for speed optimalization in production mode
+            - not required, recomanded for speed optimalization in production mode
             - possible values: just digit like 512, 1024 or 4000
             - if not configured, 1024 by default
         -->
@@ -212,7 +237,7 @@ You can configure by `app.config`/`web.config` or directly by calling `Debug.Con
         
         <!-- 
             Web debug panel enabled od console priniting enabled
-            - not required, but practical to useing it
+            - not required, recomanded
             - possible values: 1, 0, true, false
             - if not configured - enabled is only when VS debugger is attached or entry assembly is builded as Debug
             - if disabled - all Debug.Log() calls are still enabled, see more option "Desharp:Levels"
@@ -228,7 +253,7 @@ You can configure by `app.config`/`web.config` or directly by calling `Debug.Con
         
         <!--
             Client ip adresses list to limit enabled desharp only for some users
-            - not required, but practical to useing it
+            - not required, recomanded
             - possible values: IPv4 or IPv6, separated by comma
             - if not configured and desharp is enabled, then is enabled for all client ips
         -->
@@ -236,7 +261,7 @@ You can configure by `app.config`/`web.config` or directly by calling `Debug.Con
         
         <!--
             Loggin levels to enable/disable to write on hard drive and also to enable/disable for email notification
-            - not required, but practical to useing it
+            - not required, recomanded
             - possible values: exception, debug, info, notice, warning, error, critical, alert, emergency, javascript
             - if not configured, all logging levels are enabled for logging, not enabled for email notification
             - if at least one level is configured, then all other configured levels are disabled for logging and for email notification
@@ -245,10 +270,32 @@ You can configure by `app.config`/`web.config` or directly by calling `Debug.Con
             - if you want to enable any logging level for email notification - put plus (+) character before level name
         -->
         <add key="Desharp:Levels" value="+exception,debug,info,-notice,-warning,+error,+critical,alert,+emergency,javascript" />
+
+        <!--
+            Logged messages notification by configured levels
+            - not required, recomanded in production mode
+            - possible values: exception, debug, info, notice, warning, error, critical, alert, emergency, javascript
+            - if not configured, all logging levels are enabled for logging, not enabled for email notification
+            - if at least one level is configured, then all other configured levels are disabled for logging and for email notification
+            - if you want to enable any logging level - write level name bellow
+            - if you want to disable any logging level - put minus (-) character before level name or remove level name
+            - if you want to enable any logging level for email notification - put plus (+) character before level name
+        -->
+        <add key="Desharp:NotifySettings" value="{
+            host: 'smtp.host.com',
+            port: 25,
+            ssl: false,
+            user: 'username',
+            password: 'secret',
+            from: 'username@host.com',
+            to: 'mydaily@mailbox.com',
+            priority: 'high',
+            timeout: 30000
+        }" />
         
         <!--
             Web debug bar panels
-            - not required, good for advanced C# developers who want to extend desharp tool
+            - not required, recomanded
             - full class names separated by comma character
             - all panel classes has to implement abstract class: Desharp.Panels.Abstract
             - build-in panels you can use: Desharp.Panels.Session (Desharp.Panels.Routing - TODO)
@@ -258,7 +305,7 @@ You can configure by `app.config`/`web.config` or directly by calling `Debug.Con
         
         <!--
             Absolute or relative path from application root directory
-            - not required, but practical to useing it
+            - not required, recomanded
             - relative path from app root has to start with '~/' like: '~/path/to/logs'
             - if not configured, all log files are written into application root directory
         -->
@@ -266,7 +313,7 @@ You can configure by `app.config`/`web.config` or directly by calling `Debug.Con
         
         <!--
             Milisecond timeout how often logged messages or exceptions are written from RAM to HDD
-            - not required, but very good for speed optimalization in production mode
+            - not required, recomanded for speed optimalization in production mode
             - possible values - use digits to define any miliseconds number
             - if not configured, all messages or exceptions are written in singleton background thread immediately
         -->
@@ -274,7 +321,7 @@ You can configure by `app.config`/`web.config` or directly by calling `Debug.Con
         
         <!--
             C# object dumping depth
-            - not required, but very good for speed optimalization in production mode
+            - not required, recomanded for speed optimalization in production mode
             - possible values: just digit like 3, 4 or 5
             - if not configured, 3 by default
         -->
@@ -282,7 +329,7 @@ You can configure by `app.config`/`web.config` or directly by calling `Debug.Con
         
         <!--
             Max length for dumped string values
-            - not required, but very good for speed optimalization in production mode
+            - not required, recomanded for speed optimalization in production mode
             - possible values: just digit like 512, 1024 or 4000
             - if not configured, 1024 by default
         -->
@@ -290,7 +337,7 @@ You can configure by `app.config`/`web.config` or directly by calling `Debug.Con
 
         <!--
             Custom web error page
-            - not required, but very good for production mode to be original
+            - not required, recomanded for production mode to be original
             - if desharp is not enabled and there is uncatched exception in your application,
               you can use custom static error page to transfer into client browser
             - if not configured - desharp build-in error page is used by default

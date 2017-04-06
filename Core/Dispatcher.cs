@@ -26,6 +26,7 @@ namespace Desharp.Core {
 		internal static LogFormat? OutputGlobal = null;
 		internal static Dictionary<string, int> Levels;
 		internal static string WebStaticErrorPage;
+		internal static readonly VirtualPathProvider VirtualPathProvider;
 
 		protected static List<string> webHtmlXmlMimeTypes = new List<string>() {
 			"text/html", "application/xhtml+xml", "text/xml",
@@ -45,7 +46,8 @@ namespace Desharp.Core {
 		internal double WebRequestEndTime = 0;
 
 		protected bool? webRedirect = false;
-		protected bool webHtmlXmlOutput = false;
+		// -1 - it will be never rendered, 0 - it shoud be rendered but will not by default, 1 - it will be rendered
+		protected int webRenderDesharpBar = 0;
 		protected bool webTransmitErrorPage = false;
 		protected List<List<RenderedPanel>> webReqEndSession = null;
 		protected Dictionary<string, Panels.Abstract> webBarPanels = null;
@@ -58,6 +60,7 @@ namespace Desharp.Core {
 			if (cfgMaxLength > 0) Dispatcher.DumpMaxLength = cfgMaxLength;
 			Dispatcher.Levels = Config.GetLevels();
 			Dispatcher.LogWriteMilisecond = Config.GetLogWriteMilisecond();
+			Dispatcher.VirtualPathProvider = HostingEnvironment.VirtualPathProvider;
 			if (HttpRuntime.AppDomainAppId != null && HostingEnvironment.IsHosted) {
 				Dispatcher.EnvType = EnvType.Web;
 				Dispatcher.AppRoot = HttpContext.Current.Server.MapPath("~").Replace('\\', '/').TrimEnd('/');
@@ -121,16 +124,42 @@ namespace Desharp.Core {
 		internal static void Disposed () {
 			FileLog.Disposed();
 		}
+		internal static bool WebCheckIfRequestIsForHtml () {
+			string[] requestAcceptTypes = HttpContext.Current.Request.AcceptTypes;
+			string requestFirstAcceptType = requestAcceptTypes.Length > 0 ? requestAcceptTypes[0].ToLower() : "";
+			bool result = false;
+			foreach (string mimeType in Dispatcher.webHtmlXmlMimeTypes) {
+				if (mimeType.IndexOf("html") > -1) {
+					if (requestFirstAcceptType.IndexOf(mimeType) > -1) {
+						result = true;
+						break;
+					}
+				} else {
+					break;
+				}
+			}
+			return result;
+		}
 		internal static bool WebCheckIfResponseIsHtmlOrXml (bool checkForXmlOnly = false) {
 			string responseContentType = HttpContext.Current.Response.ContentType.ToLower();
 			bool result = false;
-			foreach (string mimeType in Dispatcher.webHtmlXmlMimeTypes) {
-				if (
-					(!checkForXmlOnly || (checkForXmlOnly && mimeType.IndexOf("xml") > -1)) &&
-					responseContentType.IndexOf(mimeType) > -1
-				) {
-					result = true;
-					break;
+			if (checkForXmlOnly) {
+				foreach (string mimeType in Dispatcher.webHtmlXmlMimeTypes) {
+					if (mimeType.IndexOf("xml") > -1 && responseContentType.IndexOf(mimeType) > -1) {
+						result = true;
+						break;
+					}
+				}
+			} else {
+				foreach (string mimeType in Dispatcher.webHtmlXmlMimeTypes) {
+					if (mimeType.IndexOf("html") > -1) {
+						if (responseContentType.IndexOf(mimeType) > -1) {
+							result = true;
+							break;
+						}
+					} else {
+						break;
+					}
 				}
 			}
 			return result;
@@ -243,6 +272,15 @@ namespace Desharp.Core {
 			}
 			return redirectCode || redirectHeader;
 		}
+		protected static bool webIsRequestToFileWithDotNetExecExtension () {
+			string ext = HttpContext.Current.Request.CurrentExecutionFilePathExtension.ToLower();
+			// empty string for example in all MVC apps controller/action requests...
+			return ext == "" || ext == ".aspx" || ext == ".asp" || ext == ".cshtml" || ext == ".cshtm" || ext == ".vbhtml" || ext == ".vbhtm" || ext == ".ashx" || ext == ".asmx";
+		}
+		protected static bool webIsRequestToHomepageOrDefaultHomepageFile () {
+			string relativeRequestPath = HttpContext.Current.Request.AppRelativeCurrentExecutionFilePath.ToLower();
+			return relativeRequestPath == "~/" || relativeRequestPath == "~/default.aspx" || relativeRequestPath == "~/index.aspx";
+		}
 		protected static List<List<RenderedPanel>> webGetSessionStorrage () {
 			List<List<RenderedPanel>> result = new List<List<RenderedPanel>>();
 			HttpSessionState session = HttpContext.Current.Session;
@@ -277,7 +315,7 @@ namespace Desharp.Core {
 					FileLog.Log(dumpedCode, LevelValues.Values[Level.DEBUG]);
 				} else {
 					if (this.webBarPanels == null) {
-						this.webHtmlXmlOutput = true; // forcely change xml/html output type
+						this.webRenderDesharpBar = 1; // forcely change to render web bar
 						this.webInitWebBarPanels();
 					}
 					if (this.webBarPanels.ContainsKey(Panels.Dumps.PanelName)) {
@@ -298,7 +336,7 @@ namespace Desharp.Core {
 					}
 				} else {
 					if (this.webBarPanels == null) {
-						this.webHtmlXmlOutput = true; // forcely change xml/html output type
+						this.webRenderDesharpBar = 1; // forcely change to render web bar
 						this.webInitWebBarPanels();
 					}
 					if (this.webBarPanels.ContainsKey(Panels.Dumps.PanelName)) {
@@ -326,7 +364,7 @@ namespace Desharp.Core {
 		}
 		internal void WebRequestBegin () {
 			if (this.Enabled == true) {
-				this.webHtmlXmlOutput = Dispatcher.WebCheckIfResponseIsHtmlOrXml();
+				this.webInitBarRendering();
 				this.webInitWebBarPanels();
 			}
 			this.WebRequestState = 1;
@@ -371,7 +409,10 @@ namespace Desharp.Core {
 			if (this.Enabled == true) {
 				if (!this.webRedirect.HasValue) this.webRedirect = Dispatcher.webCheckIfResponseIsRedirect();
 				// add possible rendered exceptions and debug bar if necessary
-				if (this.webHtmlXmlOutput && this.webRedirect != true) {
+				if (this.webRenderDesharpBar > -1 && Dispatcher.WebCheckIfResponseIsHtmlOrXml()) {
+					this.webRenderDesharpBar = 1;
+				}
+				if (this.webRenderDesharpBar == 1 && this.webRedirect != true) {
 					string responseContentType = HttpContext.Current.Response.ContentType.ToLower();
 					if (!Dispatcher.WebCheckIfResponseIsHtmlOrXml()) {
 						// if there was necessary to render in output anything (by response type change to text/html)
@@ -480,7 +521,7 @@ namespace Desharp.Core {
 			}
 		}
 		protected void webInitWebBarPanels (long crt = -1) {
-			if (!this.webHtmlXmlOutput) return; // do not register any panels for non html/xml outputs
+			if (this.webRenderDesharpBar < 1) return; // do not register any panels for non html/xml outputs
 			this.webBarPanels = new Dictionary<string, Panels.Abstract>();
 			Panels.Abstract panel;
 			foreach (var item in Dispatcher.webBarRegisteredPanels) {
@@ -491,6 +532,22 @@ namespace Desharp.Core {
 					));
 				}
 				this.webBarPanels.Add(panel.Name, panel);
+			}
+		}
+		protected void webInitBarRendering () {
+			string relativeRequestPath = HttpContext.Current.Request.AppRelativeCurrentExecutionFilePath;
+			if (
+				Dispatcher.webIsRequestToHomepageOrDefaultHomepageFile() == false &&
+				Dispatcher.webIsRequestToFileWithDotNetExecExtension() == false && (
+					Dispatcher.VirtualPathProvider.FileExists(relativeRequestPath) ||
+					Dispatcher.VirtualPathProvider.DirectoryExists(relativeRequestPath)
+				)
+			) {
+				this.webRenderDesharpBar = -1;
+			} else if (Dispatcher.WebCheckIfRequestIsForHtml()) {
+				this.webRenderDesharpBar = 1;
+			} else {
+				this.webRenderDesharpBar = 0;
 			}
 		}
 	}

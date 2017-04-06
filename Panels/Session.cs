@@ -26,16 +26,19 @@ namespace Desharp.Panels {
 		protected StringBuilder content = new StringBuilder();
 		public void SessionEnd () {
 			HttpSessionState session = HttpContext.Current.Session;
-			this.content.Append(@"<h4 style=""margin:0 0 2px 0;"">Configuration:</h4>");
-			this.content.Append(@"<p style=""margin: 2px 0 5px 0;font-size:14px;"">");
-			this.content.Append("&nbsp;&nbsp;Timeout: " + session.Timeout + "<br />");
-			this.content.Append("&nbsp;&nbsp;Mode: " + session.Mode.ToString() + "<br />");
-			this.content.Append("&nbsp;&nbsp;CookieMode: " + session.CookieMode.ToString());
-			if (session.Count == 0) this.content.Append("<br />&nbsp;&nbsp;no items");
+			this.content.Append(@"<div class=""content"">");
+			this.content.Append(@"<b class=""heading"">Configuration:</b>");
+			this.content.Append(@"<table class=""session-configuration""><tbody>");
+			this.content.Append("<tr><th>Timeout</th><td>" + session.Timeout + "</td></tr>");
+			this.content.Append("<tr><th>Mode</th><td>" + session.Mode.ToString() + "</td></tr>");
+			this.content.Append("<tr><th>CookieMode</th><td>" + session.CookieMode.ToString() + "</td></tr>");
+			this.content.Append("</tbody></table>");
+			if (session.Count == 0) this.content.Append(@"<b class=""heading"">No items</b>");
 			this.content.Append("</p>");
 			this.count = session.Count;
 			if (session.Count > 0) { 
-				this.content.Append(@"<h4 style=""margin:5px 0 2px 0;"">Items:</h4>");
+				this.content.Append(@"<b class=""heading"">Items:</b>");
+				this.content.Append(@"<div class=""inset"">");
 				string sessionKey;
 				int depth = Session.DumpDepth > 0 ? Session.DumpDepth : Dispatcher.DumpDepth;
 				string dumpBeginCode = @"<div class=""desharp-dump"">";
@@ -55,7 +58,9 @@ namespace Desharp.Panels {
 						dumpCode.Substring(beginCodePos + dumpBeginCode.Length);
 					this.content.Append(dumpCode);
 				}
+				this.content.Append("</div>");
 			}
+			this.content.Append("</div>");
 		}
 		public override string RenderBarText () {
 			return "Session (" + this.count + ")";

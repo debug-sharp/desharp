@@ -52,7 +52,7 @@ namespace Desharp.Renderers {
 			if (level == maxDepth) return Dumper._dumpRecursiveHandleLastLevelDepth(obj, htmlOut, maxLength, level, sequence);
 			string result;
 			if (Detector.IsPrimitiveType(obj)) {
-				result = Dumper._dumpPrimitiveType(obj, level, htmlOut, maxLength, sequence);
+				result = Dumper.DumpPrimitiveType(obj, level, htmlOut, maxLength, sequence);
 			} else if (Detector.IsArray(obj)) {
 				result = Dumper._dumpArray(obj, level, htmlOut, ids, maxDepth, maxLength, sequence);
 			} else if (Detector.IsNameValueCollection(obj)) {
@@ -125,7 +125,8 @@ namespace Desharp.Renderers {
 				if (lastArrCharsPos == typeStr.Length - 2) {
 					int startIndex = lastArrCharsPos; // typeStr.Length - 2
 					int arrCharsPos;
-					while (true) {
+					int safeCounter = 0;
+					while (true && safeCounter < 50) {
 						arrCharsPos = typeStr.IndexOf("[]", startIndex - 2);
 						if (arrCharsPos > -1 && arrCharsPos < lastArrCharsPos) {
 							lastArrCharsPos = arrCharsPos;
@@ -133,6 +134,7 @@ namespace Desharp.Renderers {
 						} else {
 							break;
 						}
+						safeCounter++;
 					}
 					typeStr = typeStr.Substring(0, lastArrCharsPos) + "[" + length + "]" + typeStr.Substring(lastArrCharsPos + 2);
 				} else if (obj != null) {
@@ -161,7 +163,7 @@ namespace Desharp.Renderers {
 		private static string _dumpRecursiveHandleLastLevelDepth (object obj, bool htmlOut, int maxLength, int level, string sequence) {
 			// in last level - print out only single line prints, complex object only as: ... [Type]
 			if (Detector.IsPrimitiveType(obj)) {
-				return Dumper._dumpPrimitiveType(obj, level, htmlOut, maxLength, sequence);
+				return Dumper.DumpPrimitiveType(obj, level, htmlOut, maxLength, sequence);
 			} else if (Detector.IsEnum(obj)) {
 				return Dumper._dumpEnum(obj, level, htmlOut, sequence);
 			} else if (Detector.IsTypeObject(obj)) {
@@ -202,7 +204,7 @@ namespace Desharp.Renderers {
 			}
 			return result;
 		}
-		private static string _dumpPrimitiveType (object obj, int level, bool htmlOut, int maxLength, string sequence) {
+		internal static string DumpPrimitiveType (object obj, int level, bool htmlOut, int maxLength, string sequence) {
 			string renderedValue = "";
 			if (obj == null) {
 				renderedValue = Dumper._getNullCode(htmlOut);
@@ -597,13 +599,15 @@ namespace Desharp.Renderers {
 			// search through in parent classes, because they are not automaticly returned through Type reflection
 			Type objectType = typeof(Object);
 			Type currentType = objType;
-			while (true) {
+			int safeCounter = 0;
+			while (true && safeCounter < 50) {
 				currentType = currentType.BaseType;
 				if (currentType == null || currentType.Equals(objectType)) break;
 				Dumper._getUnknownTypedProperties(items, ref flagsLength, ref namesLength, obj, level, htmlOut, ids, maxDepth, maxLength, sequence, currentType, BindingFlags.Static | BindingFlags.Public);
 				Dumper._getUnknownTypedFields(items, ref flagsLength, ref namesLength, obj, level, htmlOut, ids, maxDepth, maxLength, sequence, currentType, BindingFlags.Static | BindingFlags.Public);
 				Dumper._getUnknownTypedProperties(items, ref flagsLength, ref namesLength, obj, level, htmlOut, ids, maxDepth, maxLength, sequence, currentType, BindingFlags.Static | BindingFlags.NonPublic);
 				Dumper._getUnknownTypedFields(items, ref flagsLength, ref namesLength, obj, level, htmlOut, ids, maxDepth, maxLength, sequence, currentType, BindingFlags.Static | BindingFlags.NonPublic);
+				safeCounter++;
 			}
             DumpType type = Dumper.GetDumpTypes(obj, items.Count.ToString(), htmlOut, true, sequence);
             string flags;

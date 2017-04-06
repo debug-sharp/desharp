@@ -75,10 +75,10 @@ namespace Desharp {
 		/// </summary>
 		/// <returns>Returned values is number of seconds with 3 decimal places after comma with miliseconds.</returns>
 		public static double GetProcessingTime () {
-			long nowTicks = (Dispatcher.EnvType == EnvType.Windows)
+			long startTicks = (Dispatcher.EnvType == EnvType.Windows)
 				? Process.GetCurrentProcess().StartTime.Ticks
 				: Tools.GetRequestId();
-			double r = new TimeSpan(nowTicks - DateTime.Now.Ticks).TotalSeconds;
+			double r = new TimeSpan(DateTime.Now.Ticks - startTicks).TotalSeconds;
 			return Math.Round(r * 1000) / 1000;
         }
 		/// <summary>
@@ -100,7 +100,7 @@ namespace Desharp {
 			} else {
 				Dictionary<string, double> timers = Dispatcher.GetCurrent().Timers;
 				if (timers.ContainsKey(name)) {
-					result = nowTicks - timers[name];
+					result = (nowTicks - timers[name]);
 					timers[name] = nowTicks;
 				} else {
 					result = 0;
@@ -109,22 +109,23 @@ namespace Desharp {
 			}
 			Dispatcher dispatcher = Dispatcher.GetCurrent();
 			if (!returnTimerSeconds) {
-				string dumpResult = (nameIsNullOrEmpty ? "" : name + ": ") 
-					+ String.Format(CultureInfo.InvariantCulture, "{0:0,0.000}", result) + " s";
-				bool htmlOut = Dispatcher.EnvType == EnvType.Web;
-				if (htmlOut) {
-					dumpResult = @"<div class=""timer"">" + dumpResult + "</div>";
+				double seconds = new TimeSpan((long)result).TotalSeconds;
+				string dumpResult = String.Format(CultureInfo.InvariantCulture, seconds < 1000 ? "{0:0.000}" : "{0:0,0.000}", seconds);
+				if (Dispatcher.EnvType == EnvType.Web || (dispatcher.Enabled != true && dispatcher.Output == LogFormat.Html)) {
+					dumpResult = (nameIsNullOrEmpty ? "" : "<i>" + name.Replace(" ", "&nbsp;") + ":</i>")
+						+ "<b>" + dumpResult + "&nbsp;s</b>"
+						+ @"<span class=""type"">[Desharp.Timer]</span>";
 					if (dispatcher.Enabled == true) {
-						dumpResult = Dumper.HtmlDumpWrapper[0] + dumpResult + Dumper.HtmlDumpWrapper[1];
+						dumpResult = Dumper.HtmlDumpWrapper[0].Replace("-dump", "-dump timer") + dumpResult + Dumper.HtmlDumpWrapper[1];
 					}
-				} else if (dispatcher.Enabled == true) {
-					dumpResult += Environment.NewLine;
+				} else {
+					dumpResult = (nameIsNullOrEmpty ? "" : name + ": ") + dumpResult + " s [Desharp.Timer]" + Environment.NewLine;
 				}
 				if (dispatcher.Enabled == true) {
 					dispatcher.WriteDumpToOutput(dumpResult);
 				} else {
 					dumpResult = Exceptions.RenderCurrentApplicationPoint(
-						dumpResult, "Value", true, htmlOut
+						dumpResult, "Value", true, dispatcher.Output == LogFormat.Html
 					) + Environment.NewLine;
 					FileLog.Log(dumpResult, LevelValues.Values[logLevel]);
 				}
@@ -182,7 +183,7 @@ namespace Desharp {
 		/// <li><b>Return</b> (bool, optional) - if exception will be dumped into application output (as default) or returned as dumped string value.<para /></li>
 		/// </ul></param>
 		/// <returns>Returns empty string if debug printing is disabled and also returns empty string if second param <c>DumpOptions.Return</c> is <c>false</c> (by default), but if true, return dumped exception as string.</returns>
-		public static string Dump (Exception exception, DumpOptions? options = null) {
+		public static string Dump (Exception exception = null, DumpOptions? options = null) {
 			Dispatcher dispatcher = Dispatcher.GetCurrent();
 			dispatcher.LastError = exception;
 			if (dispatcher.Enabled != true) return "";
@@ -251,6 +252,7 @@ namespace Desharp {
 		/// <li><b>Depth</b> (int, optional) - how many levels in complex type variables will be iterated throw to dump all it's properties, fields and other values.<para /></li>
 		/// <li><b>MaxLength</b> (int, optional) - if any dumped string length is larger than this value, it will be cutted into this max. length.<para /></li>
 		/// <li><b>Return</b> (bool, optional)- if value will be dumped into application output (as default) or returned as dumped string value.<para /></li>
+		/// </ul></param>
 		/// <returns>Returns empty string by default or dumped variable string if you specify in second argument <c>DumpOptions.Return</c> to be <c>true</c>.</returns>
 		public static string Dump (object obj, DumpOptions? options = null) {
 			Dispatcher dispatcher = Dispatcher.GetCurrent();
@@ -282,8 +284,9 @@ namespace Desharp {
 		/// <li><b>Depth</b> (int, optional) - how many levels in complex type variables will be iterated throw to dump all it's properties, fields and other values.<para /></li>
 		/// <li><b>MaxLength</b> (int, optional) - if any dumped string length is larger than this value, it will be cutted into this max. length.<para /></li>
 		/// <li><b>Return</b> (bool, optional)- if value will be dumped into application output (as default) or returned as dumped string value.<para /></li>
+		/// </ul></param>
 		/// <returns>Returns empty string by default or dumped variable string if you specify in second argument <c>DumpOptions.Return</c> to be <c>true</c>.</returns>
-		public static string DumpAndDie (object obj, DumpOptions? options = null) {
+		public static string DumpAndDie (object obj = null, DumpOptions? options = null) {
 			if (!options.HasValue) options = new DumpOptions { Return = true, Depth = 0, MaxLength = 0 };
 			DumpOptions optionsValue = options.Value;
 			DumpOptions optionsValueClone = options.Value;
@@ -309,7 +312,7 @@ namespace Desharp {
 		/// <li>all inner exceptions after this exception in the same way<para /></li>
 		/// </ul></summary>
 		/// <param name="exception">Exception instance to print.</param>
-		public static void Log (Exception exception) {
+		public static void Log (Exception exception = null) {
 			Dispatcher dispatcher = Dispatcher.GetCurrent();
 			dispatcher.LastError = exception;
 			bool htmlOut = dispatcher.Output == LogFormat.Html;
@@ -325,7 +328,7 @@ namespace Desharp {
 		/// <param name="maxDepth">How many levels in complex type variables will be iterated throw to dump all it's properties, fields and other values.</param>
 		/// <param name="maxLength">If any dumped string length is larger than this value, it will be cutted into this max. length.</param>
 		/// <returns>Returns empty string by default or dumped variable string if you specify in second argument <c>DumpOptions.Return</c> to <c>true</c>.</returns>
-		public static void Log (object obj, Level level = Level.INFO, int maxDepth = 0, int maxLength = 0) {
+		public static void Log (object obj = null, Level level = Level.INFO, int maxDepth = 0, int maxLength = 0) {
 			Dispatcher dispatcher = Dispatcher.GetCurrent();
 			bool htmlOut = dispatcher.Output == LogFormat.Html;
 			string renderedObj;

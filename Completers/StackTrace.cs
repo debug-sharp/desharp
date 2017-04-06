@@ -5,6 +5,9 @@ using System.Text.RegularExpressions;
 using Desharp.Core;
 using System.Linq;
 using Desharp.Renderers;
+using System.Web;
+using System.Reflection;
+using System.CodeDom.Compiler;
 
 namespace Desharp.Completers {
 	internal class StackTrace {
@@ -79,12 +82,33 @@ namespace Desharp.Completers {
 			string causedByHash = "";
 			string causedByType = "";
 			string causedByMessage = "";
+			string exceptionMessage = exceptionToRender.Exception.Message;
 			if (index == 0 && !fileSystemLog) {
 				// there is possible view exception
-				possibleViewExceptionStackTrace = StackTrace._getPossibleViewExceptionInfo(exceptionToRender.Exception);
+				/*possibleViewExceptionStackTrace = StackTrace._getPossibleViewExceptionInfo(exceptionToRender.Exception);
 				if (possibleViewExceptionStackTrace.HasValue) {
 					errorFile = possibleViewExceptionStackTrace;
+				}*/
+				if (exceptionToRender.Exception is HttpCompileException) {
+					PropertyInfo[] props = exceptionToRender.Exception.GetType().GetProperties(BindingFlags.NonPublic | BindingFlags.Instance);
+					PropertyInfo prop;
+					for (int i = 0, l = props.Length; i < l; i += 1) {
+						prop = props[i];
+						if (prop.Name == "FirstCompileError") {
+							CompilerError compileError = prop.GetValue(exceptionToRender.Exception, null) as CompilerError;
+							if (compileError is CompilerError) {
+								exceptionMessage = compileError.ErrorText;
+								errorFile = new StackTraceItem {
+									File = compileError.FileName,
+									Line = compileError.Line.ToString(),
+									Column = compileError.Column.ToString()
+								};
+							}
+							break;
+						}
+					}
 				}
+
 			}
 			if (errorFile == null && !fileSystemLog) {
 				foreach (StackTraceItem stackTraceItem in stackTraceItems) {
@@ -97,7 +121,6 @@ namespace Desharp.Completers {
 					}
 				}
 			}
-			string exceptionMessage = exceptionToRender.Exception.Message;
 			if (htmlOut) {
 				exceptionMessage = exceptionMessage
 					.Replace("&", "&amp;")
@@ -138,7 +161,8 @@ namespace Desharp.Completers {
 			Exception baseException;
 			string baseExceptionImprint;
 			bool breakWhile;
-			while (true) {
+			int safeCounter = 0;
+			while (true && safeCounter < 10) {
 				breakWhile = true;
 				try {
 					if (useBaseExceptionsGetter) { 
@@ -159,6 +183,7 @@ namespace Desharp.Completers {
 					}
 				} catch (Exception _e1) {
 				}
+				safeCounter++;
 				if (breakWhile) break;
 			}
 		}
@@ -201,7 +226,7 @@ namespace Desharp.Completers {
 			}
 			return result;
 		}
-		private static StackTraceItem? _getPossibleViewExceptionInfo (Exception e) {
+		/*private static StackTraceItem? _getPossibleViewExceptionInfo (Exception e) {
 			StackTraceItem? result = null;
 			string viewAbsPath = "";
 			string viewLine = "";
@@ -263,7 +288,7 @@ namespace Desharp.Completers {
 				}
 			}
 			return result;
-		}
+		}*/
 		private static string _getLastRenderedView () {
 			string result = "";
 			long crt = Tools.GetRequestId();

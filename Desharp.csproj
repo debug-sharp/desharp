@@ -34,6 +34,10 @@
     <Prefer32Bit>false</Prefer32Bit>
     <DocumentationFile>bin\Debug\Desharp.XML</DocumentationFile>
   </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>
+    </ApplicationIcon>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
@@ -62,6 +66,7 @@
     <Compile Include="Core\Structs\DumpOptions.cs" />
     <Compile Include="Core\Structs\ExceptionToRender.cs" />
     <Compile Include="Core\Structs\RenderedPanel.cs" />
+    <Compile Include="Core\Structs\RouteTarget.cs" />
     <Compile Include="Core\WinDebuggerAttaching.cs" />
     <Compile Include="Debug.cs" />
     <Compile Include="Core\Config.cs" />
@@ -101,11 +106,10 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="content\App.config.transform" />
+    <None Include="content\Desharp.config.example" />
     <None Include="Desharp.nuspec" />
     <None Include="content\Web.config.transform" />
-    <None Include="README.md" />
     <None Include="_CreateNewNuGetPackage\DoNotModify\NuGet.exe" />
-    <None Include="content\App.config.example" />
     <None Include="packages.config" />
     <None Include="_CreateNewNuGetPackage\Config.ps1" />
     <None Include="_CreateNewNuGetPackage\DoNotModify\CreateNuGetPackage.ps1" />
@@ -114,6 +118,9 @@
     <None Include="_CreateNewNuGetPackage\RunMeToUploadNuGetPackage.cmd" />
   </ItemGroup>
   <ItemGroup />
+  <ItemGroup>
+    <Content Include="Assets\node_modules\desharp-assets\src\dumps.js" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PreBuildEvent>IF EXIST $(ProjectDir)Assets\node_modules\desharp-assets (

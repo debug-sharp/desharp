@@ -10,7 +10,7 @@ namespace Desharp.Producers {
         private static string _assets;
         static HtmlResponse () {
             HtmlResponse._assets = System.Environment.NewLine
-                + "<style>" + Assets.bar_css + Assets.bar_window_css + Assets.bar_exception_css + Assets.exception_css + Assets.dumps_css + "</style>"
+                + "<style>" + Assets.bar_css + Assets.bar_window_css + Assets.bar_panels_css + Assets.bar_exception_css + Assets.exception_css + Assets.dumps_css + "</style>"
                 + System.Environment.NewLine
                 + "<script>" + Assets.dumps_js + "</script>";
         }

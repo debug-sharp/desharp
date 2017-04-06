@@ -112,9 +112,11 @@ namespace Desharp.Core {
 			if (HttpContext.Current == null || HttpContext.Current.ApplicationInstance == null) {
 				return null;
 			}
+			int safeCounter = 0;
 			Type type = System.Web.HttpContext.Current.ApplicationInstance.GetType();
-			while (type != null && type.Namespace == "ASP") {
+			while (type != null && type.Namespace == "ASP" && safeCounter < 50) {
 				type = type.BaseType;
+				safeCounter++;
 			}
 			return type == null ? null : type.Assembly;
 		}

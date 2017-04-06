@@ -27,7 +27,7 @@
     </releaseNotes>
   </metadata>
   <files>
-    <file src="content/App.config.example" target="content/App.config.example" />
+    <file src="content/Desharp.config.example" target="content/Desharp.config.example" />
     <file src="content/App.config.transform" target="content/App.config.transform" />
     <file src="content/Web.config.transform" target="content/Web.config.transform" />
   </files>

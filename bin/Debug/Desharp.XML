@@ -188,6 +188,32 @@
             Web debug panel with rendered content showed on whole browser screen, used for exceptions panel.
             </summary>
         </member>
+        <member name="T:Desharp.Module">
+            <summary>
+            ASP.NET Http module to dispatch Desharp separately from original application.
+            </summary>
+        </member>
+        <member name="P:Desharp.Module.ModuleName">
+            <summary>
+            Unique module name
+            </summary>
+        </member>
+        <member name="M:Desharp.Module.#ctor">
+            <summary>
+            Empty constructor - required by IHttpModule interface
+            </summary>
+        </member>
+        <member name="M:Desharp.Module.Dispose">
+            <summary>
+            Empty method Dispose - required by IHttpModule interface
+            </summary>
+        </member>
+        <member name="M:Desharp.Module.Init(System.Web.HttpApplication)">
+            <summary>
+            Application request events initialization - BeginRequest, AcquireRequestState, PostRequestHandlerExecute, PreSendRequestHeaders, EndRequest, Error and Disposed
+            </summary>
+            <param name="application">ASP.NET aplication instance.</param>
+        </member>
         <member name="T:Desharp.DumpOptions">
             <summary>
             Dump options for Desharp.Debug.Dump() calls to optimize how values or exceptions should be rendered or how to work with rendered results.
@@ -318,8 +344,32 @@
             <param name="args">Infinite number of values to dump into application output.</param>
             <returns>All dumped values are in this function version always returned as dumped string.</returns>
         </member>
-        <!-- Badly formed XML comment ignored for member "M:Desharp.Debug.Dump(System.Object,System.Nullable{Desharp.DumpOptions})" -->
-        <!-- Badly formed XML comment ignored for member "M:Desharp.Debug.DumpAndDie(System.Object,System.Nullable{Desharp.DumpOptions})" -->
+        <member name="M:Desharp.Debug.Dump(System.Object,System.Nullable{Desharp.DumpOptions})">
+            <summary>
+            Dump any type value to application output (in web applications into debug bar, in desktop applications into console).
+            </summary>
+            <param name="obj">Any type value to dump into application output.</param>
+            <param name="options">Dump options collection (optional) - just create new instance with public fields of that:<para /><br />
+            For this dump call you can change options:<para /><ul>
+            <li><b>Depth</b> (int, optional) - how many levels in complex type variables will be iterated throw to dump all it's properties, fields and other values.<para /></li>
+            <li><b>MaxLength</b> (int, optional) - if any dumped string length is larger than this value, it will be cutted into this max. length.<para /></li>
+            <li><b>Return</b> (bool, optional)- if value will be dumped into application output (as default) or returned as dumped string value.<para /></li>
+            </ul></param>
+            <returns>Returns empty string by default or dumped variable string if you specify in second argument <c>DumpOptions.Return</c> to be <c>true</c>.</returns>
+        </member>
+        <member name="M:Desharp.Debug.DumpAndDie(System.Object,System.Nullable{Desharp.DumpOptions})">
+            <summary>
+            Dump any type value to direct application output (not into web request debug bar in web applications!) and stop request/thread (in web applications dump into direct response body, in desktop applications into console).
+            </summary>
+            <param name="obj">Any type value to dump into application output.</param>
+            <param name="options">Dump options collection (optional) - just create new instance with public fields of that:<para /><br />
+            For this dump call you can change options:<para /><ul>
+            <li><b>Depth</b> (int, optional) - how many levels in complex type variables will be iterated throw to dump all it's properties, fields and other values.<para /></li>
+            <li><b>MaxLength</b> (int, optional) - if any dumped string length is larger than this value, it will be cutted into this max. length.<para /></li>
+            <li><b>Return</b> (bool, optional)- if value will be dumped into application output (as default) or returned as dumped string value.<para /></li>
+            </ul></param>
+            <returns>Returns empty string by default or dumped variable string if you specify in second argument <c>DumpOptions.Return</c> to be <c>true</c>.</returns>
+        </member>
         <member name="M:Desharp.Debug.Log(System.Exception)">
             <summary>
             Log exception instance as dumped string into <c>exceptions.log|exceptions.html</c> file. It stores:<para /><ul>
