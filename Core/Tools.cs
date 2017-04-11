@@ -3,11 +3,14 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Diagnostics;
+using System.IO;
 using System.Reflection;
 using System.Text;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Web;
+using System.Web.Compilation;
 
 namespace Desharp.Core {
 	/// <summary>
@@ -109,6 +112,8 @@ namespace Desharp.Core {
 		/// Get web application hosted in IIS server entry assembly written by developer, no .NET framework system assembly.
 		/// </summary>
 		public static Assembly GetWebEntryAssembly () {
+			return BuildManager.GetGlobalAsaxType().BaseType.Assembly;
+			/*
 			if (HttpContext.Current == null || HttpContext.Current.ApplicationInstance == null) {
 				return null;
 			}
@@ -119,6 +124,7 @@ namespace Desharp.Core {
 				safeCounter++;
 			}
 			return type == null ? null : type.Assembly;
+			*/
 		}
 		/// <summary>
 		/// Get web request id, by HttpContext.Current.Timestamp.Ticks;
@@ -211,6 +217,58 @@ namespace Desharp.Core {
 				Environment.OSVersion.Platform == PlatformID.Win32S ||
 				Environment.OSVersion.Platform == PlatformID.Win32Windows ||
 				Environment.OSVersion.Platform == PlatformID.WinCE;
+		}
+		/// <summary>
+		/// Return Type object by string in forms: "Full.Class.Name" or "AssemblyName:Full.Class.Name", desired type should be in any loaded assembly in memory, not just in current assembly.
+		/// </summary>
+		/// <param name="fullClassName" type="String">"Full.Class.Name" or "AssemblyName:Full.Class.Name"</param>
+		/// <returns type="Type">Desired type</returns>
+		public static Type GetTypeGlobaly (string fullClassName) {
+			// classic way to get type from current assembly
+			Type type = Type.GetType(fullClassName);
+			if (type is Type) return type;
+			// try to get assembly by assembly name and full class name
+			if (fullClassName.IndexOf(":") > 0) {
+				string[] fullNameAndAssembly = fullClassName.Split(':');
+				type = Tools.GetTypeGlobaly(fullNameAndAssembly[0], fullNameAndAssembly[1]);
+				if (type is Type) return type;
+			}
+			// get all loaded assemblies
+			Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
+			foreach (Assembly assembly in assemblies) {
+				type = assembly.GetType(fullClassName);
+				if (type is Type) break;
+			}
+			return type;
+		}
+		/// <summary>
+		/// Return Type object by two strings in form: "AssemblyName", "Full.Class.Name", desired type should be in any loaded assembly in memory, not just in current assembly.
+		/// </summary>
+		/// <param name="assemblyName" type="String">"AssemblyName" for AssemblyName.dll</param>
+		/// <param name="fullClassName" type="String">Full class name including namespace</param>
+		/// <returns type="Type">Desired type</returns>
+		public static Type GetTypeGlobaly (string assemblyName, string fullClassName) {
+			// do not use this - it gets all loaded assemblies into memory
+			//Dim assemblies As Reflection.Assembly() = AppDomain.CurrentDomain.GetAssemblies()
+			// do not use this - it gets all assemblies from references
+			//AppDomain.CurrentDomain.GetAssemblies()
+			Type type = null;
+			// use this - it gets all assemblies in aplication directory
+			try {
+				IEnumerable<Assembly> assemblies =
+				from file in Directory.GetFiles(AppDomain.CurrentDomain.BaseDirectory)
+				where Path.GetExtension(file) == ".dll"
+				select Assembly.LoadFrom(file);
+				foreach (Assembly assembly in assemblies) {
+					if (assembly.GetName().Name == assemblyName) {
+						type = assembly.GetType(fullClassName);
+						break;
+					}
+				}
+			} catch (Exception e) {
+			}
+			return type;
+
 		}
 	}
 }

@@ -6,12 +6,14 @@ namespace Desharp.Completers {
 	internal class LoadedAssemblies {
 		internal static List<string[]> CompleteLoadedAssemblies () {
 			List<string[]> result = new List<string[]>();
-			AssemblyName[] asmNames = Assembly.GetExecutingAssembly().GetReferencedAssemblies();
-			Assembly asm;
+			Assembly[] asms = AppDomain.CurrentDomain.GetAssemblies();
+			//AssemblyName[] asmNames = Assembly.GetExecutingAssembly().GetReferencedAssemblies();
+			//Assembly asm;
 			int index = 0;
-			try { 
-				foreach (AssemblyName assemblyName in asmNames) {
-					asm = Assembly.Load(assemblyName.ToString());
+			try {
+				// foreach (AssemblyName assemblyName in asmNames) {
+					// asm = Assembly.Load(assemblyName.ToString());
+				foreach (Assembly asm in asms) {
 					string[] fullNameExploded = asm.FullName.Split(new[] {", "}, StringSplitOptions.None);
 					string[] itemExploded;
 					List<string> headItems = new List<string>();

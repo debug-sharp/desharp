@@ -37,42 +37,64 @@ namespace Desharp.Renderers {
 			result.Append(htmlOut ? Dumper.HtmlDumpWrapper[1] : System.Environment.NewLine);
 			return result.ToString();
 		}
-		private static string _dumpRecursive (object obj, bool htmlOut, int maxDepth, int maxLength, int level, List<int> ids, string sequence) {
+		internal static string GetNullCode (bool htmlOut) {
+			return htmlOut ? @"<span class=""null"">null</span>" : "null";
+		}
+		internal static string DumpPrimitiveType (object obj, int level, bool htmlOut, int maxLength, string sequence) {
+			string renderedValue = "";
 			if (obj == null) {
-				return Dumper._getNullCode(htmlOut);
+				renderedValue = Dumper.GetNullCode(htmlOut);
 			} else {
-				int objId = obj.GetHashCode();
-				if (ids.Contains(objId)) {
-					// detected recursion
-					return htmlOut ? @"<span class=""recursion click click-" + sequence + objId.ToString() + @""">{*** RECURSION ***}</span>" : "{*** RECURSION ***}";
-				} else {
-					ids.Add(objId);
+				renderedValue = obj.ToString();
+				if (obj is char) {
+					if (htmlOut) {
+						renderedValue = "'" + Tools.HtmlEntities(renderedValue) + "'";
+					} else {
+						renderedValue = "'" + renderedValue + "'";
+					}
+				} else if (obj is string) {
+					bool tooLong = false;
+					if (renderedValue.Length > maxLength) {
+						tooLong = true;
+						renderedValue = renderedValue.Substring(0, maxLength) + "...";
+					}
+					if (htmlOut) {
+						renderedValue = @"""" + Tools.HtmlEntities(renderedValue) + @"""";
+						if (tooLong) renderedValue = renderedValue.Substring(0, renderedValue.Length - 4) + @"<span class=""too-deep"">...</span>""";
+					} else {
+						renderedValue = @"""" + renderedValue + @"""";
+					}
+				} else if (obj is bool) {
+					renderedValue = renderedValue.ToLower();
+				} else if (obj is double || obj is float || obj is decimal) {
+					renderedValue = renderedValue.Replace(',', '.'); // Microsoft .NET environment ToString() translates double/float/decimal into shit form with comma
+				} else if (obj is byte || obj is sbyte) {
+					byte byteAbs;
+					string sign = " ";
+					if (obj is sbyte && (sbyte)obj < 0) {
+						sbyte objSbyte = (sbyte)obj;
+						int objSbyteInt = Math.Abs((int)objSbyte);
+						byteAbs = (byte)objSbyteInt;
+						sign = "-";
+					} else {
+						byteAbs = (byte)obj;
+					}
+					byte[] byteArr = new byte[] { byteAbs };
+					string dec = Convert.ToInt64(byteAbs).ToString();
+					string hex = BitConverter.ToString(byteArr);
+					string str = System.Text.Encoding.ASCII.GetString(byteArr);
+					if (htmlOut) str = Tools.HtmlEntities(str);
+					renderedValue = "HEX:" + sign + hex + ", ASCII:" + sign + "'" + str + "', DEC:" + sign + dec;
 				}
 			}
-			if (level == maxDepth) return Dumper._dumpRecursiveHandleLastLevelDepth(obj, htmlOut, maxLength, level, sequence);
-			string result;
-			if (Detector.IsPrimitiveType(obj)) {
-				result = Dumper.DumpPrimitiveType(obj, level, htmlOut, maxLength, sequence);
-			} else if (Detector.IsArray(obj)) {
-				result = Dumper._dumpArray(obj, level, htmlOut, ids, maxDepth, maxLength, sequence);
-			} else if (Detector.IsNameValueCollection(obj)) {
-				result = Dumper._dumpNameValueCollection(obj, level, htmlOut, ids, maxDepth, maxLength, sequence);
-			} else if (Detector.IsDictionary(obj)) {
-				result = Dumper._dumpDictionary(obj, level, htmlOut, ids, maxDepth, maxLength, sequence);
-			} else if (Detector.IsDbResult(obj)) {
-				result = Dumper._dumpDbResult(obj, level, htmlOut, ids, maxDepth, maxLength, sequence);
-			} else if (Detector.IsEnum(obj)) {
-				result = Dumper._dumpEnum(obj, level, htmlOut, sequence);
-			} else if (Detector.IsTypeObject(obj)) {
-				result = Dumper._dumpTypeObject(obj as Type, level, htmlOut, sequence);
-			} else if (Detector.IsEnumerable(obj)) {
-				result = Dumper._dumpEnumerable(obj, level, htmlOut, ids, maxDepth, maxLength, sequence);
-			} else if (Detector.IsCollection(obj)) {
-				result = Dumper._dumpCollection(obj, level, htmlOut, ids, maxDepth, maxLength, sequence);
-			} else if (!Detector.IsReflectionObject(obj) && !Detector.IsReflectionObjectArray(obj)) {
-				result = Dumper._dumpUnknown(obj, level, htmlOut, ids, maxDepth, maxLength, sequence);
+			DumpType type = (obj is string)
+				? Dumper.GetDumpTypes(obj, obj.ToString().Length.ToString(), htmlOut, false, sequence)
+				: Dumper.GetDumpTypes(obj, "", htmlOut, false, sequence);
+			string result = "";
+			if (htmlOut) {
+				result = @"<span class=""" + type.NameCssClass + @""">" + renderedValue + "</span>&nbsp;" + type.ValueTypeCode;
 			} else {
-				result = obj.ToString();
+				result = renderedValue + " [" + type.Text + "]";
 			}
 			return result;
 		}
@@ -160,6 +182,45 @@ namespace Desharp.Renderers {
 				};
 			}
 		}
+		private static string _dumpRecursive (object obj, bool htmlOut, int maxDepth, int maxLength, int level, List<int> ids, string sequence) {
+			if (obj == null) {
+				return Dumper.GetNullCode(htmlOut);
+			} else {
+				int objId = obj.GetHashCode();
+				if (ids.Contains(objId)) {
+					// detected recursion
+					return htmlOut ? @"<span class=""recursion click click-" + sequence + objId.ToString() + @""">{*** RECURSION ***}</span>" : "{*** RECURSION ***}";
+				} else {
+					ids.Add(objId);
+				}
+			}
+			if (level == maxDepth) return Dumper._dumpRecursiveHandleLastLevelDepth(obj, htmlOut, maxLength, level, sequence);
+			string result;
+			if (Detector.IsPrimitiveType(obj)) {
+				result = Dumper.DumpPrimitiveType(obj, level, htmlOut, maxLength, sequence);
+			} else if (Detector.IsArray(obj)) {
+				result = Dumper._dumpArray(obj, level, htmlOut, ids, maxDepth, maxLength, sequence);
+			} else if (Detector.IsNameValueCollection(obj)) {
+				result = Dumper._dumpNameValueCollection(obj, level, htmlOut, ids, maxDepth, maxLength, sequence);
+			} else if (Detector.IsDictionary(obj)) {
+				result = Dumper._dumpDictionary(obj, level, htmlOut, ids, maxDepth, maxLength, sequence);
+			} else if (Detector.IsDbResult(obj)) {
+				result = Dumper._dumpDbResult(obj, level, htmlOut, ids, maxDepth, maxLength, sequence);
+			} else if (Detector.IsEnum(obj)) {
+				result = Dumper._dumpEnum(obj, level, htmlOut, sequence);
+			} else if (Detector.IsTypeObject(obj)) {
+				result = Dumper._dumpTypeObject(obj as Type, level, htmlOut, sequence);
+			} else if (Detector.IsEnumerable(obj)) {
+				result = Dumper._dumpEnumerable(obj, level, htmlOut, ids, maxDepth, maxLength, sequence);
+			} else if (Detector.IsCollection(obj)) {
+				result = Dumper._dumpCollection(obj, level, htmlOut, ids, maxDepth, maxLength, sequence);
+			} else if (!Detector.IsReflectionObject(obj) && !Detector.IsReflectionObjectArray(obj)) {
+				result = Dumper._dumpUnknown(obj, level, htmlOut, ids, maxDepth, maxLength, sequence);
+			} else {
+				result = obj.ToString();
+			}
+			return result;
+		}
 		private static string _dumpRecursiveHandleLastLevelDepth (object obj, bool htmlOut, int maxLength, int level, string sequence) {
 			// in last level - print out only single line prints, complex object only as: ... [Type]
 			if (Detector.IsPrimitiveType(obj)) {
@@ -194,7 +255,7 @@ namespace Desharp.Renderers {
 			return result;
 		}
 		private static string _dumpTypeObject (Type obj, int level, bool htmlOut, string sequence) {
-			string renderedValue = obj == null ? Dumper._getNullCode(htmlOut) : obj.FullName;
+			string renderedValue = obj == null ? Dumper.GetNullCode(htmlOut) : obj.FullName;
 			DumpType type = Dumper.GetDumpTypes(obj, "", htmlOut, false, sequence);
 			string result = "";
 			if (htmlOut) {
@@ -204,64 +265,6 @@ namespace Desharp.Renderers {
 			}
 			return result;
 		}
-		internal static string DumpPrimitiveType (object obj, int level, bool htmlOut, int maxLength, string sequence) {
-			string renderedValue = "";
-			if (obj == null) {
-				renderedValue = Dumper._getNullCode(htmlOut);
-			} else {
-				renderedValue = obj.ToString();
-				if (obj is char) {
-					if (htmlOut) {
-						renderedValue = "'" + Tools.HtmlEntities(renderedValue) + "'";
-					} else {
-						renderedValue = "'" + renderedValue + "'";
-					}
-				} else if (obj is string) {
-					bool tooLong = false;
-					if (renderedValue.Length > maxLength) {
-						tooLong = true;
-						renderedValue = renderedValue.Substring(0, maxLength) + "...";
-					}
-					if (htmlOut) {
-						renderedValue = @"""" + Tools.HtmlEntities(renderedValue) + @"""";
-						if (tooLong) renderedValue = renderedValue.Substring(0, renderedValue.Length - 4) + @"<span class=""too-deep"">...</span>""";
-					} else {
-						renderedValue = @"""" + renderedValue + @"""";
-					}
-				} else if (obj is bool) {
-					renderedValue = renderedValue.ToLower();
-				} else if (obj is double || obj is float || obj is decimal) {
-					renderedValue = renderedValue.Replace(',', '.'); // Microsoft .NET environment ToString() translates double/float/decimal into shit form with comma
-				} else if (obj is byte || obj is sbyte) {
-					byte byteAbs;
-					string sign = " ";
-					if (obj is sbyte && (sbyte)obj < 0) {
-						sbyte objSbyte = (sbyte)obj;
-						int objSbyteInt = Math.Abs((int)objSbyte);
-						byteAbs = (byte)objSbyteInt;
-						sign = "-";
-					} else {
-						byteAbs = (byte)obj;
-					}
-					byte[] byteArr = new byte[] { byteAbs };
-					string dec = Convert.ToInt64(byteAbs).ToString();
-					string hex = BitConverter.ToString(byteArr);
-					string str = System.Text.Encoding.ASCII.GetString(byteArr);
-					if (htmlOut) str = Tools.HtmlEntities(str);
-					renderedValue = "HEX:" + sign + hex + ", ASCII:" + sign + "'" + str + "', DEC:" + sign + dec;
-				} 
-			}
-            DumpType type = (obj is string) 
-				? Dumper.GetDumpTypes(obj, obj.ToString().Length.ToString(), htmlOut, false, sequence) 
-				: Dumper.GetDumpTypes(obj, "", htmlOut, false, sequence);
-            string result = "";
-            if (htmlOut) {
-                result = @"<span class=""" + type.NameCssClass + @""">" + renderedValue + "</span>&nbsp;" + type.ValueTypeCode;
-            } else {
-                result = renderedValue + " [" + type.Text + "]";
-            }
-            return result;
-        }
 		private static string _dumpNameValueCollection (object obj, int level, bool htmlOut, List<int> ids, int maxDepth, int maxLength, string sequence) {
 			NameValueCollection objCol = (NameValueCollection)obj;
 			string[] objColKeys = objCol.AllKeys;
@@ -726,9 +729,6 @@ namespace Desharp.Renderers {
 				for (var i = 0; i < tabs; i++) s += "   ";
 			}
 			return s;
-		}
-		private static string _getNullCode (bool htmlOut) {
-			return htmlOut ? @"<span class=""null"">null</span>" : "null";
 		}
 		private static dynamic _getSimpleTypeArray (object obj) {
 			if (obj is sbyte[]) return new { Data = (sbyte[])obj, Length = ((sbyte[])obj).Length };

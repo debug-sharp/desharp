@@ -114,7 +114,7 @@ namespace Desharp.Renderers {
 				result += Exceptions._renderHtmlDataTable("HTTP Headers:", headersStr);
 			}
 			result += Exceptions._renderHtmlDataTable(
-				"Loaded assemblies:", 
+				"Application Domain Assemblies:", 
 				Exceptions._renderDataTableRows(LoadedAssemblies.CompleteLoadedAssemblies(), true, true)
 			);
 			result += Exceptions._renderHtmlResponseFooterInfo();
@@ -274,7 +274,7 @@ namespace Desharp.Renderers {
 				counter++;
 			}
 			if (format == StackTraceFormat.Html) {
-                string resultStr = @"<div class=""table callstack""><b class=""title"">Call stack:</b>"
+                string resultStr = @"<div class=""table callstack""><b class=""title"">Call Stack:</b>"
 					+ @"<div class=""calls""><div><table>" + String.Join("", result.ToArray()) + "</table></div></div>"
 				+ "</div>";
                 return resultStr;
