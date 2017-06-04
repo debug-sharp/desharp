@@ -35,6 +35,15 @@ Dim list As New List(Of String)() { "a", "b", "c" }
 Debug.Dump(list)  ' print list by Console.WriteLine(); or append into html response as floating window
 Debug.Log(list)   ' store dumped list in debug.log or debug.html file on HDD
 ```
+```cs
+/**
+ * Dumped variables are always looking like:
+ * [List<string>(3)]
+ *    0: "a" [String(1)]
+ *    1: "b" [String(1)]
+ *    2: "c" [String(1)]
+ */
+```
 
 ### Dump/log `Exception`
 #### C#:
@@ -54,15 +63,6 @@ Catch e As Exception
    Debug.Dump(e)  ' print exception by Console.WriteLine(); or append into html response as floating window
    Debug.Log(e)   ' store dumped exception in exception.log or exception.html file on HDD
 End Try
-```
-```cs
-/**
- * Dumped variables are looking like:
- * [List<string>(3)]
- *    0: "a" [String(1)]
- *    1: "b" [String(1)]
- *    2: "c" [String(1)]
- */
 ```
 
 ## Dump outputs
