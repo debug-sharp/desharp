@@ -19,6 +19,7 @@ More info [about code snippets for Visual Studio](https://code.visualstudio.com/
 
 
 ### Dump/log any variable
+## C#:
 ```cs
 using Desharp;
 
@@ -26,8 +27,8 @@ var list = new List<string>() { "a", "b", "c" };
 Debug.Dump(list);  // print list by Console.WriteLine(); or append into html response as floating window
 Debug.Log(list);   // store dumped list in debug.log or debug.html file on HDD
 ```
-
-```cv
+## VB:
+```vb
 Imports Desharp
 
 Dim list As New List(Of String)() { "a", "b", "c" }
@@ -36,6 +37,7 @@ Debug.Log(list)   ' store dumped list in debug.log or debug.html file on HDD
 ```
 
 ### Dump/log `Exception`
+## C#:
 ```cs
 try {
    throw new Exception("Something wrong!");
@@ -44,6 +46,7 @@ try {
    Debug.Log(e);   // store dumped exception in exception.log or exception.html file on HDD
 }
 ```
+## VB:
 ```vb
 Try
    Throw New Exception("Something wrong!")
