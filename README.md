@@ -1,6 +1,6 @@
 # Desharp - C#/VB .NET Debugging Tool
 
-[![Latest Stable Version](https://img.shields.io/badge/Stable-v1.1.2-brightgreen.svg?style=plastic)](https://github.com/tomFlidr/desharp/releases)
+[![Latest Stable Version](https://img.shields.io/badge/Stable-v1.1.5-brightgreen.svg?style=plastic)](https://github.com/tomFlidr/desharp/releases)
 [![License](https://img.shields.io/badge/Licence-BSD-brightgreen.svg?style=plastic)](https://mvccore.github.io/docs/mvccore/4.0.0/LICENCE.md)
 ![.NET Version](https://img.shields.io/badge/.NET->=4.0-brightgreen.svg?style=plastic)
 
@@ -20,19 +20,39 @@ More info [about code snippets for Visual Studio](https://code.visualstudio.com/
 
 ### Dump/log any variable
 ```cs
-var list = new List<string>() { "a", "b", "c" });
+using Desharp;
+
+var list = new List<string>() { "a", "b", "c" };
 Debug.Dump(list);  // print list by Console.WriteLine(); or append into html response as floating window
 Debug.Log(list);   // store dumped list in debug.log or debug.html file on HDD
+```
+
+```cv
+Imports Desharp
+
+Dim list As New List(Of String)() { "a", "b", "c" }
+Debug.Dump(list)  ' print list by Console.WriteLine(); or append into html response as floating window
+Debug.Log(list)   ' store dumped list in debug.log or debug.html file on HDD
 ```
 
 ### Dump/log `Exception`
 ```cs
 try {
-  throw new Exception("Something wrong!");
+   throw new Exception("Something wrong!");
 } catch (Exception e) {
-  Debug.Dump(e);  // print exception by Console.WriteLine(); or append into html response as floating window
-  Debug.Log(e);   // store dumped exception in exception.log or exception.html file on HDD
+   Debug.Dump(e);  // print exception by Console.WriteLine(); or append into html response as floating window
+   Debug.Log(e);   // store dumped exception in exception.log or exception.html file on HDD
 }
+```
+```vb
+Try
+   Throw New Exception("Something wrong!")
+Catch e As Exception
+   Debug.Dump(e)  ' print exception by Console.WriteLine(); or append into html response as floating window
+   Debug.Log(e)   ' store dumped exception in exception.log or exception.html file on HDD
+End Try
+```
+```cs
 /**
  * Dumped variables are looking like:
  * [List<string>(3)]
@@ -200,6 +220,16 @@ You can configure by `app.config`/`web.config` or directly by calling `Debug.Con
             - if not configured, 1024 by default
         -->
         <add key="Desharp:MaxLength" value="512" />
+
+        <!--
+            Dump all backing fields in class instances, created usually for properties 
+            and all class instance member types marked with 'CompillerGenerated' attribute.
+            - not required, recomanded only for depp development view
+            - possible values: 1, 0, true, false
+            - if not configured, false by default
+            - if not configured or configured as false, you can hide for dumping
+        -->
+        <add key="Desharp:DumpCompillerGenerated" value="true" />
         
         <!-- 
             Default editor param value
@@ -350,6 +380,16 @@ You can configure by `app.config`/`web.config` or directly by calling `Debug.Con
             - if not configured - desharp build-in error page is used by default
         -->
         <add key="Desharp:ErrorPage" value="~/custom-error-page-500.html" />
+
+        <!--
+            Dump all backing fields in class instances, created usually for properties 
+            and all class instance member types marked with 'CompillerGenerated' attribute.
+            - not required, recomanded only for depp development view
+            - possible values: 1, 0, true, false
+            - if not configured, false by default
+            - if not configured or configured as false, you can hide for dumping
+        -->
+        <add key="Desharp:DumpCompillerGenerated" value="true" />
         
         <!-- 
             Default editor param value
