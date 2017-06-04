@@ -19,7 +19,8 @@ namespace Desharp.Core {
 		internal const string APP_SETTINGS_DEPTH = "Desharp:Depth"; // 3
 		internal const string APP_SETTINGS_MAX_LENGTH = "Desharp:MaxLength"; // 1024
 		internal const string APP_SETTINGS_NOTIFY_SETTINGS = "Desharp:NotifySettings"; // { host: 'smtp.mailbox.com', port: 587, ssl: true, user: 'username', password: '1234', from: 'desharp@app.com', to: 'username@mailbox.com', priority: 'high', timeout: 30000 }
-		private static Dictionary<string, string> _appSettings = new Dictionary<string, string>();
+        internal const string APP_SETTINGS_DUMP_COMPILLER_GENERATED = "Desharp:DumpCompillerGenerated"; // false
+        private static Dictionary<string, string> _appSettings = new Dictionary<string, string>();
 		static Config () {
 			string itemKey;
 			string itemValue;
@@ -158,8 +159,16 @@ namespace Desharp.Core {
 				}
 			}
 			return 0;
-		}
-		internal static Dictionary<string, object> GetNotifySettings () {
+        }
+        internal static bool? GetDumpCompillerGenerated () {
+            if (Config._appSettings.ContainsKey(Config.APP_SETTINGS_DUMP_COMPILLER_GENERATED)) {
+                string rawValue = Config._appSettings[Config.APP_SETTINGS_DUMP_COMPILLER_GENERATED].Trim().ToLower();
+                return (rawValue == "false" || rawValue == "0" || rawValue == "") ? false : true;
+            } else {
+                return null;
+            }
+        }
+        internal static Dictionary<string, object> GetNotifySettings () {
 			Dictionary<string, object> result = new Dictionary<string, object>();
 			if (Config._appSettings.ContainsKey(Config.APP_SETTINGS_NOTIFY_SETTINGS)) {
 				string rawJson = Config._appSettings[Config.APP_SETTINGS_NOTIFY_SETTINGS].Trim();

@@ -12,6 +12,6 @@ namespace Desharp {
 		internal string[] NamespacesLower;
 		internal string Namespace;
 		internal string NamespaceLower;
-		internal Dictionary<string, object[]> Params;
+		internal Dictionary<string, RouteTargetArg> Params;
 	}
 }

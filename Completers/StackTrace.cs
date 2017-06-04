@@ -307,7 +307,7 @@ namespace Desharp.Completers {
 			string fileName;
 			string line;
 			Regex r1 = new Regex(@"^([^\s]*)\s(.*)$");
-			Regex r2 = new Regex(@"^([a-zA-Z0-9&`_\(\[\]\<\>\.\,\s]*)\)\s+([^\s]+)\s+(.*)$");
+			Regex r2 = new Regex(@"^([^\)]*)\)\s+([^\s]+)\s+(.*)$");
 			Regex r3 = new Regex(@"(.*)\.(cs|vb):([^\s]+)\s([0-9]*)$");
 			for (int i = 0; i < rawStackTraceLines.Length; i++) {
 				method = "";

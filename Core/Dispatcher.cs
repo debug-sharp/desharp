@@ -23,7 +23,8 @@ namespace Desharp.Core {
 		internal static int DumpDepth = 3;
 		internal static int DumpMaxLength = 1024;
 		internal static bool? EnabledGlobal = null;
-		internal static LogFormat? OutputGlobal = null;
+        internal static bool DumpCompillerGenerated = false;
+        internal static LogFormat? OutputGlobal = null;
 		internal static Dictionary<string, int> Levels;
 		internal static string WebStaticErrorPage;
 		internal static readonly VirtualPathProvider VirtualPathProvider;
@@ -103,7 +104,8 @@ namespace Desharp.Core {
 			}
 			Dispatcher.staticInitEnabledGlobal();
 			Dispatcher.staticInitOutputGlobal();
-			Dispatcher.staticInitDirectory(Config.GetDirectory());
+            Dispatcher.staticInitDumpCompillerGenerated();
+            Dispatcher.staticInitDirectory(Config.GetDirectory());
 			FileLog.Init();
 		}
 		internal static Dispatcher GetCurrent (bool createIfNecessary = true) {
@@ -206,7 +208,11 @@ namespace Desharp.Core {
 				Dispatcher.OutputGlobal = LogFormat.Text;
 			}
 		}
-		protected static void staticInitDirectory (string dirRelOrFullPath = "") {
+        protected static void staticInitDumpCompillerGenerated () {
+            bool? dumpCompillerGenerated = Config.GetDumpCompillerGenerated();
+            if (dumpCompillerGenerated.HasValue) Dispatcher.DumpCompillerGenerated = dumpCompillerGenerated.Value;
+        }
+        protected static void staticInitDirectory (string dirRelOrFullPath = "") {
 			string fullPath;
 			if (dirRelOrFullPath.Length > 0) {
 				fullPath = dirRelOrFullPath;

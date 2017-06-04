@@ -18,7 +18,7 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DefineConstants>TRACE;DEBUG</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <DocumentationFile>bin\Debug\Desharp.XML</DocumentationFile>
@@ -66,7 +66,9 @@
     <Compile Include="Core\Structs\DumpOptions.cs" />
     <Compile Include="Core\Structs\ExceptionToRender.cs" />
     <Compile Include="Core\Structs\RenderedPanel.cs" />
+    <Compile Include="Core\Structs\RouteMatchedParam.cs" />
     <Compile Include="Core\Structs\RouteTarget.cs" />
+    <Compile Include="Core\Structs\RouteTargetArg.cs" />
     <Compile Include="Core\WinDebuggerAttaching.cs" />
     <Compile Include="Debug.cs" />
     <Compile Include="Core\Config.cs" />
@@ -79,6 +81,7 @@
     <Compile Include="Panels\Abstract.cs" />
     <Compile Include="Panels\Exceptions.cs" />
     <Compile Include="Panels\Routing.cs" />
+    <Compile Include="Panels\Routings\MatchedCompleter.cs" />
     <Compile Include="Panels\Session.cs" />
     <Compile Include="Core\Mailer.cs" />
     <Compile Include="Renderers\ErrorFile.cs" />
@@ -105,10 +108,12 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <None Include="content\App.config.transform" />
+    <None Include="content\App.config.install.xdt" />
+    <None Include="content\App.config.uninstall.xdt" />
     <None Include="content\Desharp.config.example" />
+    <None Include="content\Web.config.install.xdt" />
     <None Include="Desharp.nuspec" />
-    <None Include="content\Web.config.transform" />
+    <None Include="content\Web.config.uninstall.xdt" />
     <None Include="_CreateNewNuGetPackage\DoNotModify\NuGet.exe" />
     <None Include="packages.config" />
     <None Include="_CreateNewNuGetPackage\Config.ps1" />

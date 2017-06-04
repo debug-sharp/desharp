@@ -162,6 +162,7 @@ namespace Desharp.Core {
 		/// <returns>Safe HTML string.</returns>
 		public static string HtmlEntities (string value) {
 			value = HttpUtility.JavaScriptStringEncode(value);
+			value = value.Replace(@"\\", @"&#92;");
 			Regex r = new Regex(@"\\u([0-9a-f]{4})");
 			MatchCollection m = r.Matches(value);
 			long intItem;

@@ -236,7 +236,7 @@ namespace Desharp {
                 try {
 					resultItems.Append(Dumper.Dump(args[i], htmlOut));
                 } catch (Exception e) {
-					resultItems.Append(Debug.Dump(e, true));
+					resultItems.Append(Dumper.Dump(e, htmlOut));
                 }
 			}
 			result = resultItems.ToString();

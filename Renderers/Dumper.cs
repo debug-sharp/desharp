@@ -10,6 +10,7 @@ using System.Collections;
 using System.Web;
 using System.Collections.Specialized;
 using System.Text;
+using System.Runtime.CompilerServices;
 
 namespace Desharp.Renderers {
 	/// <summary>
@@ -40,52 +41,21 @@ namespace Desharp.Renderers {
 		internal static string GetNullCode (bool htmlOut) {
 			return htmlOut ? @"<span class=""null"">null</span>" : "null";
 		}
+		internal static string TabsIndent (int tabs, bool htmlOut) {
+			string s = "";
+			if (htmlOut) {
+				s = @"<s style=""width:" + (27 * tabs) + @"px""></s>";
+			} else {
+				for (var i = 0; i < tabs; i++) s += "   ";
+			}
+			return s;
+		}
 		internal static string DumpPrimitiveType (object obj, int level, bool htmlOut, int maxLength, string sequence) {
-			string renderedValue = "";
+			string renderedValue;
 			if (obj == null) {
 				renderedValue = Dumper.GetNullCode(htmlOut);
 			} else {
-				renderedValue = obj.ToString();
-				if (obj is char) {
-					if (htmlOut) {
-						renderedValue = "'" + Tools.HtmlEntities(renderedValue) + "'";
-					} else {
-						renderedValue = "'" + renderedValue + "'";
-					}
-				} else if (obj is string) {
-					bool tooLong = false;
-					if (renderedValue.Length > maxLength) {
-						tooLong = true;
-						renderedValue = renderedValue.Substring(0, maxLength) + "...";
-					}
-					if (htmlOut) {
-						renderedValue = @"""" + Tools.HtmlEntities(renderedValue) + @"""";
-						if (tooLong) renderedValue = renderedValue.Substring(0, renderedValue.Length - 4) + @"<span class=""too-deep"">...</span>""";
-					} else {
-						renderedValue = @"""" + renderedValue + @"""";
-					}
-				} else if (obj is bool) {
-					renderedValue = renderedValue.ToLower();
-				} else if (obj is double || obj is float || obj is decimal) {
-					renderedValue = renderedValue.Replace(',', '.'); // Microsoft .NET environment ToString() translates double/float/decimal into shit form with comma
-				} else if (obj is byte || obj is sbyte) {
-					byte byteAbs;
-					string sign = " ";
-					if (obj is sbyte && (sbyte)obj < 0) {
-						sbyte objSbyte = (sbyte)obj;
-						int objSbyteInt = Math.Abs((int)objSbyte);
-						byteAbs = (byte)objSbyteInt;
-						sign = "-";
-					} else {
-						byteAbs = (byte)obj;
-					}
-					byte[] byteArr = new byte[] { byteAbs };
-					string dec = Convert.ToInt64(byteAbs).ToString();
-					string hex = BitConverter.ToString(byteArr);
-					string str = System.Text.Encoding.ASCII.GetString(byteArr);
-					if (htmlOut) str = Tools.HtmlEntities(str);
-					renderedValue = "HEX:" + sign + hex + ", ASCII:" + sign + "'" + str + "', DEC:" + sign + dec;
-				}
+				renderedValue = Dumper.RenderPrimitiveTypeValue(obj, htmlOut, maxLength);
 			}
 			DumpType type = (obj is string)
 				? Dumper.GetDumpTypes(obj, obj.ToString().Length.ToString(), htmlOut, false, sequence)
@@ -97,6 +67,50 @@ namespace Desharp.Renderers {
 				result = renderedValue + " [" + type.Text + "]";
 			}
 			return result;
+		}
+		internal static string RenderPrimitiveTypeValue (object obj, bool htmlOut, int maxLength) {
+			string renderedValue = obj.ToString();
+			if (obj is char) {
+				if (htmlOut) {
+					renderedValue = "'" + Tools.HtmlEntities(renderedValue) + "'";
+				} else {
+					renderedValue = "'" + renderedValue + "'";
+				}
+			} else if (obj is string) {
+				bool tooLong = false;
+				if (renderedValue.Length > maxLength) {
+					tooLong = true;
+					renderedValue = renderedValue.Substring(0, maxLength) + "...";
+				}
+				if (htmlOut) {
+					renderedValue = @"""" + Tools.HtmlEntities(renderedValue) + @"""";
+					if (tooLong) renderedValue = renderedValue.Substring(0, renderedValue.Length - 4) + @"<span class=""too-deep"">...</span>""";
+				} else {
+					renderedValue = @"""" + renderedValue + @"""";
+				}
+			} else if (obj is bool) {
+				renderedValue = renderedValue.ToLower();
+			} else if (obj is double || obj is float || obj is decimal) {
+				renderedValue = renderedValue.Replace(',', '.'); // Microsoft .NET environment ToString() translates double/float/decimal into shit form with comma
+			} else if (obj is byte || obj is sbyte) {
+				byte byteAbs;
+				string sign = " ";
+				if (obj is sbyte && (sbyte)obj < 0) {
+					sbyte objSbyte = (sbyte)obj;
+					int objSbyteInt = Math.Abs((int)objSbyte);
+					byteAbs = (byte)objSbyteInt;
+					sign = "-";
+				} else {
+					byteAbs = (byte)obj;
+				}
+				byte[] byteArr = new byte[] { byteAbs };
+				string dec = Convert.ToInt64(byteAbs).ToString();
+				string hex = BitConverter.ToString(byteArr);
+				string str = System.Text.Encoding.ASCII.GetString(byteArr);
+				if (htmlOut) str = Tools.HtmlEntities(str);
+				renderedValue = "HEX:" + sign + hex + ", ASCII:" + sign + "'" + str + "', DEC:" + sign + dec;
+			}
+			return renderedValue;
 		}
 		internal static DumpType GetDumpTypes (object obj, string length, bool htmlOut, bool fullTypeName, string sequence) {
 			string typeStr = "";
@@ -164,7 +178,7 @@ namespace Desharp.Renderers {
 				}
 			}
 			if (htmlOut) {
-				valueTypeHtml = @"<span class=""type " + valueTypeClickClass + @""">[" + typeStr + "]</span>";
+				valueTypeHtml = @"<span class=""type " + valueTypeClickClass + @""" title=""" + (obj != null ? obj.GetHashCode().ToString() : "") + @""">[" + typeStr + "]</span>";
 			} else {
 				valueTypeHtml = "[" + typeStr + "]";
 			}
@@ -218,6 +232,7 @@ namespace Desharp.Renderers {
 				result = Dumper._dumpUnknown(obj, level, htmlOut, ids, maxDepth, maxLength, sequence);
 			} else {
 				result = obj.ToString();
+				if (htmlOut) result = @"<span class=""unknown"">" + result + "</span>";
 			}
 			return result;
 		}
@@ -277,7 +292,7 @@ namespace Desharp.Renderers {
 			object child;
 			DumpType subTypeKey;
 			DumpType subTypeValue;
-			string tabsStr = Dumper._tabsIndent(level + 1, htmlOut);
+			string tabsStr = Dumper.TabsIndent(level + 1, htmlOut);
 			if (htmlOut) {
 				result += @"<div class=""item dump dump-" + sequence + obj.GetHashCode().ToString() + @""">";
 				for (int i = 0, l = objColKeys.Length; i < l; i += 1) {
@@ -290,7 +305,7 @@ namespace Desharp.Renderers {
 					if (subTypeKey.NameCssClass == "char") keyStr = "'" + keyStr + "'";
 					if (subTypeKey.NameCssClass == "string") keyStr = @"""" + keyStr + @"""";
 					result += (i > 0 ? "<br />" : "") + tabsStr
-						+ @"<span class=""" + subTypeKey.NameCssClass + @""">" + keyStr + "</span>"
+						+ @"<span class=""" + subTypeKey.NameCssClass + @""">" + keyStr.Replace("<", "&lt;").Replace(">", "&gt;") + "</span>"
 						+ "<s>:&nbsp;</s>" + dumpedChild;
 				}
 				result += "</div>";
@@ -325,7 +340,7 @@ namespace Desharp.Renderers {
 			int maxKeyLength = 0;
 			DumpType subTypeKey;
 			DumpType subTypeValue;
-			string tabsStr = Dumper._tabsIndent(level + 1, htmlOut);
+			string tabsStr = Dumper.TabsIndent(level + 1, htmlOut);
 			int i = 0;
 			if (htmlOut) {
 				result += @"<div class=""item dump dump-" + sequence + obj.GetHashCode().ToString() + @""">";
@@ -333,7 +348,7 @@ namespace Desharp.Renderers {
 					dumpedChild = Dumper._dumpRecursive(objEnum.Current, htmlOut, maxDepth, maxLength, level + 1, new List<int>(ids), sequence);
 					subTypeKey = Dumper.GetDumpTypes(i, "", htmlOut, false, sequence);
 					subTypeValue = Dumper.GetDumpTypes(objEnum.Current, "", htmlOut, false, sequence);
-					keyStr = i.ToString();
+					keyStr = i.ToString().Replace("<", "&lt;").Replace(">", "&gt;");
 					result += (i > 0 ? "<br />" : "")
 						+ tabsStr + @"<span class=""" + subTypeKey.NameCssClass + @""">" + keyStr + "</span>" 
 						+ "<s>:&nbsp;</s>" + dumpedChild;
@@ -366,7 +381,7 @@ namespace Desharp.Renderers {
 			string dumpedChild;
 			object child;
 			if (htmlOut) result += @"<div class=""item dump dump-" + sequence + obj.GetHashCode().ToString() + @""">";
-			string tabsStr = Dumper._tabsIndent(level + 1, htmlOut);
+			string tabsStr = Dumper.TabsIndent(level + 1, htmlOut);
 			int maxKeyDigits = simpleArrayLengthStr.Length;
 			string key;
 			for (int i = 0, l = simpleArray.Length; i < l; i += 1) {
@@ -402,7 +417,7 @@ namespace Desharp.Renderers {
 			string dumpedChild;
 			object key;
 			string keyStr;
-			string tabsStr = Dumper._tabsIndent(level + 1, htmlOut);
+			string tabsStr = Dumper.TabsIndent(level + 1, htmlOut);
 			DumpType subTypeKey;
 			if (htmlOut) {
 				result += @"<div class=""item dump dump-" + sequence + obj.GetHashCode().ToString() + @""">";
@@ -410,7 +425,7 @@ namespace Desharp.Renderers {
 				while (keysEnum.MoveNext()) {
 					key = keysEnum.Current;
 					valuesEnum.MoveNext();
-					keyStr = Detector.IsPrimitiveType(key) ? key.ToString() : Dumper._dumpRecursive(key, htmlOut, maxDepth, maxLength, level + 1, new List<int>(ids), sequence);
+					keyStr = Detector.IsPrimitiveType(key) ? key.ToString().Replace("<", "&lt;").Replace(">", "&gt;") : Dumper._dumpRecursive(key, htmlOut, maxDepth, maxLength, level + 1, new List<int>(ids), sequence);
 					subTypeKey = Dumper.GetDumpTypes(key, "", htmlOut, false, sequence);
 					dumpedChild = Dumper._dumpRecursive(valuesEnum.Current, htmlOut, maxDepth, maxLength, level + 1, new List<int>(ids), sequence);
 					if (subTypeKey.NameCssClass == "char") keyStr = "'" + Tools.HtmlEntities(keyStr) + "'";
@@ -458,7 +473,7 @@ namespace Desharp.Renderers {
 			object child;
             string keyStr;
 			if (htmlOut) result += @"<div class=""item dump dump-" + sequence + obj.GetHashCode().ToString() + @""">";
-			string tabsStr = Dumper._tabsIndent(level + 1, htmlOut);
+			string tabsStr = Dumper.TabsIndent(level + 1, htmlOut);
 			for (int i = 0; i < length; i++) {
                 child = objEnum[i];
                 keyStr = i.ToString();
@@ -466,7 +481,7 @@ namespace Desharp.Renderers {
 				if (htmlOut) {
                     result += (i > 0 ? "<br />" : "") + tabsStr
 					+ @"<span class=""int"">" + keyStr + "</span>"
-                    + "<s>:&nbsp;</s>" + dumpedChild;
+					+ "<s>:&nbsp;</s>" + dumpedChild;
                 } else {
                     result += System.Environment.NewLine + tabsStr + keyStr + ": " + dumpedChild;
                 }
@@ -481,7 +496,7 @@ namespace Desharp.Renderers {
 			string dumpedChild;
             object child;
 			if (htmlOut) result += @"<div class=""item dump dump-" + sequence + obj.GetHashCode().ToString() + @""">";
-			string tabsStr = Dumper._tabsIndent(level + 1, htmlOut);
+			string tabsStr = Dumper.TabsIndent(level + 1, htmlOut);
 			if (obj is DataSet) {
                 DataSet ds = obj as DataSet;
                 length = ds.Tables.Count;
@@ -562,7 +577,7 @@ namespace Desharp.Renderers {
             object child;
 			string dumpedChild;
 			if (htmlOut) result += @"<div class=""item dump dump-" + sequence + obj.GetHashCode().ToString() + @""">";
-			string tabsStr = Dumper._tabsIndent(level + 1, htmlOut);
+			string tabsStr = Dumper.TabsIndent(level + 1, htmlOut);
 			int i = 0;
 			foreach (PropertyDescriptor descriptor in objProperties) {
                 name = descriptor.Name;
@@ -575,7 +590,9 @@ namespace Desharp.Renderers {
 				}
 				if (htmlOut) {
                     result += (i > 0 ? "<br />" : "") + tabsStr
-						+ @"<span class=""field"">" + name + "</span><s>:&nbsp;</s>" 
+						+ @"<span class=""field"">"
+							+ name.Replace("<", "&lt;").Replace(">", "&gt;")
+						+ "</span><s>:&nbsp;</s>" 
                         + dumpedChild;
                 } else {
                     result += System.Environment.NewLine + tabsStr + name + ": " + dumpedChild;
@@ -587,15 +604,16 @@ namespace Desharp.Renderers {
 		}
         private static string _dumpUnknownTyped (object obj, int level, bool htmlOut, List<int> ids, int maxDepth, int maxLength, string sequence) {
             Type objType = obj.GetType();
-			int flagsLength = 0;
+            string indexerPropertyName = Dumper._getIndexerPropertyName(objType);
+            int flagsLength = 0;
 			int namesLength = 0;
 			Dictionary<string, object[]> items = new Dictionary<string, object[]>();
-			Dumper._getUnknownTypedProperties(items, ref flagsLength, ref namesLength, obj, level, htmlOut, ids, maxDepth, maxLength, sequence, objType, BindingFlags.Static | BindingFlags.Public);
-			Dumper._getUnknownTypedProperties(items, ref flagsLength, ref namesLength, obj, level, htmlOut, ids, maxDepth, maxLength, sequence, objType, BindingFlags.Instance | BindingFlags.Public);
+			Dumper._getUnknownTypedProperties(items, ref flagsLength, ref namesLength, obj, level, htmlOut, ids, maxDepth, maxLength, sequence, objType, BindingFlags.Static | BindingFlags.Public, indexerPropertyName);
+			Dumper._getUnknownTypedProperties(items, ref flagsLength, ref namesLength, obj, level, htmlOut, ids, maxDepth, maxLength, sequence, objType, BindingFlags.Instance | BindingFlags.Public, indexerPropertyName);
 			Dumper._getUnknownTypedFields(items, ref flagsLength, ref namesLength, obj, level, htmlOut, ids, maxDepth, maxLength, sequence, objType, BindingFlags.Static | BindingFlags.Public);
 			Dumper._getUnknownTypedFields(items, ref flagsLength, ref namesLength, obj, level, htmlOut, ids, maxDepth, maxLength, sequence, objType, BindingFlags.Instance | BindingFlags.Public);
-			Dumper._getUnknownTypedProperties(items, ref flagsLength, ref namesLength, obj, level, htmlOut, ids, maxDepth, maxLength, sequence, objType, BindingFlags.Static | BindingFlags.NonPublic);
-			Dumper._getUnknownTypedProperties(items, ref flagsLength, ref namesLength, obj, level, htmlOut, ids, maxDepth, maxLength, sequence, objType, BindingFlags.Instance | BindingFlags.NonPublic);
+			Dumper._getUnknownTypedProperties(items, ref flagsLength, ref namesLength, obj, level, htmlOut, ids, maxDepth, maxLength, sequence, objType, BindingFlags.Static | BindingFlags.NonPublic, indexerPropertyName);
+			Dumper._getUnknownTypedProperties(items, ref flagsLength, ref namesLength, obj, level, htmlOut, ids, maxDepth, maxLength, sequence, objType, BindingFlags.Instance | BindingFlags.NonPublic, indexerPropertyName);
 			Dumper._getUnknownTypedFields(items, ref flagsLength, ref namesLength, obj, level, htmlOut, ids, maxDepth, maxLength, sequence, objType, BindingFlags.Static | BindingFlags.NonPublic);
 			Dumper._getUnknownTypedFields(items, ref flagsLength, ref namesLength, obj, level, htmlOut, ids, maxDepth, maxLength, sequence, objType, BindingFlags.Instance | BindingFlags.NonPublic);
 			// for static properties and static fields only defined in parent classes,
@@ -606,9 +624,9 @@ namespace Desharp.Renderers {
 			while (true && safeCounter < 50) {
 				currentType = currentType.BaseType;
 				if (currentType == null || currentType.Equals(objectType)) break;
-				Dumper._getUnknownTypedProperties(items, ref flagsLength, ref namesLength, obj, level, htmlOut, ids, maxDepth, maxLength, sequence, currentType, BindingFlags.Static | BindingFlags.Public);
+				Dumper._getUnknownTypedProperties(items, ref flagsLength, ref namesLength, obj, level, htmlOut, ids, maxDepth, maxLength, sequence, currentType, BindingFlags.Static | BindingFlags.Public, indexerPropertyName);
 				Dumper._getUnknownTypedFields(items, ref flagsLength, ref namesLength, obj, level, htmlOut, ids, maxDepth, maxLength, sequence, currentType, BindingFlags.Static | BindingFlags.Public);
-				Dumper._getUnknownTypedProperties(items, ref flagsLength, ref namesLength, obj, level, htmlOut, ids, maxDepth, maxLength, sequence, currentType, BindingFlags.Static | BindingFlags.NonPublic);
+				Dumper._getUnknownTypedProperties(items, ref flagsLength, ref namesLength, obj, level, htmlOut, ids, maxDepth, maxLength, sequence, currentType, BindingFlags.Static | BindingFlags.NonPublic, indexerPropertyName);
 				Dumper._getUnknownTypedFields(items, ref flagsLength, ref namesLength, obj, level, htmlOut, ids, maxDepth, maxLength, sequence, currentType, BindingFlags.Static | BindingFlags.NonPublic);
 				safeCounter++;
 			}
@@ -619,7 +637,7 @@ namespace Desharp.Renderers {
 			string dumpedChild;
             string result = type.ValueTypeCode;
 			if (htmlOut) result += @"<div class=""item dump dump-" + sequence + obj.GetHashCode().ToString() + @""">";
-			string tabsStr = Dumper._tabsIndent(level + 1, htmlOut);
+			string tabsStr = Dumper.TabsIndent(level + 1, htmlOut);
 			int i = 0;
             foreach (var item in items) {
                 name = item.Key;
@@ -630,7 +648,9 @@ namespace Desharp.Renderers {
 				cssClass = flags.Replace(",", " ");
 				if (htmlOut) {
                     result += (i > 0 ? "<br />" : "") + tabsStr
-						+ @"<span class=""" + cssClass + @""" title =""" + flags + @""">" + name + "</span><s>:&nbsp;</s>"
+						+ @"<span class=""" + cssClass + @""" title =""" + flags + @""">" 
+							+ name.Replace("<", "&lt;").Replace(">", "&gt;") 
+						+ "</span><s>:&nbsp;</s>"
 						+ dumpedChild;
                 } else {
 					result += System.Environment.NewLine + tabsStr + flags + " " + name + ": " + dumpedChild;
@@ -640,19 +660,20 @@ namespace Desharp.Renderers {
 			if (htmlOut) result += "</div>";
 			return result;
 		}
-        private static void _getUnknownTypedProperties (Dictionary<string, object[]> items, ref int flagsLength, ref int namesLength, object obj, int level, bool htmlOut, List<int> ids, int maxDepth, int maxLength, string sequence, Type objType, BindingFlags bindingFlags) {
-			Dictionary<string, object[]> newItems = new Dictionary<string, object[]>();
+        private static void _getUnknownTypedProperties (Dictionary<string, object[]> items, ref int flagsLength, ref int namesLength, object obj, int level, bool htmlOut, List<int> ids, int maxDepth, int maxLength, string sequence, Type objType, BindingFlags bindingFlags, string indexerPropertyName) {
+            IEnumerable<PropertyInfo> props = objType.GetProperties(bindingFlags);
+            if (props.Count() == 0) return;
+            Dictionary<string, object[]> newItems = new Dictionary<string, object[]>();
 			List<string> flags = new List<string>();
-			if (bindingFlags.HasFlag(BindingFlags.Public)) flags.Add("public");
-			if (bindingFlags.HasFlag(BindingFlags.NonPublic)) flags.Add("nonpublic");
-			if (bindingFlags.HasFlag(BindingFlags.Static)) flags.Add("static");
-			flags.Add("property");
+			if (bindingFlags.HasFlag(BindingFlags.Public)) flags.Add(htmlOut ? "public" : "publ");
+			if (bindingFlags.HasFlag(BindingFlags.NonPublic)) flags.Add(htmlOut ? "nonpublic" : "nonpub");
+			if (bindingFlags.HasFlag(BindingFlags.Static)) flags.Add(htmlOut ? "static" : "stat");
+			flags.Add(htmlOut ? "property" : "prop");
 			string flag = String.Join(",", flags);
-			IEnumerable<PropertyInfo> props = objType.GetProperties(bindingFlags);
 			object child;
 			string dumpedChild;
 			foreach (PropertyInfo prop in props) {
-				if (!items.ContainsKey(prop.Name) && !newItems.ContainsKey(prop.Name)) {
+				if (!items.ContainsKey(prop.Name) && !newItems.ContainsKey(prop.Name) && prop.Name != indexerPropertyName && !Dumper._isCompilerGenerated(prop)) {
 					if (prop.CanRead) {
 						try {
 							child = prop.GetValue(obj, null);
@@ -679,26 +700,31 @@ namespace Desharp.Renderers {
 				if (flag.Length > flagsLength) flagsLength = flag.Length;
 				items.Add(item.Key, item.Value);
 			}
-		}
-		private static void _getUnknownTypedFields (Dictionary<string, object[]> items, ref int flagsLength, ref int namesLength, object obj, int level, bool htmlOut, List<int> ids, int maxDepth, int maxLength, string sequence, Type objType, BindingFlags bindingFlags) {
-			Dictionary<string, object[]> newItems = new Dictionary<string, object[]>();
+        }
+        private static string _getIndexerPropertyName (Type type) {
+            Attribute defaultAttr = Attribute.GetCustomAttribute(type, typeof(DefaultMemberAttribute));
+            return defaultAttr is DefaultMemberAttribute ? ((DefaultMemberAttribute)defaultAttr).MemberName : "";
+        }
+        private static void _getUnknownTypedFields (Dictionary<string, object[]> items, ref int flagsLength, ref int namesLength, object obj, int level, bool htmlOut, List<int> ids, int maxDepth, int maxLength, string sequence, Type objType, BindingFlags bindingFlags) {
+            IEnumerable<FieldInfo> fields = objType.GetFields(bindingFlags);
+            if (fields.Count() == 0) return;
+            Dictionary<string, object[]> newItems = new Dictionary<string, object[]>();
 			List<string> flags = new List<string>();
-			if (bindingFlags.HasFlag(BindingFlags.Public)) flags.Add("public");
-			if (bindingFlags.HasFlag(BindingFlags.NonPublic)) flags.Add("nonpublic");
-			if (bindingFlags.HasFlag(BindingFlags.Static)) flags.Add("static");
+			if (bindingFlags.HasFlag(BindingFlags.Public)) flags.Add(htmlOut ? "public" : "publ");
+			if (bindingFlags.HasFlag(BindingFlags.NonPublic)) flags.Add(htmlOut ? "nonpublic" : "nonpub");
+			if (bindingFlags.HasFlag(BindingFlags.Static)) flags.Add(htmlOut ? "static" : "stat");
 			flags.Add("field");
 			string flag = String.Join(",", flags);
 			string flag2;
-			IEnumerable<FieldInfo> fields = objType.GetFields(bindingFlags);
 			object child;
 			string dumpedChild;
 			foreach (FieldInfo field in fields) {
-				if (!items.ContainsKey(field.Name) && !newItems.ContainsKey(field.Name)) {
+				if (!items.ContainsKey(field.Name) && !newItems.ContainsKey(field.Name) && !Dumper._isCompilerGenerated(field)) {
 					if (field.Name.Length > namesLength) namesLength = field.Name.Length;
 					if (field.IsPrivate && !bindingFlags.HasFlag(BindingFlags.Public)) {
-						flag2 = flag.Replace("nonpublic", "private");
+						flag2 = flag.Replace(htmlOut ? "nonpublic" : "nonpub", htmlOut ? "private" : "priv");
 					} else {
-						flag2 = flag.Replace("nonpublic", "protected");
+						flag2 = flag.Replace(htmlOut ? "nonpublic" : "nonpub", htmlOut ? "protected" : "prot");
 					}
 					try {
 						child = field.GetValue(obj);
@@ -721,15 +747,11 @@ namespace Desharp.Renderers {
 				items.Add(item.Key, item.Value);
 			}
 		}
-		private static string _tabsIndent (int tabs, bool htmlOut) {
-			string s = "";
-			if (htmlOut) {
-				s = @"<s style=""width:" + (27*tabs) + @"px""></s>";
-			} else {
-				for (var i = 0; i < tabs; i++) s += "   ";
-			}
-			return s;
-		}
+        private static bool _isCompilerGenerated (MemberInfo fieldOrPropInfo) {
+            if (Dispatcher.DumpCompillerGenerated) return false;
+            Attribute compilerGeneratedAttr = Attribute.GetCustomAttribute(fieldOrPropInfo, typeof(CompilerGeneratedAttribute));
+            return compilerGeneratedAttr is CompilerGeneratedAttribute;
+        }
 		private static dynamic _getSimpleTypeArray (object obj) {
 			if (obj is sbyte[]) return new { Data = (sbyte[])obj, Length = ((sbyte[])obj).Length };
 			if (obj is byte[]) return new { Data = (byte[])obj, Length = ((byte[])obj).Length };

@@ -143,6 +143,21 @@
             Determinate if platform is windows OS - PlatformID.Win32NT | Win32S | Win32Windows | WinCE;
             </summary>
         </member>
+        <member name="M:Desharp.Core.Tools.GetTypeGlobaly(System.String)">
+            <summary>
+            Return Type object by string in forms: "Full.Class.Name" or "AssemblyName:Full.Class.Name", desired type should be in any loaded assembly in memory, not just in current assembly.
+            </summary>
+            <param name="fullClassName" type="String">"Full.Class.Name" or "AssemblyName:Full.Class.Name"</param>
+            <returns type="Type">Desired type</returns>
+        </member>
+        <member name="M:Desharp.Core.Tools.GetTypeGlobaly(System.String,System.String)">
+            <summary>
+            Return Type object by two strings in form: "AssemblyName", "Full.Class.Name", desired type should be in any loaded assembly in memory, not just in current assembly.
+            </summary>
+            <param name="assemblyName" type="String">"AssemblyName" for AssemblyName.dll</param>
+            <param name="fullClassName" type="String">Full class name including namespace</param>
+            <returns type="Type">Desired type</returns>
+        </member>
         <member name="T:Desharp.PanelIconType">
             <summary>
             Panel icon type for custom web debug panel.

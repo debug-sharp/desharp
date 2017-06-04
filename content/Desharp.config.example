@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <configuration>
   
   <startup>
@@ -128,6 +128,17 @@
       - if not configured - desharp build-in error page is used by default
     -->
     <add key="Desharp:ErrorPage" value="~/custom-error-page-500.html" />
+
+    <!--
+      Dump all backing fields in class instances, created usually for properties 
+      and all class instance member types marked with 'CompillerGenerated' attribute.
+      - not required, recomanded only for depp development view
+      - possible values: 1, 0, true, false
+      - if not configured, false by default
+      - if not configured or configured as false, you can hide for dumping
+        your class members by [CompilerGenerated] attribute
+    -->
+    <add key="Desharp:DumpCompillerGenerated" value="true" />
     
     <!-- 
       Default editor param value

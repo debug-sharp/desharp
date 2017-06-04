@@ -1,34 +1,39 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
-  <metadata>
-    <id>Desharp</id>
-	<version>1.0.0.0</version>
-    <title>Desharp - C# .NET Debugging Tool</title>
-    <authors>Tom Flidr</authors>
-    <owners>Tom Flidr</owners>
-	<licenseUrl>https://opensource.org/licenses/BSD-3-Clause</licenseUrl>
-    <projectUrl>https://github.com/tomflidr/desharp</projectUrl>
-    <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>.NET debuging utility to dump or log structuralized variables, exceptions, stack traces and much more into console, visual studio console, into html web response as floating window or into html/text log files.</description>
-    <copyright>Copyright ©  2017</copyright>
-    <tags>csharp cs asp-net debug debugging logging trace tracing tool web desktop windows wpf asp-net-mvc utility html-response stack-traces wpf-application</tags>
-    <!--dependencies>
-		<dependency id="Microsoft.CSharp" version="4.0.0.0" />
-		<dependency id="System" version="4.0.0.0" />
-		<dependency id="System.Configuration" version="4.0.0.0" />
-		<dependency id="System.Core" version="4.0.0.0" />
-		<dependency id="System.Data" version="4.0.0.0" />
-		<dependency id="System.Data.DataSetExtensions" version="4.0.0.0" />
-		<dependency id="System.Web" version="4.0.0.0" />
-		<dependency id="System.Web.Extensions" version="4.0.0.0" />
-		<dependency id="System.Xml" version="4.0.0.0" />
-	</dependencies-->
-    <releaseNotes>
-    </releaseNotes>
-  </metadata>
-  <files>
-    <file src="content/Desharp.config.example" target="content/Desharp.config.example" />
-    <file src="content/App.config.transform" target="content/App.config.transform" />
-    <file src="content/Web.config.transform" target="content/Web.config.transform" />
-  </files>
+	<metadata minClientVersion="2.6">
+		<id>Desharp</id>
+		<version>1.1.5.0</version>
+		<title>Desharp - C#/VB.NET Debugging Tool</title>
+		<authors>Tom Flidr</authors>
+		<owners>Tom Flidr</owners>
+		<licenseUrl>https://opensource.org/licenses/BSD-3-Clause</licenseUrl>
+		<projectUrl>https://github.com/debug-sharp</projectUrl>
+		<iconUrl>https://raw.githubusercontent.com/debug-sharp/desharp/master/gfx/desharp-icon.ico</iconUrl>
+		<language>en-US</language>
+		<requireLicenseAcceptance>false</requireLicenseAcceptance>
+		<description>
+      Desharp - C#/VB .NET debuging utility to dump or log structuralized variables, exceptions, stack traces and much more into console, visual studio console, into html web response as floating window or into html/text log files on HDD.
+    </description>
+		<copyright>Copyright ©	2017</copyright>
+		<tags>csharp cs vb-net vb asp-net debug debugging logging trace tracing tool utility web desktop windows wpf asp-net-mvc html-response stack-traces wpf-application</tags>
+		<!--dependencies>
+			<dependency id="Microsoft.CSharp" version="4.0.0.0" />
+			<dependency id="System" version="4.0.0.0" />
+			<dependency id="System.Configuration" version="4.0.0.0" />
+			<dependency id="System.Core" version="4.0.0.0" />
+			<dependency id="System.Data" version="4.0.0.0" />
+			<dependency id="System.Data.DataSetExtensions" version="4.0.0.0" />
+			<dependency id="System.Web" version="4.0.0.0" />
+			<dependency id="System.Web.Extensions" version="4.0.0.0" />
+			<dependency id="System.Xml" version="4.0.0.0" />
+		</dependencies-->
+		<releaseNotes>https://github.com/debug-sharp/desharp/releases</releaseNotes>
+	</metadata>
+	<files>
+		<file src="content/Desharp.config.example" target="content/Desharp.config.example" />
+		<file src="content/App.config.install.xdt" target="content/App.config.install.xdt" />
+		<file src="content/Web.config.install.xdt" target="content/Web.config.install.xdt" />
+		<file src="content/App.config.uninstall.xdt" target="content/App.config.uninstall.xdt" />
+		<file src="content/Web.config.uninstall.xdt" target="content/Web.config.uninstall.xdt" />
+	</files>
 </package>

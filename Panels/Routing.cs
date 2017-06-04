@@ -10,19 +10,20 @@ using System.Text.RegularExpressions;
 using System.Web;
 using System.Web.Routing;
 using System.Collections;
+using Desharp.Panels.Routings;
 
 namespace Desharp.Panels {
 	public class Routing: Abstract {
 		public static string PanelName = "routing";
 		private static string _defaultControllersNamespace;
 		private static volatile List<RouteTarget> _routeTargets = null;
-		private static object _ctlrActionsCompletingLock = new object { };
-		private bool _barTextAndPanelContentReady = false;
-		private string _allRouteTable;
-		private string _dataTokensTable;
-		private RouteTarget _matchedRouteTarget = null;
-		private string _panelContent = String.Empty;
+		private static object _routeTargetsLock = new object { };
+		private bool _dataCompleted = false;
 		private string _barText = String.Empty;
+		private string _panelContent = String.Empty;
+		private string _allRoutesTable;
+		private string _dataTokensTable;
+		private MatchedCompleter _matchedCompleter = new MatchedCompleter();
 		public new int[] DefaultWindowSizes {
 			get { return new int[] { 350, 250 }; }
 		}
@@ -35,6 +36,9 @@ namespace Desharp.Panels {
 		public override PanelIconType PanelIconType {
 			get { return PanelIconType.Class; }
 		}
+		public new void SessionBegin () {
+			this._completeData();
+		}
 		public override string RenderBarText () {
 			this._completeData();
 			return this._barText;
@@ -44,7 +48,7 @@ namespace Desharp.Panels {
 			return this._panelContent;
 		}
 		private static void _completeRouteTargetsAndDefaultNamespace () {
-			lock (Routing._ctlrActionsCompletingLock) {
+			lock (Routing._routeTargetsLock) {
 				if (Routing._routeTargets == null) {
 					Routing._defaultControllersNamespace = String.Format("{0}.Controllers", Tools.GetWebEntryAssembly().GetName().Name);
 					Routing._routeTargets = new List<RouteTarget>();
@@ -52,87 +56,103 @@ namespace Desharp.Panels {
 					Type systemWebMvcCtrlType = Tools.GetTypeGlobaly("System.Web.Mvc.Controller");
 					Type systemWebMvcNonActionAttrType = Tools.GetTypeGlobaly("System.Web.Mvc.NonActionAttribute");
 					if (systemWebMvcCtrlType is Type && systemWebMvcNonActionAttrType is Type) {
-						IEnumerable<MethodInfo> controllersActions = entryAssembly.GetTypes()
-							.Where(type => systemWebMvcCtrlType.IsAssignableFrom(type)) //filter controllers
-							.SelectMany(type => type.GetMethods(BindingFlags.Instance | BindingFlags.DeclaredOnly | BindingFlags.Public))
-							.Where(method => method.IsPublic && !method.IsDefined(systemWebMvcNonActionAttrType, false));
-						foreach (MethodBase controllerAction in controllersActions) {
-							ParameterInfo[] args = controllerAction.GetParameters();
-							Dictionary<string, object[]> targetArgs = new Dictionary<string, object[]>();
-							List<Type> argsTypes = new List<Type>();
-							for (int i = 0, l = args.Length; i < l; i += 1) {
-								targetArgs.Add(
-									args[i].Name,
-									new [] {
-										args[i].ParameterType, args[i].DefaultValue
+						try {
+							IEnumerable<MethodInfo> controllersActions = entryAssembly.GetTypes()
+								.Where(type => systemWebMvcCtrlType.IsAssignableFrom(type)) //filter controllers
+								.SelectMany(type => type.GetMethods(BindingFlags.Instance | BindingFlags.DeclaredOnly | BindingFlags.Public))
+								.Where(method => method.IsPublic && !method.IsDefined(systemWebMvcNonActionAttrType, false));
+							foreach (MethodBase controllerAction in controllersActions) {
+								ParameterInfo[] args = controllerAction.GetParameters();
+								Dictionary<string, RouteTargetArg> targetArgs = new Dictionary<string, RouteTargetArg>();
+								Type targetArgType;
+								Type[] genericTypes;
+								string targetArgTypeName;
+								bool nullable;
+								for (int i = 0, l = args.Length; i < l; i += 1) {
+									targetArgType = args[i].ParameterType;
+									if (targetArgType.Name.IndexOf("Nullable`") == 0) {
+										nullable = true;
+										targetArgTypeName = "Nullable&lt;";
+										genericTypes = targetArgType.GetGenericArguments();
+										for (int j = 0, k = genericTypes.Length; j < k; j += 1) {
+											targetArgTypeName += (j > 0 ? ",&nbsp;" : "") + genericTypes[i].Name;
+										}
+										targetArgTypeName += "&gt;";
+									} else {
+										nullable = false;
+										targetArgTypeName = targetArgType.Name;
 									}
-								);
+									targetArgs.Add(
+										args[i].Name,
+										new RouteTargetArg {
+											Type = targetArgType,
+											DefaultValue = args[i].DefaultValue,
+											IsNullable = nullable,
+											HtmlName = targetArgTypeName
+										}
+									);
+								}
+								Routing._routeTargets.Add(new RouteTarget {
+									Namespace = controllerAction.DeclaringType.Namespace,
+									NamespaceLower = controllerAction.DeclaringType.Namespace.ToLower(),
+									Controller = controllerAction.DeclaringType.Name,
+									Action = controllerAction.Name,
+									FullName = controllerAction.DeclaringType.Namespace
+										+ "." + controllerAction.DeclaringType.Name
+										+ ":" + controllerAction.Name,
+									Params = targetArgs
+								});
 							}
-							Routing._routeTargets.Add(new RouteTarget {
-								Namespace = controllerAction.DeclaringType.Namespace,
-								NamespaceLower = controllerAction.DeclaringType.Namespace.ToLower(),
-								Controller = controllerAction.DeclaringType.Name,
-								Action = controllerAction.Name,
-								FullName = controllerAction.DeclaringType.Namespace 
-									+ "." + controllerAction.DeclaringType.Name 
-									+ ":" + controllerAction.Name,
-								Params = targetArgs
-							});
-						}
+						} catch {}
 					}
 				}
 			}
 		}
 		private void _completeData () {
-			if (this._barTextAndPanelContentReady) return;
+			if (this._dataCompleted) return;
 			if (Routing._routeTargets == null) Routing._completeRouteTargetsAndDefaultNamespace();
 			try {
 				this._completeRoutes();
 				this._completeBarText();
 				this._completeMatchedDataTokens();
 				this._panelContent = @"<div class=""content" 
-					+ (this._matchedRouteTarget is RouteTarget ? "" : " nomatch") + @""">"
-					+ this._allRouteTable
-					+ this._getCurrentRelExecPath()
+					+ (this._matchedCompleter.Target is RouteTarget ? "" : " nomatch") + @""">"
+					+ this._allRoutesTable
+					+ Routing._getCurrentRelExecPath()
 					+ this._dataTokensTable
 				+ "</div>";
 			} catch (Exception e) {
 				Debug.Log(e);
 			}
-			this._barTextAndPanelContentReady = true;
+			this._dataCompleted = true;
 		}
 		private void _completeRoutes () {
 			HttpContextBase httpContext = HttpContext.Current.Request.RequestContext.HttpContext;
-			bool matched;
+			bool routeMatched;
+			int routeMatchLevel;
 			bool matchedRouteFound = false;
 			StringBuilder allRouteTableRows = new StringBuilder();
+			Route route;
+			RouteTarget routeTarget;
 			foreach (RouteBase routeBase in RouteTable.Routes) {
-				matched = routeBase.GetRouteData(httpContext) != null;
-				Route route = this._safeCastRouteBaseToRoute(routeBase);
-				RouteTarget routeTarget = this._completeRouteTarget(route, route.Defaults);
-				allRouteTableRows.Append(this._completeRoute(
-					route, routeTarget, matched ? (!matchedRouteFound ? 2 : 1) : 0
-				));
-				if (!matchedRouteFound && matched) {
-					this._matchedRouteTarget = routeTarget;
+				routeMatched = routeBase.GetRouteData(httpContext) != null;
+				route = Routing._safeCastRouteBaseToRoute(routeBase);
+				routeTarget = this._completeRouteTarget(ref route, route.Defaults);
+				routeMatchLevel = routeMatched ? (!matchedRouteFound ? 2 : 1) : 0;
+				if (routeMatchLevel == 2) {
+					this._matchedCompleter.Route = route;
+					this._matchedCompleter.Target = routeTarget;
 					matchedRouteFound = true;
 				}
+				allRouteTableRows.Append(this._completeRoute(
+					ref route, ref routeTarget, routeMatchLevel
+				));
 			}
-			this._allRouteTable = @"<b class=""heading"">All Routes:</b><table class=""routes"">"
+			this._allRoutesTable = @"<b class=""heading"">All Routes:</b><table class=""routes"">"
 				+ @"<thead><tr class=""header""><th></th><th>Pattern</th><th>Defaults</th><th>Matched as</th></tr></thead>"
 				+ @"<tbody>" + allRouteTableRows.ToString() + "</tbody></table>";
 		}
-		private Route _safeCastRouteBaseToRoute (RouteBase routeBase) {
-			Route route = routeBase as Route;
-			if (route == null && routeBase != null) {
-				PropertyInfo property = routeBase.GetType().GetProperty("__DebugRoute", BindingFlags.NonPublic | BindingFlags.Instance);
-				if (property != null) {
-					route = property.GetValue(routeBase, null) as Route;
-				}
-			}
-			return route;
-		}
-		private RouteTarget _completeRouteTarget (Route route, RouteValueDictionary dictionaryContainingCtrlAndAction) {
+		private RouteTarget _completeRouteTarget (ref Route route, RouteValueDictionary dictionaryContainingCtrlAndAction) {
 			RouteTarget result = new RouteTarget {
 				Controller = "",
 				Action = "",
@@ -140,7 +160,7 @@ namespace Desharp.Panels {
 				Namespaces = new string[] {},
 				NamespacesLower = new string[] {},
 				Namespace = Routing._defaultControllersNamespace,
-				Params = new Dictionary<string, object[]>()
+				Params = new Dictionary<string, RouteTargetArg>()
 			};
 			bool ctrlDefined = false;
 			bool actionDefined = false;
@@ -190,7 +210,7 @@ namespace Desharp.Panels {
 				}
 				result.FullName = result.Controller + ":" + result.Action;
 				if (ctrlDefined && actionDefined) {
-					result = this._completeRouteTargetCompleteActionParams(result);
+					this._completeRouteTargetCompleteActionParams(ref result);
 				} else {
 					result.FullName += "()";
 				}
@@ -201,9 +221,8 @@ namespace Desharp.Panels {
 			}
 			return result;
 		}
-		private RouteTarget _completeRouteTargetCompleteActionParams (RouteTarget routeTarget) {
-			RouteTarget routeTargetLocal;
-			List<RouteTarget> targets = new List<RouteTarget>();
+		private void _completeRouteTargetCompleteActionParams (ref RouteTarget routeTarget) {
+			RouteTarget routeTargetLocal = null;
 			bool searchForCtrl = routeTarget.Controller != "*";
 			bool searchForAction = routeTarget.Action != "*";
 			bool searchForNamespace = routeTarget.Namespaces.Length > 0;
@@ -213,23 +232,20 @@ namespace Desharp.Panels {
 				if (searchForAction && item.Action != routeTarget.Action) continue;
 				if (searchForNamespace) {
 					if (routeTarget.NamespacesLower.Contains(item.NamespaceLower)) {
-						targets.Add(item);
+						routeTargetLocal = item;
 						break;
 					}
 				} else {
-					targets.Add(item);
+					routeTargetLocal = item;
 					break;
 				}
 			}
-			if (targets.Count > 0) {
-				routeTargetLocal = targets.First();
+			if (routeTargetLocal is RouteTarget) {
 				List<string> targetParams = new List<string>();
 				Type targetParamType;
-				object targetParamDefaultValue;
 				foreach (var targetParamItem in routeTargetLocal.Params) {
-					targetParamType = (Type)targetParamItem.Value[0];
-					targetParamDefaultValue = targetParamItem.Value[1];
-					targetParams.Add(targetParamType.Name + " " + targetParamItem.Key);
+					targetParamType = targetParamItem.Value.Type;
+					targetParams.Add(targetParamItem.Value.HtmlName + " " + targetParamItem.Key);
 				}
 				routeTarget.FullName += "(" + String.Join(", ", targetParams) + ")";
 				routeTarget.Namespace = routeTargetLocal.Namespace;
@@ -240,18 +256,17 @@ namespace Desharp.Panels {
 			} else {
 				routeTarget.FullName += "()";
 			}
-			return routeTarget;
 		}
-		private string _completeRoute (Route route, RouteTarget routeTarget, int matched) {
-			string[] rowCssClassAndFirstColumn = this._completeRouteCssClassAndFirstColumn(route, matched);
-			string secondColumn = this._completeRouteSecondColumn(route);
-			string configuredRouteName = this._completeRouteConfiguredRouteName(routeTarget);
+		private string _completeRoute (ref Route route, ref RouteTarget routeTarget, int matched) {
+			string[] rowCssClassAndFirstColumn = Routing._completeRouteCssClassAndFirstColumn(ref route, matched);
+			string secondColumn = Routing._completeRouteSecondColumn(route);
+			string configuredRouteName = Routing._completeRouteConfiguredRouteName(routeTarget);
 			string routeParams = this._completeRouteParamsValuesConstraints(route);
 			string routeMatches = String.Empty;
 			string matchedRouteName = String.Empty;
 			if (matched == 2) {
-				routeMatches = this._completeRouteMatchedValues(route, routeTarget);
-				matchedRouteName = this._completeRouteMatchedRouteName(route);
+				routeMatches = this._matchedCompleter.Render();
+				matchedRouteName = configuredRouteName;
 			}
 			return String.Format(
 				@"<tr{0}><td>{1}</td><td>{2}</td><td>{3}</td><td>{4}</td></tr>",
@@ -261,30 +276,6 @@ namespace Desharp.Panels {
 				configuredRouteName + routeParams,
 				matchedRouteName + routeMatches
 			);
-		}
-		private string[] _completeRouteCssClassAndFirstColumn (Route route, int matched) {
-			string rowCssClass = String.Empty;
-			string firstColumn = String.Empty;
-			if (matched == 2) {
-				rowCssClass = @" class=""matched""";
-				firstColumn = "&#10003;";
-			} else if (matched == 1) {
-				firstColumn = "&#8776;";
-			} else if (route.RouteHandler is StopRoutingHandler) {
-				rowCssClass = @" class=""ignore""";
-				firstColumn = "&#215;";
-			}
-			return new[] { rowCssClass, firstColumn };
-		}
-		private string _completeRouteSecondColumn (Route route) {
-			string result = "~/" + route.Url;
-			Regex r = new Regex(@"\{([a-zA-Z0-9_\*]*)\}");
-			return @"<div class=""pattern"">""" + r.Replace(result, @"<b>{$1}</b>") + @"""</div>";
-		}
-		private string _completeRouteConfiguredRouteName (RouteTarget routeTarget) {
-			return routeTarget.FullName.IndexOf(":") > -1
-				? @"<div class=""target"">" + routeTarget.FullName + "</div>"
-				: routeTarget.FullName;
 		}
 		private string _completeRouteParamsValuesConstraints (Route route) {
 			string result = "";
@@ -297,7 +288,7 @@ namespace Desharp.Panels {
 					if (item.Key == "controller" || item.Key == "action") continue;
 					result += @"<div class=""desharp-dump""><span class=""routeparam"">" 
 						+ item.Key + "</span><s>:&nbsp;</s>" 
-						+ this._renderUrlParamValue(item.Value);
+						+ Routing._renderUrlParamValue(item.Value);
 					if (routeConstraints.ContainsKey(item.Key)) {
 						if (routeConstraints[item.Key] != null) {
 							if (routeConstraints[item.Key] is string) {
@@ -313,132 +304,10 @@ namespace Desharp.Panels {
 			}
 			return result;
 		}
-		private string _completeRouteMatchedValues (Route route, RouteTarget routeTarget) {
-			string result = "";
-			if (route.RouteHandler is StopRoutingHandler) return result;
-			HttpRequest request = HttpContext.Current.Request;
-			RouteValueDictionary routeDataValues = request.RequestContext.RouteData.Values;
-			List<string[]> matchedRouteParams = new List<string[]>();
-			List<string[]> otherQueryParams = new List<string[]>();
-			List<string> resolvedParams = new List<string>();
-			this._completeRouteMatchedParamsByQueryString(
-				route, routeTarget, ref matchedRouteParams, ref otherQueryParams, ref resolvedParams
-			);
-			this._completeRouteMatchedParamsByDefaults(
-				route, routeTarget, ref matchedRouteParams, ref otherQueryParams, ref resolvedParams
-			);
-			result = @"<div class=""params"">";
-			foreach (string[] item in matchedRouteParams) {
-				result += @"<div class=""desharp-dump"">"
-					+ @"<span class=""routeparam"">" + item[0] + "</span>" + "<s>:&nbsp;</s>" + item[1]
-					+ (item[2].Length > 0 ? @"&nbsp;(<span class=""string"">""" + item[2] + @"""</span>)" : "") + "</div>";
-			}
-			foreach (string[] item in otherQueryParams) {
-				result += @"<div class=""desharp-dump"">"
-					+ @"<span class=""queryparam"">" + item[0] + "</span>" + "<s>:&nbsp;</s>" + item[1] + "</div>";
-			}
-			result += "</div>";
-			return result;
-		}
-		// todo otestovat - i to zda když nevedu v route defaultni parametr ale je uveden v metode zda se to taky pretypuje
-		private void _completeRouteMatchedParamsByQueryString (Route route, RouteTarget routeTarget, ref List<string[]> matchedRouteParams, ref List<string[]> otherQueryParams, ref List<string> resolvedParams) {
-			HttpRequest request = HttpContext.Current.Request;
-			NameValueCollection queryString = request.QueryString;
-			RouteValueDictionary routeDefaults = route.Defaults;
-			for (int i = 0, l = queryString.AllKeys.Length; i < l; i += 1) {
-				// fill default values for each param
-				string paramName = queryString.AllKeys[i];
-				string rawValue = "";
-				try { 
-					rawValue = queryString.Get(paramName);
-				} catch (Exception e) {
-					rawValue = "";
-				}
-				Type defaultsType = null;
-				Type targetMethodType = null;
-				Type targetType = null;
-				object typedValue = null;
-				bool matchingConstraint;
-				// set params has been resolved
-				resolvedParams.Add(paramName);
-				if (paramName == "controller" || paramName == "action") continue;
-				// try to resolve target types
-				targetMethodType = routeTarget.Params.ContainsKey(paramName) && routeTarget.Params[paramName].Length > 0 
-					? routeTarget.Params[paramName][0] as Type 
-					: null;
-				if (routeDefaults.ContainsKey(paramName)) {
-					defaultsType = routeDefaults[paramName].GetType();
-					if (defaultsType.Name == "UrlParameter") defaultsType = null;
-				}
-				targetType = targetMethodType is Type ? targetMethodType : (defaultsType is Type ? defaultsType : null);
-				// lets try to retype raw param into target type as System.Web.Mvc library does if param pass throw it's constraint:
-				if (targetType is Type) {
-					try {
-						targetType = Nullable.GetUnderlyingType(targetType) ?? targetType;
-						typedValue = Convert.ChangeType(rawValue, targetType);
-					} catch { }
-					if (typedValue != null) {
-						matchedRouteParams.Add(new[] {
-							paramName, this._renderUrlParamValue(typedValue), ""
-						});
-					} else if (routeDefaults.ContainsKey(paramName)) {
-						matchedRouteParams.Add(new[] {
-							paramName, this._renderUrlParamValue(routeDefaults[paramName]), rawValue
-						});
-					} else if (routeTarget.Params.ContainsKey(paramName) && routeTarget.Params[paramName][1] != null) {
-						matchedRouteParams.Add(new[] {
-							paramName, this._renderUrlParamValue(routeTarget.Params[paramName][1]), rawValue
-						});
-					}
-				} else {
-					// if there was not possible to convert raw input value to target type 
-					// - use value from defaults if there is any or use raw value to display
-					if (routeDefaults.ContainsKey(paramName)) {
-						matchedRouteParams.Add(new[] {
-							paramName, this._renderUrlParamValue(routeDefaults[paramName]), rawValue
-						});
-					} else {
-						otherQueryParams.Add(new[] {
-							paramName, this._renderUrlParamValue(rawValue)
-						});
-					}
-				}
-			}
-		}
-		private void _completeRouteMatchedParamsByDefaults (Route route, RouteTarget routeTarget, ref List<string[]> matchedRouteParams, ref List<string[]> otherQueryParams, ref List<string> resolvedParams) {
-			HttpRequest request = HttpContext.Current.Request;
-			foreach (var item in route.Defaults) {
-				string paramName = item.Key;
-				if (paramName == "controller" || paramName == "action" || resolvedParams.Contains(paramName)) continue;
-				object typedValue = item.Value;
-				matchedRouteParams.Add(new[] {
-					paramName, this._renderUrlParamValue(typedValue), ""
-				});
-			}
-		}
-		private string _renderUrlParamValue (object obj) {
-			if (obj == null) {
-				return Dumper.GetNullCode(true);
-			} else if (obj.GetType().Name == "UrlParameter") {
-				return @"<span class=""type"">[Optional]</span>";
-			} else {
-				return Dumper.DumpPrimitiveType(obj, 0, true, Dispatcher.DumpMaxLength, "");
-			}
-		}
-		private string _completeRouteMatchedRouteName (Route route) {
-			string result = "";
-			if (!(route.RouteHandler is StopRoutingHandler)) {
-				RouteTarget routeTarget = this._completeRouteTarget(
-					route, HttpContext.Current.Request.RequestContext.RouteData.Values
-				);
-				result = @"<div class=""target"">" + routeTarget.FullName + "</div>";
-			}
-			return result;
-		}
 		private void _completeBarText () {
-			if (this._matchedRouteTarget is RouteTarget) {
-				int firstBracketPos = this._matchedRouteTarget.FullName.IndexOf("(");
-				this._barText = this._matchedRouteTarget.FullName.Substring(0, firstBracketPos) + " (" + RouteTable.Routes.Count + ")";
+			if (this._matchedCompleter.Target is RouteTarget) {
+				int firstBracketPos = this._matchedCompleter.Target.FullName.IndexOf("(");
+				this._barText = this._matchedCompleter.Target.FullName.Substring(0, firstBracketPos) + " (" + RouteTable.Routes.Count + ")";
 			} else {
 				this._barText = "No matched route";
 			}
@@ -446,7 +315,7 @@ namespace Desharp.Panels {
 		private void _completeMatchedDataTokens () {
 			string dataTokensTableRows = "";
 			RouteData routeData = HttpContext.Current.Request.RequestContext.RouteData;
-			Route route = this._safeCastRouteBaseToRoute(routeData.Route);
+			Route route = Routing._safeCastRouteBaseToRoute(routeData.Route);
 			if (route == null || route.RouteHandler is StopRoutingHandler) return;
 			if (routeData.DataTokens.Keys.Count > 0) {
 				foreach (string key in routeData.DataTokens.Keys) {
@@ -460,7 +329,50 @@ namespace Desharp.Panels {
 				this._dataTokensTable = "<p>Matched route has no data tokens.</p>";
 			}
 		}
-		private string _getCurrentRelExecPath () {
+		private static Route _safeCastRouteBaseToRoute (RouteBase routeBase) {
+			Route route = routeBase as Route;
+			if (route == null && routeBase != null) {
+				PropertyInfo property = routeBase.GetType().GetProperty("__DebugRoute", BindingFlags.NonPublic | BindingFlags.Instance);
+				if (property != null) {
+					route = property.GetValue(routeBase, null) as Route;
+				}
+			}
+			return route;
+		}
+		private static string _renderUrlParamValue (object obj) {
+			if (obj == null) {
+				return Dumper.GetNullCode(true);
+			} else if (obj.GetType().Name == "UrlParameter") {
+				return @"<span class=""type"">[Optional]</span>";
+			} else {
+				return Dumper.DumpPrimitiveType(obj, 0, true, Dispatcher.DumpMaxLength, "");
+			}
+		}
+		private static string[] _completeRouteCssClassAndFirstColumn (ref Route route, int matched) {
+			string rowCssClass = String.Empty;
+			string firstColumn = String.Empty;
+			if (matched == 2) {
+				rowCssClass = @" class=""matched""";
+				firstColumn = "&#10003;";
+			} else if (matched == 1) {
+				firstColumn = "&#8776;";
+			} else if (route.RouteHandler is StopRoutingHandler) {
+				rowCssClass = @" class=""ignore""";
+				firstColumn = "&#215;";
+			}
+			return new[] { rowCssClass, firstColumn };
+		}
+		private static string _completeRouteSecondColumn (Route route) {
+			string result = "~/" + route.Url;
+			Regex r = new Regex(@"\{([a-zA-Z0-9_\*]*)\}");
+			return @"<div class=""pattern"">""" + r.Replace(result, @"<b>{$1}</b>") + @"""</div>";
+		}
+		private static string _completeRouteConfiguredRouteName (RouteTarget routeTarget) {
+			return routeTarget.FullName.IndexOf(":") > -1
+				? @"<div class=""target"">" + routeTarget.FullName + "</div>"
+				: routeTarget.FullName;
+		}
+		private static string _getCurrentRelExecPath () {
 			HttpRequest request = HttpContext.Current.Request;
 			Uri url = request.Url;
 			string requestedPath = request.AppRelativeCurrentExecutionFilePath.TrimStart('~');
