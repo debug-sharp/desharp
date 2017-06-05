@@ -103,16 +103,16 @@ namespace Desharp.Completers {
 			if (obj is DataSet || obj is DataTable || obj is DataRow) return true;
             return false;
 		}
-		/// <summary>
-		/// True if value is implementing IList | System.Array | System.Collections.ArrayList | System.Data.SqlClient.SqlDataReader.
-		/// </summary>
-		/// <param name="obj">Any value or null.</param>
-		public static bool IsEnumerable (object obj) {
+        /// <summary>
+        /// True if value is implementing IList | System.Array | System.Collections.ArrayList | System.Data.Common.DbDataReader.
+        /// </summary>
+        /// <param name="obj">Any value or null.</param>
+        public static bool IsEnumerable (object obj) {
 			if (
                 obj is IList ||
                 obj is System.Array ||
                 obj is System.Collections.ArrayList ||
-                obj is System.Data.SqlClient.SqlDataReader
+                obj is System.Data.Common.DbDataReader
             ) {
                 return true;
             }

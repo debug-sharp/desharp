@@ -53,7 +53,7 @@
         </member>
         <member name="M:Desharp.Completers.Detector.IsEnumerable(System.Object)">
             <summary>
-            True if value is implementing IList | System.Array | System.Collections.ArrayList | System.Data.SqlClient.SqlDataReader.
+            True if value is implementing IList | System.Array | System.Collections.ArrayList | System.Data.Common.DbDataReader.
             </summary>
             <param name="obj">Any value or null.</param>
         </member>

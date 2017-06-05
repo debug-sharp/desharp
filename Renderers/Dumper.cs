@@ -460,12 +460,14 @@ namespace Desharp.Renderers {
             string result = "";
             int length = 0;
             dynamic objEnum = (dynamic)obj;
-            if (obj is System.Data.SqlClient.SqlDataReader) {
-                length = objEnum.FieldCount;
-            } else if (obj is System.Array) {
-                length = objEnum.Length;
-            } else {
-				length = objEnum.Count;
+            if (obj is IList) {
+                length = ((IList)objEnum).Count;
+            } else if (obj is System.Data.Common.DbDataReader) {
+                length = ((System.Data.Common.DbDataReader)objEnum).FieldCount;
+            } else if (obj is Array) {
+                length = ((Array)objEnum).Length;
+            } else if (obj is ArrayList) {
+				length = ((ArrayList)objEnum).Count;
             }
             DumpType type = Dumper.GetDumpTypes(obj, length.ToString(), htmlOut, true, sequence);
             result += type.ValueTypeCode;
@@ -474,18 +476,21 @@ namespace Desharp.Renderers {
             string keyStr;
 			if (htmlOut) result += @"<div class=""item dump dump-" + sequence + obj.GetHashCode().ToString() + @""">";
 			string tabsStr = Dumper.TabsIndent(level + 1, htmlOut);
-			for (int i = 0; i < length; i++) {
-                child = objEnum[i];
+            IEnumerator enumerator = ((IEnumerable)objEnum).GetEnumerator();
+            int i = 0;
+            while (enumerator.MoveNext()) {
+                child = enumerator.Current;
                 keyStr = i.ToString();
-				dumpedChild = Dumper._dumpRecursive(child, htmlOut, maxDepth, maxLength, level + 1, new List<int>(ids), sequence);
-				if (htmlOut) {
+                dumpedChild = Dumper._dumpRecursive(child, htmlOut, maxDepth, maxLength, level + 1, new List<int>(ids), sequence);
+                if (htmlOut) {
                     result += (i > 0 ? "<br />" : "") + tabsStr
-					+ @"<span class=""int"">" + keyStr + "</span>"
-					+ "<s>:&nbsp;</s>" + dumpedChild;
+                    + @"<span class=""int"">" + keyStr + "</span>"
+                    + "<s>:&nbsp;</s>" + dumpedChild;
                 } else {
                     result += System.Environment.NewLine + tabsStr + keyStr + ": " + dumpedChild;
                 }
-			}
+                i += 1;
+            }
 			if (htmlOut) result += "</div>";
 			return result;
 		}
