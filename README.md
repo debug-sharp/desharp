@@ -1,6 +1,6 @@
-# Desharp - C#/VB .NET Debugging Tool
+# **[Desharp](https://www.nuget.org/packages/Desharp/)** - C#/VB .NET Debugging Tool
 
-[![Latest Stable Version](https://img.shields.io/badge/Stable-v1.1.5-brightgreen.svg?style=plastic)](https://github.com/tomFlidr/desharp/releases)
+[![Latest Stable Version](https://img.shields.io/badge/Stable-v1.0.0-brightgreen.svg?style=plastic)](https://github.com/tomFlidr/desharp/releases)
 [![License](https://img.shields.io/badge/Licence-BSD-brightgreen.svg?style=plastic)](https://mvccore.github.io/docs/mvccore/4.0.0/LICENCE.md)
 ![.NET Version](https://img.shields.io/badge/.NET->=4.0-brightgreen.svg?style=plastic)
 
@@ -14,7 +14,7 @@ PM> Install-Package Desharp
 ## Usage and examples
 
 ### Code snippets
-To use long Desharp calls more comfortable, install [Visual Studio code snippets](https://github.com/tomFlidr/desharp-codesnippets) for desharp to create proper shortcuts
+To use long **[Desharp](https://www.nuget.org/packages/Desharp/)** calls more comfortable, install [Visual Studio code snippets](https://github.com/tomFlidr/desharp-codesnippets) for desharp to create proper shortcuts
 More info [about code snippets for Visual Studio](https://code.visualstudio.com/docs/editor/userdefinedsnippets).
 
 
