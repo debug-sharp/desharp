@@ -35,14 +35,13 @@ namespace Desharp.Completers {
 			int counter = 0;
 
 			foreach (StackFrame stackItem in stackTrace.GetFrames()) {
-				fileName = stackItem.GetFileName();
-				if (fileName == null) fileName = "";
+				fileName = stackItem.GetFileName() ?? "";
 				fileName = fileName.Replace('\\', '/');
 
 				if (fileName.Length > 0) {
-					if (fileName.IndexOf(StackTrace.SELF_FILENAME) > -1 && fileName.IndexOf(StackTrace.SELF_FILENAME) == fileName.Length - StackTrace.SELF_FILENAME.Length) continue;
-					if (fileName.IndexOf(Exceptions.SELF_FILENAME) > -1 && fileName.IndexOf(Exceptions.SELF_FILENAME) == fileName.Length - Exceptions.SELF_FILENAME.Length) continue;
-					if (fileName.IndexOf(Debug.SELF_FILENAME) > -1 && fileName.IndexOf(Debug.SELF_FILENAME) == fileName.Length - Debug.SELF_FILENAME.Length) continue;
+					if (fileName.IndexOf(StackTrace.SELF_FILENAME) > -1 & fileName.IndexOf(StackTrace.SELF_FILENAME) == fileName.Length - StackTrace.SELF_FILENAME.Length) continue;
+					if (fileName.IndexOf(Exceptions.SELF_FILENAME) > -1 & fileName.IndexOf(Exceptions.SELF_FILENAME) == fileName.Length - Exceptions.SELF_FILENAME.Length) continue;
+					if (fileName.IndexOf(Debug.SELF_FILENAME) > -1 & fileName.IndexOf(Debug.SELF_FILENAME) == fileName.Length - Debug.SELF_FILENAME.Length) continue;
 				}
 
 				line = stackItem.GetFileLineNumber().ToString().Trim();
@@ -58,8 +57,8 @@ namespace Desharp.Completers {
 					Method = method
 				};
 				if (
-					!errorFile.HasValue && 
-					fileName.Length > 0 && 
+					!errorFile.HasValue & 
+					fileName.Length > 0 &
 					line != "?"
 				) {
 					errorFile = stackTraceItem;
@@ -74,8 +73,32 @@ namespace Desharp.Completers {
 				ExceptionMessage = message,
 				ExceptionType = exceptionType.Length > 0 ? exceptionType : ""
 			};
-		}
-		internal static RenderingCollection RenderStackTraceForException (ExceptionToRender exceptionToRender, bool fileSystemLog = true, bool htmlOut = false, int index = 0) {
+        }
+        internal static StackTraceItem CompleteCallerPoint () {
+            StackTraceItem result = new StackTraceItem();
+            System.Diagnostics.StackTrace stackTrace = new System.Diagnostics.StackTrace(1, true);
+            string fileName;
+            string line;
+            foreach (var stackItem in stackTrace.GetFrames()) {
+                fileName = stackItem.GetFileName() ?? "";
+                fileName = fileName.Replace('\\', '/');
+                if (fileName.Length > 0) {
+                    if (fileName.IndexOf(FireDump.SELF_FILENAME) > -1 & fileName.IndexOf(FireDump.SELF_FILENAME) == fileName.Length - FireDump.SELF_FILENAME.Length) continue;
+                    if (fileName.IndexOf(StackTrace.SELF_FILENAME) > -1 & fileName.IndexOf(StackTrace.SELF_FILENAME) == fileName.Length - StackTrace.SELF_FILENAME.Length) continue;
+                    if (fileName.IndexOf(Exceptions.SELF_FILENAME) > -1 & fileName.IndexOf(Exceptions.SELF_FILENAME) == fileName.Length - Exceptions.SELF_FILENAME.Length) continue;
+                    if (fileName.IndexOf(Debug.SELF_FILENAME) > -1 & fileName.IndexOf(Debug.SELF_FILENAME) == fileName.Length - Debug.SELF_FILENAME.Length) continue;
+                }
+                line = stackItem.GetFileLineNumber().ToString().Trim();
+                if (line.Length == 0) line = "";
+                result = new StackTraceItem {
+                    File = fileName,
+                    Line = line
+                };
+                break;
+            }
+            return result;
+        }
+        internal static RenderingCollection RenderStackTraceForException (ExceptionToRender exceptionToRender, bool fileSystemLog = true, bool htmlOut = false, int index = 0) {
 			StackTraceItem? possibleViewExceptionStackTrace;
 			List<StackTraceItem> stackTraceItems = StackTrace._completeStackTraceForSingleException(exceptionToRender.Exception);
 			StackTraceItem? errorFile = null;
@@ -155,7 +178,7 @@ namespace Desharp.Completers {
 			StackTrace._completeExceptionsGetBaseAndInnerExceptions(e, ref exceptions, false);
 			return StackTrace._completeExceptionsOrderByRelationships(exceptions, catched);
 		}
-		private static void _completeExceptionsGetBaseAndInnerExceptions (Exception e, ref Dictionary<string, object[]> exceptions, bool useBaseExceptionsGetter) {
+        private static void _completeExceptionsGetBaseAndInnerExceptions (Exception e, ref Dictionary<string, object[]> exceptions, bool useBaseExceptionsGetter) {
 			string currentExceptionImprint = StackTrace._getExceptionFingerPrint(e);
 			Exception currentException = e;
 			Exception baseException;

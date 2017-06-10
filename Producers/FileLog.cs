@@ -18,7 +18,7 @@ namespace Desharp.Producers {
 		protected volatile static object storesLock = new object { };
 		protected static object writingLock = new object { };
 		protected static Thread writeThread = null;
-		internal static void Init () {
+		internal static void StaticInit () {
 			FileLog.stores = new Dictionary<string, StringBuilder>();
 			FileLog.writing = false;
 			FileLog.loadedStores = new List<string>();

@@ -55,16 +55,19 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Assets.resx</DependentUpon>
     </Compile>
+    <Compile Include="Attributes\Hidden.cs" />
     <Compile Include="Completers\LoadedAssemblies.cs" />
     <Compile Include="Core\AppExitWatcher.cs" />
     <Compile Include="Core\Dispatcher.cs" />
     <Compile Include="Core\Enums\AppExitType.cs" />
+    <Compile Include="Core\Enums\FireDumpType.cs" />
     <Compile Include="Core\Enums\PanelIconType.cs" />
     <Compile Include="Core\Enums\PanelType.cs" />
     <Compile Include="Core\Enums\StackTraceFormat.cs" />
     <Compile Include="Core\Module.cs" />
     <Compile Include="Core\Structs\DumpOptions.cs" />
     <Compile Include="Core\Structs\ExceptionToRender.cs" />
+    <Compile Include="Core\Structs\FireDumpItem.cs" />
     <Compile Include="Core\Structs\RenderedPanel.cs" />
     <Compile Include="Core\Structs\RouteMatchedParam.cs" />
     <Compile Include="Core\Structs\RouteTarget.cs" />
@@ -95,7 +98,7 @@
     <Compile Include="Core\Structs\DumpType.cs" />
     <Compile Include="Completers\Detector.cs" />
     <Compile Include="Renderers\Dumper.cs" />
-    <Compile Include="FireCS.cs" />
+    <Compile Include="Producers\FireDump.cs" />
     <Compile Include="Producers\FileLog.cs" />
     <Compile Include="Renderers\Exceptions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

@@ -41,17 +41,13 @@ namespace Desharp {
 					Dispatcher.GetCurrent().WebRequestSessionEnd();
 				} catch { }
 			};
-			application.PreSendRequestHeaders += delegate (object o, EventArgs e) {
-				try {
-					FireCS.CloseHeaders();
-				} catch { }
-			};
 			application.EndRequest += delegate (object o, EventArgs e) {
 				try {
 					// be carefull, EndRequest event is sometimes called twice (...if there is exception in your application)
 					Dispatcher dispatcher = Dispatcher.GetCurrent(false);
 					if (dispatcher is Dispatcher) {
-						dispatcher.WebRequestEnd();
+                        dispatcher.GetFireDump().CloseHeaders();
+                        dispatcher.WebRequestEnd();
 						Dispatcher.Remove();
 					}
 				} catch { }

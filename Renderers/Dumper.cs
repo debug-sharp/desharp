@@ -754,8 +754,8 @@ namespace Desharp.Renderers {
 		}
         private static bool _isCompilerGenerated (MemberInfo fieldOrPropInfo) {
             if (Dispatcher.DumpCompillerGenerated) return false;
-            Attribute compilerGeneratedAttr = Attribute.GetCustomAttribute(fieldOrPropInfo, typeof(CompilerGeneratedAttribute));
-            return compilerGeneratedAttr is CompilerGeneratedAttribute;
+            return Attribute.GetCustomAttribute(fieldOrPropInfo, typeof(HiddenAttribute)) is HiddenAttribute |
+                Attribute.GetCustomAttribute(fieldOrPropInfo, typeof(CompilerGeneratedAttribute)) is CompilerGeneratedAttribute;
         }
 		private static dynamic _getSimpleTypeArray (object obj) {
 			if (obj is sbyte[]) return new { Data = (sbyte[])obj, Length = ((sbyte[])obj).Length };

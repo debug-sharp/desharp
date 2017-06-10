@@ -22,6 +22,13 @@ namespace Desharp {
 		/// Desharp assembly Version.
 		/// </summary>
 		public static Version Version;
+        /// <summary>
+        /// Get or set current request FireDump to log anything into client browser console window through FirePHP extension.
+        /// </summary>
+        public static FireDump Fire {
+            get { return Dispatcher.GetCurrent().GetFireDump(); }
+            set { Dispatcher.GetCurrent().FireDump = value; }
+        }
 		/// <summary>
 		/// Session storrage key to store Desharp data inside Web app session storrage.
 		/// </summary>
@@ -134,15 +141,15 @@ namespace Desharp {
 				return result;
 			}
 		}
-		/// <summary>
-		/// Print to output if enabled or log into file if first param is <c>true</c> - use it always if you want to know that something is equal and what it is - described by second param <c>message</c>.
-		/// </summary>
-		/// <param name="assertion">Comparation you need to process by yourself in method param space.</param>
-		/// <param name="description">Any text to describe previous comparation.</param>
-		/// <param name="logLevel">Log level, used only when printing to output is disabled, <c>"default.log"</c> used by default.</param>
-		public static void Assert (bool assertion, string description = "", Level logLevel = Level.DEBUG) {
+        /// <summary>
+        /// Print to application output or log into file (if enabled) first param to be <c>true</c> or not and describe what was equal or not in first param by second param <c>message</c>.
+        /// </summary>
+        /// <param name="assertion">Comparation boolean to dump or log, way to compare things is up to you, you need to process it in method param space to send here boolean only.</param>
+        /// <param name="description">Any text to describe previous comparation.</param>
+        /// <param name="logLevel">Log level, used only when printing to output is disabled, <c>"default.log"</c> used by default.</param>
+        public static void Assert (bool assertion, string description = "", Level logLevel = Level.DEBUG) {
 			string result = String.Format(
-				(description.Length > 0 ? "{0}: ({1})" : "{0}{1}"), description, (assertion ? "true" : "false")
+				(description.Length > 0 ? "{0}: {1}" : "{0}{1}"), description, (assertion ? "true" : "false")
 			);
 			if (Dispatcher.GetCurrent().Enabled == true) {
 				Debug.Dump(result);
@@ -150,10 +157,12 @@ namespace Desharp {
 				Debug.Log(result, logLevel);
 			}
         }
-		/// <summary>
-		/// Stop current request/thread processing by exception writen into output (stop request for web applications, stop current thread for desktop applications).
-		/// </summary>
-		public static void Stop () {
+        /// <summary>
+        /// Print current thread stack trace into application output and exit running application.
+        /// - web applications - stop current request
+        /// - any other applications - stop application with all it's threads
+        /// </summary>
+        public static void Stop () {
 			Dispatcher dispatcher = Dispatcher.GetCurrent();
 			if (dispatcher.Enabled != true) return;
 			bool htmlOut = dispatcher.Output == LogFormat.Html && Dispatcher.EnvType == EnvType.Web;
@@ -164,27 +173,28 @@ namespace Desharp {
 				HtmlResponse.SendRenderedExceptions(renderedException, "Exception");
 			} else {
 				dispatcher.WriteExceptionToOutput(new List<string>() { renderedException });
+                Console.Read();
 			}
-			dispatcher.Stop();
+            dispatcher.Stop();
 		}
-		/// <summary>
-		/// Dump exception instance to application output if output dumping is enabled. It renders:<para /><ul>
-		/// <li>exception <b>type</b><para /></li>
-		/// <li>exception <b>message</b><para /></li>
-		/// <li>if exception has been <b>catched</b> or <b>not catched</b><para /></li>
-		/// <li>exception <b>hash id</b><para /></li>
-		/// <li><b>error file</b> where exception has been thrown<para /></li>
-		/// <li>thread callstack<para /></li>
-		/// <li>all inner exceptions after this exception in the same way<para /></li>
-		/// </ul></summary>
-		/// <param name="exception">Exception instance to dump.</param>
-		/// <param name="options">Dump options collection (optional) - just create new instance with public fields of that:<para /><br />
-		/// For this dump call you can change options:<para /><ul>
-		/// <li><b>Return</b> (bool, optional) - if exception will be dumped into application output (as default) or returned as dumped string value.<para /></li>
-		/// </ul></param>
-		/// <returns>Returns empty string if debug printing is disabled and also returns empty string if second param <c>DumpOptions.Return</c> is <c>false</c> (by default), but if true, return dumped exception as string.</returns>
-		public static string Dump (Exception exception = null, DumpOptions? options = null) {
-			Dispatcher dispatcher = Dispatcher.GetCurrent();
+        /// <summary>
+        /// Dump exception instance to application output if output dumping is enabled. It renders:<para /><ul>
+        /// <li>exception <b>type</b><para /></li>
+        /// <li>exception <b>message</b><para /></li>
+        /// <li>if exception has been <b>catched</b> or <b>not catched</b><para /></li>
+        /// <li>exception <b>hash id</b><para /></li>
+        /// <li><b>error file</b> where exception has been thrown<para /></li>
+        /// <li>thread callstack<para /></li>
+        /// <li>all inner exceptions after this exception in the same way<para /></li>
+        /// </ul></summary>
+        /// <param name="exception">Exception instance to dump.</param>
+        /// <param name="options">Dump options collection (optional) - just create new instance with public fields of that:<para /><br />
+        /// For this dump call you can change options:<para /><ul>
+        /// <li><b>Return</b> (bool, optional) - if exception will be dumped into application output (as default) or returned as dumped string value.<para /></li>
+        /// </ul></param>
+        /// <returns>Returns empty string if debug printing is disabled and also returns empty string if second param <c>DumpOptions.Return</c> is <c>false</c> (by default), but if true, return dumped exception as string.</returns>
+        public static string Dump (Exception exception = null, DumpOptions? options = null) {
+            Dispatcher dispatcher = Dispatcher.GetCurrent();
 			dispatcher.LastError = exception;
 			if (dispatcher.Enabled != true) return "";
 			if (!options.HasValue) options = new DumpOptions { Return = false, Depth = 0, MaxLength = 0 };
@@ -204,13 +214,13 @@ namespace Desharp {
 				if (!optionsValue.MaxLength.HasValue) optionsValue.MaxLength = 0;
 				if (!optionsValue.Return.HasValue) optionsValue.Return = false;
 				dumpResult = Dumper.Dump(exception, htmlOut, optionsValue.Depth.Value, optionsValue.MaxLength.Value);
-			}
-			if (!optionsValue.Return.HasValue || (optionsValue.Return.HasValue && !optionsValue.Return.Value)) {
-				if (dumpResult.Length == 0 && exceptionResult.Count > 0) {
+            }
+            if (!optionsValue.Return.HasValue || (optionsValue.Return.HasValue && !optionsValue.Return.Value)) {
+                if (dumpResult.Length == 0 && exceptionResult.Count > 0) {
 					dispatcher.WriteExceptionToOutput(exceptionResult);
-				} else {
+                } else {
 					dispatcher.WriteDumpToOutput(dumpResult);
-				}
+                }
 				return "";
 			}
 			if (dumpResult.Length == 0 && exceptionResult.Count > 0) {
@@ -225,7 +235,7 @@ namespace Desharp {
 		/// <param name="args">Infinite number of values to dump into application output.</param>
 		/// <returns>All dumped values are in this function version always returned as dumped string.</returns>
 		public static string Dump (params object[] args) {
-			Dispatcher dispatcher = Dispatcher.GetCurrent();
+            Dispatcher dispatcher = Dispatcher.GetCurrent();
 			if (dispatcher.Enabled != true) return "";
 			string result;
 			StringBuilder resultItems = new StringBuilder();
@@ -255,7 +265,7 @@ namespace Desharp {
 		/// </ul></param>
 		/// <returns>Returns empty string by default or dumped variable string if you specify in second argument <c>DumpOptions.Return</c> to be <c>true</c>.</returns>
 		public static string Dump (object obj, DumpOptions? options = null) {
-			Dispatcher dispatcher = Dispatcher.GetCurrent();
+            Dispatcher dispatcher = Dispatcher.GetCurrent();
 			if (dispatcher.Enabled != true) return "";
 			if (!options.HasValue) options = new DumpOptions { Return = false, Depth = 0, MaxLength = 0 };
 			DumpOptions optionsValue = options.Value;

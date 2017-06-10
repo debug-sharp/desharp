@@ -17,7 +17,7 @@ namespace Desharp {
 		public int? LogWriteMilisecond;
 		/// <summary>Application logs content format, should be HTML or TEXT.</summary>
 		public LogFormat LogFormat;
-		/// <summary>Application environment - usually automaticly determinated by Desharp asembly - change this value only when you REALY know what you are doing!!!</summary>
+		/// <summary>Application environment - usually automaticly determinated by Desharp asembly - change this value only when you REALLY know what you are doing!</summary>
 		public EnvType EnvType;
 		/// <summary>Custom web debug panel types, implementing Desharp.Panels.Abstract to create their instances for each web request where debuging enabled.</summary>
 		public Type[] Panels;

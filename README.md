@@ -22,6 +22,7 @@ More info [about code snippets for Visual Studio](https://code.visualstudio.com/
 #### C#:
 ```cs
 using Desharp;
+using System.Collections.Generic;
 
 var list = new List<string>() { "a", "b", "c" };
 Debug.Dump(list);  // print list by Console.WriteLine(); or append into html response as floating window
@@ -30,19 +31,18 @@ Debug.Log(list);   // store dumped list in debug.log or debug.html file on HDD
 #### VB:
 ```vb
 Imports Desharp
+Imports System.Collections.Generic
 
 Dim list As New List(Of String)() { "a", "b", "c" }
 Debug.Dump(list)  ' print list by Console.WriteLine(); or append into html response as floating window
 Debug.Log(list)   ' store dumped list in debug.log or debug.html file on HDD
 ```
-```cs
-/**
- * Dumped variables are always looking like:
- * [List<string>(3)]
- *    0: "a" [String(1)]
- *    1: "b" [String(1)]
- *    2: "c" [String(1)]
- */
+Dumped list for both languages in debug output or console window:
+```
+[List<string>(3)]
+   0: "a" [String(1)]
+   1: "b" [String(1)]
+   2: "c" [String(1)]
 ```
 
 ### Dump/log `Exception`
@@ -63,6 +63,28 @@ Catch e As Exception
    Debug.Dump(e)  ' print exception by Console.WriteLine(); or append into html response as floating window
    Debug.Log(e)   ' store dumped exception in exception.log or exception.html file on HDD
 End Try
+```
+Dumped exception for both languages in debug output or console window:
+```
+System.Exception (Hash Code: 50632145):
+   Message   : Something wrong!
+   Time      : 2017-06-10 13:18:07:300
+   Process ID: 7972
+   Thread ID : 1
+   File      : /Program.cs:8
+   -------
+       4 | namespace ExampleConsole {
+       5 |     class Program {
+       6 |         static void Main(string[] args) {
+       7 |             try {
+   ->  8 |                 throw new Exception("Something wrong!");
+       9 |             } catch (Exception e) {
+      10 |                 Debug.Dump(e);  // print exception by Console.WriteLine(); or append into html response as floating window
+      11 |                 Debug.Log(e);   // store dumped exception in exception.log or exception.html file on HDD
+      12 |             }
+   -------
+   Callstack: 
+      ExampleConsole.Program.Main(String[] args) /Program.cs 8
 ```
 
 ## Dump outputs
@@ -417,7 +439,3 @@ Debug.Configure(new DebugConfig {
   Depth = 3
 });
 ```
-
-## Additional info
-- Desharp library works in .NET framework >= 4.0
-- Desharp is possible to use in Visual Basic application, but it was tested wery poorly
