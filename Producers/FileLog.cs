@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Collections.Generic;
 using Desharp.Core;
@@ -12,19 +13,24 @@ namespace Desharp.Producers {
 		protected const string LOGS_NUMBERING_SEPARATOR = "-";
 		protected const int MAX_LOG_FILE_SIZE = 50000000; // 50 MB
 		protected static string[] htmlLogFileBegin;
-		protected volatile static Dictionary<string, StringBuilder> stores;
-		protected volatile static List<string> loadedStores;
-		protected volatile static bool writing;
-		protected volatile static object storesLock = new object { };
-		protected static object writingLock = new object { };
-		protected static Thread writeThread = null;
-		internal static void StaticInit () {
+
+        protected static ReaderWriterLockSlim wrigingBgThreadLock = new ReaderWriterLockSlim();
+        protected static volatile bool wrigingBgThreadIsRunning = false;
+        protected static volatile Thread wrigingBgThread = null;
+
+        protected volatile static Dictionary<string, StringBuilder> stores;
+        protected static volatile Dictionary<string, ReaderWriterLockSlim> storesAppendingLocks;
+        protected static volatile Dictionary<string, ReaderWriterLockSlim> hddWritingLocks;
+        
+        internal static void StaticInit () {
 			FileLog.stores = new Dictionary<string, StringBuilder>();
-			FileLog.writing = false;
-			FileLog.loadedStores = new List<string>();
+            FileLog.storesAppendingLocks = new Dictionary<string, ReaderWriterLockSlim>();
+            FileLog.hddWritingLocks = new Dictionary<string, ReaderWriterLockSlim>();
 			foreach (var item in LevelValues.Values) {
 				FileLog.stores.Add(item.Value, new StringBuilder());
-			}
+                FileLog.storesAppendingLocks.Add(item.Value, new ReaderWriterLockSlim());
+                FileLog.hddWritingLocks.Add(item.Value, new ReaderWriterLockSlim());
+            }
 			FileLog.stores.Add("exception", new StringBuilder());
 			FileLog.htmlLogFileBegin = new string[] {
 				@"<!DOCTYPE HTML><html lang=""en-US""><head><meta charset=""UTF-8""/><title>",
@@ -35,98 +41,82 @@ namespace Desharp.Producers {
 				+ @"</script></head><body id=""desharp"">" 
 				+ Environment.NewLine
 			};
-			FileLog.InitCyclicWritingIfNecessary();
+			FileLog.InitBackgroundWritingIfNecessary();
 		}
-		internal static void InitCyclicWritingIfNecessary () {
-			if (Dispatcher.LogWriteMilisecond > 0 && FileLog.writeThread == null) {
-				bool htmlOut = Dispatcher.GetCurrent().Output == LogFormat.Html;
-				FileLog.writeThread = new Thread(() => {
-					while (true) { 
-						Thread.Sleep(Dispatcher.LogWriteMilisecond);
-						FileLog.writeAllStores(htmlOut);
-					}
-				});
-				FileLog.writeThread.IsBackground = true;
-				FileLog.writeThread.Start();
-			}
+		internal static void InitBackgroundWritingIfNecessary () {
+            FileLog.wrigingBgThreadLock.EnterUpgradeableReadLock();
+            if (Dispatcher.LogWriteMilisecond > 0 && FileLog.wrigingBgThreadIsRunning) {
+                FileLog.wrigingBgThreadLock.EnterWriteLock();
+                FileLog.wrigingBgThreadLock.ExitUpgradeableReadLock();
+                bool htmlOut = Dispatcher.GetCurrent().Output == LogFormat.Html;
+                FileLog.wrigingBgThread = new Thread(() => {
+                    while (true) {
+                        Thread.Sleep(Dispatcher.LogWriteMilisecond);
+                        FileLog.writeAllStores(htmlOut);
+                    }
+                });
+                FileLog.wrigingBgThread.IsBackground = true;
+                FileLog.wrigingBgThread.Start();
+                FileLog.wrigingBgThreadIsRunning = true;
+                FileLog.wrigingBgThreadLock.ExitWriteLock();
+            } else {
+                FileLog.wrigingBgThreadLock.ExitUpgradeableReadLock();
+            }
 		}
 		internal static void Disposed () {
-			if (FileLog.writeThread != null) FileLog.writeThread.Abort();
-			FileLog.writeAllStores(Dispatcher.GetCurrent().Output == LogFormat.Html);
+            FileLog.wrigingBgThreadLock.EnterUpgradeableReadLock();
+            if (FileLog.wrigingBgThreadIsRunning) {
+                FileLog.wrigingBgThreadLock.EnterWriteLock();
+                FileLog.wrigingBgThreadLock.ExitUpgradeableReadLock();
+                FileLog.wrigingBgThread.Abort();
+                FileLog.writeAllStores(Dispatcher.GetCurrent().Output == LogFormat.Html);
+                FileLog.wrigingBgThreadLock.ExitWriteLock();
+            } else {
+                FileLog.wrigingBgThreadLock.ExitUpgradeableReadLock();
+            }
 		}
 		internal static void Log (string content, string level) {
 			if (Dispatcher.Levels[level] == 0) return;
-			lock (FileLog.storesLock) {
-				FileLog.stores[level].Append(content);
-			}
-			if (FileLog.writeThread == null) FileLog.writeImmediately(level);
-		}
-		/*************************************************************************/
-		protected static void writeImmediately (string level) {
-			string[] levelsToWrite = new string[] { };
-			lock (FileLog.writingLock) {
-				if (!FileLog.loadedStores.Contains(level)) FileLog.loadedStores.Add(level);
-				if (!FileLog.writing) {
-					FileLog.writing = true;
-					levelsToWrite = FileLog.loadedStores.ToArray();
-					FileLog.loadedStores = new List<string>();
-				}
-			}
-			if (levelsToWrite.Length > 0) FileLog.writeStores(Dispatcher.GetCurrent().Output == LogFormat.Html, levelsToWrite);
-		}
-		protected static void writeStores (bool htmlOut, params string[] levels) {
-			Dictionary<string, string> stores = FileLog.duplicateStores(levels);
-			foreach (var item in stores) {
-				if (item.Value.Length == 0) continue;
-				try {
-					FileLog.writeStore(item.Key, item.Value, htmlOut);
-				} catch (Exception e) {
-				}
-			}
-			lock (FileLog.writingLock) {
-				if (FileLog.loadedStores.Count > 0) {
-					string[] levelsToWrite = FileLog.loadedStores.ToArray();
-					FileLog.loadedStores = new List<string>();
-					FileLog.writeStores(htmlOut, levelsToWrite);
-				} else {
-					FileLog.writing = false;
-				}
-			}
-		}
-		protected static void writeAllStores (bool htmlOut) {
-			Dictionary<string, string> stores = FileLog.duplicateStores();
-			foreach (var item in stores) {
-				if (item.Value.Length == 0) continue;
-				try {
-					FileLog.writeStore(item.Key, item.Value, htmlOut);
-				} catch (Exception e) {
-				}
-			}
-		}
-		protected static Dictionary<string, string> duplicateStores (params string[] levels) {
-			Dictionary<string, string> result = new Dictionary<string, string>();
-			string level;
-			StringBuilder levelStore;
-			if (levels.Length > 0) {
-				lock (FileLog.storesLock) {
-					for (int i = 0, l = levels.Length; i < l; i += 1) {
-						level = levels[i];
-						levelStore = FileLog.stores[level];
-						result.Add(level, levelStore.ToString());
-						levelStore.Clear();
-					}
-				}
-			} else {
-				lock (FileLog.storesLock) {
-					foreach (var item in FileLog.stores) {
-						levelStore = item.Value;
-						result.Add(item.Key, levelStore.ToString());
-						levelStore.Clear();
-					}
-				}
-			}
-			return result;
-		}
+            ReaderWriterLockSlim lockObj;
+            FileLog.wrigingBgThreadLock.EnterReadLock();
+            if (FileLog.wrigingBgThreadIsRunning) {
+                FileLog.wrigingBgThreadLock.ExitWriteLock();
+                lockObj = FileLog.storesAppendingLocks[level];
+                lockObj.EnterWriteLock();
+                FileLog.stores[level].Append(content);
+                lockObj.ExitWriteLock();
+            } else {
+                FileLog.wrigingBgThreadLock.ExitWriteLock();
+                lockObj = FileLog.hddWritingLocks[level];
+                lockObj.EnterWriteLock();
+                FileLog.writeStore(level, content, Dispatcher.GetCurrent().Output == LogFormat.Html);
+                lockObj.ExitWriteLock();
+            }
+        }
+        /*************************************************************************/
+        protected static void writeAllStores (bool htmlOut) {
+            // duplicate all stores an clear duplicate records
+            string[] storeKeys = LevelValues.Values.Values.ToArray();
+            Dictionary<string, string> duplicatedStores = new Dictionary<string, string>();
+            List<string> allStoreKeys = FileLog.stores.Keys.ToList<string>();
+            allStoreKeys.Add("exception");
+            ReaderWriterLockSlim lockObj;
+            foreach (string storeKey in allStoreKeys) {
+                lockObj = FileLog.storesAppendingLocks[storeKey];
+                lockObj.EnterWriteLock();
+                duplicatedStores[storeKey] = FileLog.stores[storeKey].ToString();
+                FileLog.stores[storeKey].Clear();
+                lockObj.ExitWriteLock();
+            }
+            foreach (var item in duplicatedStores) {
+                lockObj = FileLog.hddWritingLocks[item.Key];
+                lockObj.EnterWriteLock();
+                try {
+                    FileLog.writeStore(item.Key, item.Value, htmlOut);
+                } catch {}
+                lockObj.ExitWriteLock();
+            }
+        }
 		protected static bool writeStore (string filename, string writeContent, bool htmlOut) {
             string fullPath = FileLog.getFullPathFromFilename(filename, htmlOut);
 			bool logBegin = !File.Exists(fullPath) || (File.Exists(fullPath) && new FileInfo(fullPath).Length < 4 /* utf8bom has length 3 */);
@@ -149,17 +139,17 @@ namespace Desharp.Producers {
 		}
         protected static bool writeFileStream(string fullPath, string value, bool fromStart) {
 			bool r;
-            FileStream lStream = null;
+            FileStream stream = null;
 			try {
-				lStream = new FileStream(fullPath, fromStart ? FileMode.Create : FileMode.Append);
+				stream = new FileStream(fullPath, fromStart ? FileMode.Create : FileMode.Append);
 				byte[] bytes = new UTF8Encoding(true).GetBytes(value);
-				lStream.Write(bytes, 0, bytes.Length);
-				lStream.Flush();
+				stream.Write(bytes, 0, bytes.Length);
+				stream.Flush();
 				r = true;
 			} catch (Exception e) {
 				r = false;
 			} finally {
-				if (lStream != null) lStream.Close();
+				if (stream != null) stream.Close();
             }
 			return r;
         }

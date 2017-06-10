@@ -11,13 +11,14 @@ using System.Web;
 using System.Web.Routing;
 using System.Collections;
 using Desharp.Panels.Routings;
+using System.Threading;
 
 namespace Desharp.Panels {
 	public class Routing: Abstract {
 		public static string PanelName = "routing";
 		private static string _defaultControllersNamespace;
-		private static volatile List<RouteTarget> _routeTargets = null;
-		private static object _routeTargetsLock = new object { };
+        private static ReaderWriterLockSlim _routeTargetsLock = new ReaderWriterLockSlim();
+        private static volatile List<RouteTarget> _routeTargets = null;
 		private bool _dataCompleted = false;
 		private string _barText = String.Empty;
 		private string _panelContent = String.Empty;
@@ -48,69 +49,73 @@ namespace Desharp.Panels {
 			return this._panelContent;
 		}
 		private static void _completeRouteTargetsAndDefaultNamespace () {
-			lock (Routing._routeTargetsLock) {
-				if (Routing._routeTargets == null) {
-					Routing._defaultControllersNamespace = String.Format("{0}.Controllers", Tools.GetWebEntryAssembly().GetName().Name);
-					Routing._routeTargets = new List<RouteTarget>();
-					Assembly entryAssembly = Tools.GetWebEntryAssembly();
-					Type systemWebMvcCtrlType = Tools.GetTypeGlobaly("System.Web.Mvc.Controller");
-					Type systemWebMvcNonActionAttrType = Tools.GetTypeGlobaly("System.Web.Mvc.NonActionAttribute");
-					if (systemWebMvcCtrlType is Type && systemWebMvcNonActionAttrType is Type) {
-						try {
-							IEnumerable<MethodInfo> controllersActions = entryAssembly.GetTypes()
-								.Where(type => systemWebMvcCtrlType.IsAssignableFrom(type)) //filter controllers
-								.SelectMany(type => type.GetMethods(BindingFlags.Instance | BindingFlags.DeclaredOnly | BindingFlags.Public))
-								.Where(method => method.IsPublic && !method.IsDefined(systemWebMvcNonActionAttrType, false));
-							foreach (MethodBase controllerAction in controllersActions) {
-								ParameterInfo[] args = controllerAction.GetParameters();
-								Dictionary<string, RouteTargetArg> targetArgs = new Dictionary<string, RouteTargetArg>();
-								Type targetArgType;
-								Type[] genericTypes;
-								string targetArgTypeName;
-								bool nullable;
-								for (int i = 0, l = args.Length; i < l; i += 1) {
-									targetArgType = args[i].ParameterType;
-									if (targetArgType.Name.IndexOf("Nullable`") == 0) {
-										nullable = true;
-										targetArgTypeName = "Nullable&lt;";
-										genericTypes = targetArgType.GetGenericArguments();
-										for (int j = 0, k = genericTypes.Length; j < k; j += 1) {
-											targetArgTypeName += (j > 0 ? ",&nbsp;" : "") + genericTypes[i].Name;
-										}
-										targetArgTypeName += "&gt;";
-									} else {
-										nullable = false;
-										targetArgTypeName = targetArgType.Name;
-									}
-									targetArgs.Add(
-										args[i].Name,
-										new RouteTargetArg {
-											Type = targetArgType,
-											DefaultValue = args[i].DefaultValue,
-											IsNullable = nullable,
-											HtmlName = targetArgTypeName
-										}
-									);
+			Routing._defaultControllersNamespace = String.Format("{0}.Controllers", Tools.GetWebEntryAssembly().GetName().Name);
+			Routing._routeTargets = new List<RouteTarget>();
+			Assembly entryAssembly = Tools.GetWebEntryAssembly();
+			Type systemWebMvcCtrlType = Tools.GetTypeGlobaly("System.Web.Mvc.Controller");
+			Type systemWebMvcNonActionAttrType = Tools.GetTypeGlobaly("System.Web.Mvc.NonActionAttribute");
+			if (systemWebMvcCtrlType is Type && systemWebMvcNonActionAttrType is Type) {
+				try {
+					IEnumerable<MethodInfo> controllersActions = entryAssembly.GetTypes()
+						.Where(type => systemWebMvcCtrlType.IsAssignableFrom(type)) //filter controllers
+						.SelectMany(type => type.GetMethods(BindingFlags.Instance | BindingFlags.DeclaredOnly | BindingFlags.Public))
+						.Where(method => method.IsPublic && !method.IsDefined(systemWebMvcNonActionAttrType, false));
+					foreach (MethodBase controllerAction in controllersActions) {
+						ParameterInfo[] args = controllerAction.GetParameters();
+						Dictionary<string, RouteTargetArg> targetArgs = new Dictionary<string, RouteTargetArg>();
+						Type targetArgType;
+						Type[] genericTypes;
+						string targetArgTypeName;
+						bool nullable;
+						for (int i = 0, l = args.Length; i < l; i += 1) {
+							targetArgType = args[i].ParameterType;
+							if (targetArgType.Name.IndexOf("Nullable`") == 0) {
+								nullable = true;
+								targetArgTypeName = "Nullable&lt;";
+								genericTypes = targetArgType.GetGenericArguments();
+								for (int j = 0, k = genericTypes.Length; j < k; j += 1) {
+									targetArgTypeName += (j > 0 ? ",&nbsp;" : "") + genericTypes[i].Name;
 								}
-								Routing._routeTargets.Add(new RouteTarget {
-									Namespace = controllerAction.DeclaringType.Namespace,
-									NamespaceLower = controllerAction.DeclaringType.Namespace.ToLower(),
-									Controller = controllerAction.DeclaringType.Name,
-									Action = controllerAction.Name,
-									FullName = controllerAction.DeclaringType.Namespace
-										+ "." + controllerAction.DeclaringType.Name
-										+ ":" + controllerAction.Name,
-									Params = targetArgs
-								});
+								targetArgTypeName += "&gt;";
+							} else {
+								nullable = false;
+								targetArgTypeName = targetArgType.Name;
 							}
-						} catch {}
+							targetArgs.Add(
+								args[i].Name,
+								new RouteTargetArg {
+									Type = targetArgType,
+									DefaultValue = args[i].DefaultValue,
+									IsNullable = nullable,
+									HtmlName = targetArgTypeName
+								}
+							);
+						}
+						Routing._routeTargets.Add(new RouteTarget {
+							Namespace = controllerAction.DeclaringType.Namespace,
+							NamespaceLower = controllerAction.DeclaringType.Namespace.ToLower(),
+							Controller = controllerAction.DeclaringType.Name,
+							Action = controllerAction.Name,
+							FullName = controllerAction.DeclaringType.Namespace
+								+ "." + controllerAction.DeclaringType.Name
+								+ ":" + controllerAction.Name,
+							Params = targetArgs
+						});
 					}
-				}
+				} catch {}
 			}
 		}
 		private void _completeData () {
 			if (this._dataCompleted) return;
-			if (Routing._routeTargets == null) Routing._completeRouteTargetsAndDefaultNamespace();
+            Routing._routeTargetsLock.EnterUpgradeableReadLock();
+            if (Routing._routeTargets == null) {
+                Routing._routeTargetsLock.EnterWriteLock();
+                Routing._routeTargetsLock.ExitUpgradeableReadLock();
+                Routing._completeRouteTargetsAndDefaultNamespace();
+                Routing._routeTargetsLock.ExitWriteLock();
+            } else {
+                Routing._routeTargetsLock.ExitUpgradeableReadLock();
+            }
 			try {
 				this._completeRoutes();
 				this._completeBarText();
@@ -227,19 +232,21 @@ namespace Desharp.Panels {
 			bool searchForAction = routeTarget.Action != "*";
 			bool searchForNamespace = routeTarget.Namespaces.Length > 0;
 			string searchedCtrl = routeTarget.Controller + "Controller";
-			foreach (RouteTarget item in Routing._routeTargets) {
-				if (searchForCtrl && item.Controller != searchedCtrl) continue;
-				if (searchForAction && item.Action != routeTarget.Action) continue;
-				if (searchForNamespace) {
-					if (routeTarget.NamespacesLower.Contains(item.NamespaceLower)) {
-						routeTargetLocal = item;
-						break;
-					}
-				} else {
-					routeTargetLocal = item;
-					break;
-				}
-			}
+            Routing._routeTargetsLock.EnterReadLock();
+            foreach (RouteTarget item in Routing._routeTargets) {
+                if (searchForCtrl && item.Controller != searchedCtrl) continue;
+                if (searchForAction && item.Action != routeTarget.Action) continue;
+                if (searchForNamespace) {
+                    if (routeTarget.NamespacesLower.Contains(item.NamespaceLower)) {
+                        routeTargetLocal = item;
+                        break;
+                    }
+                } else {
+                    routeTargetLocal = item;
+                    break;
+                }
+            }
+            Routing._routeTargetsLock.ExitReadLock();
 			if (routeTargetLocal is RouteTarget) {
 				List<string> targetParams = new List<string>();
 				Type targetParamType;

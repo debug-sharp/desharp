@@ -14,7 +14,7 @@ using static Desharp.Core.AppExitWatcher;
 namespace Desharp.Core {
 	internal class Dispatcher {
 
-        internal static object StaticInitLock = new object { };
+        internal static ReaderWriterLockSlim StaticInitLock = new ReaderWriterLockSlim();
 		internal static EnvType EnvType;
 		internal static string AppRoot;
 		internal static string SourcesRoot;
@@ -34,7 +34,7 @@ namespace Desharp.Core {
 			"text/html", "application/xhtml+xml", "text/xml",
 			"application/xml", "image/svg+xml", "application/rss+xml",
 		};
-        protected static object dispatchersLock = new object { };
+        protected static ReaderWriterLockSlim dispatchersLock = new ReaderWriterLockSlim();
         protected static volatile Dictionary<string, Dispatcher> dispatchers = new Dictionary<string, Dispatcher>();
 		protected static Dictionary<string, Type> webBarRegisteredPanels = new Dictionary<string, Type>();
 
@@ -58,84 +58,102 @@ namespace Desharp.Core {
 		protected List<string> webExceptions = null;
 
 		static Dispatcher () {
-            lock(Dispatcher.StaticInitLock) {
-                int cfgDepth = Config.GetDepth();
-                if (cfgDepth > 0) Dispatcher.DumpDepth = cfgDepth;
-                int cfgMaxLength = Config.GetMaxLength();
-                if (cfgMaxLength > 0) Dispatcher.DumpMaxLength = cfgMaxLength;
-                Dispatcher.Levels = Config.GetLevels();
-                Dispatcher.LogWriteMilisecond = Config.GetLogWriteMilisecond();
-                Dispatcher.VirtualPathProvider = HostingEnvironment.VirtualPathProvider;
-                if (HttpRuntime.AppDomainAppId != null && HostingEnvironment.IsHosted) {
-                    Dispatcher.EnvType = EnvType.Web;
-                    Dispatcher.AppRoot = HttpContext.Current.Server.MapPath("~").Replace('\\', '/').TrimEnd('/');
-                    Dispatcher.WebDebugIps = Config.GetDebugIps();
-                    Dispatcher.staticInitWebRegisterPanels(typeof(Panels.Exceptions), typeof(Panels.Dumps));
-                    Dispatcher.staticInitWebRegisterPanels(Config.GetDebugPanels());
-                    Dispatcher.staticInitWebErrorPage(Config.GetErrorPage());
-                } else {
-                    Dispatcher.EnvType = EnvType.Windows;
-                    Dispatcher.AppRoot = System.IO.Path.GetDirectoryName(
-                        System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName
-                    ).Replace('\\', '/').TrimEnd('/');
-                    AppDomain.CurrentDomain.UnhandledException += delegate (object o, UnhandledExceptionEventArgs e) {
-                        Debug.Log(e.ExceptionObject as Exception);
-                        if (e.IsTerminating) Dispatcher.Disposed();
+            Dispatcher.StaticInitLock.EnterWriteLock();
+            int cfgDepth = Config.GetDepth();
+            if (cfgDepth > 0) Dispatcher.DumpDepth = cfgDepth;
+            int cfgMaxLength = Config.GetMaxLength();
+            if (cfgMaxLength > 0) Dispatcher.DumpMaxLength = cfgMaxLength;
+            Dispatcher.Levels = Config.GetLevels();
+            Dispatcher.LogWriteMilisecond = Config.GetLogWriteMilisecond();
+            Dispatcher.VirtualPathProvider = HostingEnvironment.VirtualPathProvider;
+            if (HttpRuntime.AppDomainAppId != null && HostingEnvironment.IsHosted) {
+                Dispatcher.EnvType = EnvType.Web;
+                Dispatcher.AppRoot = HttpContext.Current.Server.MapPath("~").Replace('\\', '/').TrimEnd('/');
+                Dispatcher.WebDebugIps = Config.GetDebugIps();
+                Dispatcher.staticInitWebRegisterPanels(typeof(Panels.Exceptions), typeof(Panels.Dumps));
+                Dispatcher.staticInitWebRegisterPanels(Config.GetDebugPanels());
+                Dispatcher.staticInitWebErrorPage(Config.GetErrorPage());
+            } else {
+                Dispatcher.EnvType = EnvType.Windows;
+                Dispatcher.AppRoot = System.IO.Path.GetDirectoryName(
+                    System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName
+                ).Replace('\\', '/').TrimEnd('/');
+                AppDomain.CurrentDomain.UnhandledException += delegate (object o, UnhandledExceptionEventArgs e) {
+                    Debug.Log(e.ExceptionObject as Exception);
+                    if (e.IsTerminating) Dispatcher.Disposed();
+                };
+                if (Dispatcher.LogWriteMilisecond > 0) {
+                    bool exited = false;
+                    AppDomain.CurrentDomain.ProcessExit += delegate (object o, EventArgs e) {
+                        Dispatcher.Disposed();
+                        exited = true;
                     };
-                    if (Dispatcher.LogWriteMilisecond > 0) {
-                        bool exited = false;
-                        AppDomain.CurrentDomain.ProcessExit += delegate (object o, EventArgs e) {
-                            Dispatcher.Disposed();
-                            exited = true;
-                        };
-                        AppExitWatcher.SetConsoleCtrlHandler(new HandlerRoutine((type) => {
-                            if (exited) return true;
-                            Dispatcher.Disposed();
-                            return true;
-                        }), true);
-                    }
+                    AppExitWatcher.SetConsoleCtrlHandler(new HandlerRoutine((type) => {
+                        if (exited) return true;
+                        Dispatcher.Disposed();
+                        return true;
+                    }), true);
                 }
-                if (Tools.IsWindows()) Dispatcher.AppRoot = Dispatcher.AppRoot.Substring(0, 1).ToUpper() + Dispatcher.AppRoot.Substring(1);
-                if (
-                    Tools.IsWindows() && (
-                        Dispatcher.AppRoot.IndexOf("/bin/Debug") == Dispatcher.AppRoot.Length - 10 ||
-                        Dispatcher.AppRoot.IndexOf("/bin/Release") == Dispatcher.AppRoot.Length - 12
-                    )
-                ) {
-                    Dispatcher.SourcesRoot = System.IO.Path.GetFullPath(Dispatcher.AppRoot + "/../..").Replace('\\', '/');
-                } else {
-                    Dispatcher.SourcesRoot = "";
-                }
-                Dispatcher.staticInitEnabledGlobal();
-                Dispatcher.staticInitOutputGlobal();
-                Dispatcher.staticInitDumpCompillerGenerated();
-                Dispatcher.staticInitDirectory(Config.GetDirectory());
-                FileLog.StaticInit();
             }
+            if (Tools.IsWindows()) Dispatcher.AppRoot = Dispatcher.AppRoot.Substring(0, 1).ToUpper() + Dispatcher.AppRoot.Substring(1);
+            if (
+                Tools.IsWindows() && (
+                    Dispatcher.AppRoot.IndexOf("/bin/Debug") == Dispatcher.AppRoot.Length - 10 ||
+                    Dispatcher.AppRoot.IndexOf("/bin/Release") == Dispatcher.AppRoot.Length - 12
+                )
+            ) {
+                Dispatcher.SourcesRoot = System.IO.Path.GetFullPath(Dispatcher.AppRoot + "/../..").Replace('\\', '/');
+            } else {
+                Dispatcher.SourcesRoot = "";
+            }
+            Dispatcher.staticInitEnabledGlobal();
+            Dispatcher.staticInitOutputGlobal();
+            Dispatcher.staticInitDumpCompillerGenerated();
+            Dispatcher.staticInitDirectory(Config.GetDirectory());
+            FileLog.StaticInit();
+            Dispatcher.StaticInitLock.ExitWriteLock();
 		}
 		internal static Dispatcher GetCurrent (bool createIfNecessary = true) {
 			string dispatchedKey = Dispatcher.EnvType == EnvType.Web 
                 ? Tools.GetRequestId().ToString() 
                 : $"{Tools.GetProcessId()}:{Tools.GetThreadId()}";
             Dispatcher result = null;
-            lock (Dispatcher.dispatchersLock) {
-			    if (!Dispatcher.dispatchers.ContainsKey(dispatchedKey) && createIfNecessary) {
-				    Dispatcher.dispatchers[dispatchedKey] = new Dispatcher();
-			    }
-			    if (Dispatcher.dispatchers.ContainsKey(dispatchedKey)) {
-				    result = Dispatcher.dispatchers[dispatchedKey];
-                }
+            Dispatcher.dispatchersLock.EnterUpgradeableReadLock();
+            if (!Dispatcher.dispatchers.ContainsKey(dispatchedKey) & createIfNecessary) {
+                Dispatcher.dispatchersLock.EnterWriteLock();
+                Dispatcher.dispatchersLock.ExitUpgradeableReadLock();
+                result = new Dispatcher();
+                Dispatcher.dispatchers[dispatchedKey] = result;
+                Dispatcher.dispatchersLock.ExitWriteLock();
+            } else {
+                Dispatcher.dispatchersLock.EnterReadLock();
+                Dispatcher.dispatchersLock.ExitUpgradeableReadLock();
+                result = Dispatcher.dispatchers[dispatchedKey];
+                Dispatcher.dispatchersLock.ExitReadLock();
             }
+            /*lock (Dispatcher.dispatchersLock) {
+                if (!Dispatcher.dispatchers.ContainsKey(dispatchedKey) && createIfNecessary) {
+                    Dispatcher.dispatchers[dispatchedKey] = new Dispatcher();
+                }
+                if (Dispatcher.dispatchers.ContainsKey(dispatchedKey)) {
+                    result = Dispatcher.dispatchers[dispatchedKey];
+                }
+            }*/
             return result;
 		}
 		internal static bool Remove () {
             bool removed = false;
-            lock (Dispatcher.dispatchersLock) {
-                string dispatchedKey = Dispatcher.EnvType == EnvType.Web
-                    ? Tools.GetRequestId().ToString()
-                    : $"{Tools.GetProcessId()}:{Tools.GetThreadId()}";
+            string dispatchedKey = Dispatcher.EnvType == EnvType.Web
+                ? Tools.GetRequestId().ToString()
+                : $"{Tools.GetProcessId()}:{Tools.GetThreadId()}";
+            Dispatcher.dispatchersLock.EnterWriteLock();
+            removed = Dispatcher.dispatchers.ContainsKey(dispatchedKey)
+                ? Dispatcher.dispatchers.Remove(dispatchedKey)
+                : false;
+            Dispatcher.dispatchersLock.ExitWriteLock();
+            /*lock (Dispatcher.dispatchersLock) {
                 removed = Dispatcher.dispatchers.Remove(dispatchedKey);
-            }
+            }*/
             return removed;
 		}
 		internal static void Disposed () {
@@ -333,7 +351,7 @@ namespace Desharp.Core {
 			if (cfg.Depth != null && cfg.Depth.Value > 0) Dispatcher.DumpDepth = cfg.Depth.Value;
 			if (cfg.LogWriteMilisecond != null && cfg.LogWriteMilisecond.Value > 0) {
 				Dispatcher.LogWriteMilisecond = cfg.LogWriteMilisecond.Value;
-				FileLog.InitCyclicWritingIfNecessary();
+				FileLog.InitBackgroundWritingIfNecessary();
 			}
 			if (cfg.Panels != null && cfg.Panels.Length > 0) Dispatcher.staticInitWebRegisterPanels(cfg.Panels);
 		}
