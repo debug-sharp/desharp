@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
 	<metadata minClientVersion="2.6">
 		<id>Desharp</id>
-		<version>1.2.1.0</version>
+		<version>1.2.2.0</version>
 		<title>Desharp - C#/VB.NET Debugging Tool</title>
 		<authors>Tom Flidr</authors>
 		<owners>Tom Flidr</owners>
@@ -12,12 +12,14 @@
 		<language>en-US</language>
 		<requireLicenseAcceptance>false</requireLicenseAcceptance>
 		<description>
-			Desharp - C#/VB .NET debuging utility to dump or log structuralized variables, exceptions, stack traces and much more into console, visual studio console, into html web response as floating window or into html/text log files on HDD.
-		</description>
+Desharp - C#/VB .NET debuging utility to dump or log structuralized variables, exceptions, stack traces and much more into console, visual studio console, into html web response as floating window or into html/text log files on HDD.
+Download and install Visual Studio code snippets for Desharp: https://github.com/debug-sharp/codesnippets
+Dependencies .NET Framework >= 4.0.0.0 (Microsoft.CSharp, System, System.Configuration, System.Core, System.Data, System.Data.DataSetExtensions, System.Web, System.Web.Extensions, System.Xml)
+    </description>
 		<copyright>Copyright ©	2017</copyright>
 		<tags>csharp cs vb-net vb asp-net debug debugging logging trace tracing tool utility web desktop windows wpf asp-net-mvc html-response stack-traces wpf-application</tags>
 		<dependencies>
-			<dependency id="Microsoft.CSharp" version="4.0.0.0" />
+      <!--dependency id="Microsoft.CSharp" version="4.0.0.0" />
 			<dependency id="System" version="4.0.0.0" />
 			<dependency id="System.Configuration" version="4.0.0.0" />
 			<dependency id="System.Core" version="4.0.0.0" />
@@ -25,7 +27,7 @@
 			<dependency id="System.Data.DataSetExtensions" version="4.0.0.0" />
 			<dependency id="System.Web" version="4.0.0.0" />
 			<dependency id="System.Web.Extensions" version="4.0.0.0" />
-			<dependency id="System.Xml" version="4.0.0.0" />
+			<dependency id="System.Xml" version="4.0.0.0" /-->
 		</dependencies>
 		<releaseNotes>https://github.com/debug-sharp/desharp/releases</releaseNotes>
 	</metadata>
