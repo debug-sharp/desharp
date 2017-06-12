@@ -80,13 +80,13 @@ namespace Desharp.Producers {
             ReaderWriterLockSlim lockObj;
             FileLog.wrigingBgThreadLock.EnterReadLock();
             if (FileLog.wrigingBgThreadIsRunning) {
-                FileLog.wrigingBgThreadLock.ExitWriteLock();
+                FileLog.wrigingBgThreadLock.ExitReadLock();
                 lockObj = FileLog.storesAppendingLocks[level];
                 lockObj.EnterWriteLock();
                 FileLog.stores[level].Append(content);
                 lockObj.ExitWriteLock();
             } else {
-                FileLog.wrigingBgThreadLock.ExitWriteLock();
+                FileLog.wrigingBgThreadLock.ExitReadLock();
                 lockObj = FileLog.hddWritingLocks[level];
                 lockObj.EnterWriteLock();
                 FileLog.writeStore(level, content, Dispatcher.GetCurrent().Output == LogFormat.Html);

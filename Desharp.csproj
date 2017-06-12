@@ -115,7 +115,9 @@
     <None Include="content\App.config.uninstall.xdt" />
     <None Include="content\Desharp.config.example" />
     <None Include="content\Web.config.install.xdt" />
-    <None Include="Desharp.nuspec" />
+    <None Include="Desharp.nuspec">
+      <SubType>Designer</SubType>
+    </None>
     <None Include="content\Web.config.uninstall.xdt" />
     <None Include="_CreateNewNuGetPackage\DoNotModify\NuGet.exe" />
     <None Include="packages.config" />
