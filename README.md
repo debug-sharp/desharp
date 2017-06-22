@@ -1,7 +1,7 @@
 # **[Desharp](https://www.nuget.org/packages/Desharp/)** - C#/VB .NET Debugging Tool
 
 [![Latest Stable Version](https://img.shields.io/badge/Stable-v1.2.1-brightgreen.svg?style=plastic)](https://github.com/tomFlidr/desharp/releases)
-[![License](https://img.shields.io/badge/Licence-BSD-brightgreen.svg?style=plastic)](https://mvccore.github.io/docs/mvccore/4.0.0/LICENCE.md)
+[![License](https://img.shields.io/badge/Licence-BSD-brightgreen.svg?style=plastic)](https://raw.githubusercontent.com/debug-sharp/desharp/master/LICENCE.md)
 ![.NET Version](https://img.shields.io/badge/.NET->=4.0-brightgreen.svg?style=plastic)
 
 C#/VB .NET debuging utility to dump or log structuralized variables, exceptions, stack traces and much more into console, visual studio console, into html web response as floating window or into html/text log files on HDD.
