@@ -32,7 +32,9 @@ namespace Desharp.Producers {
                 FileLog.hddWritingLocks.Add(item.Value, new ReaderWriterLockSlim());
             }
 			FileLog.stores.Add("exception", new StringBuilder());
-			FileLog.htmlLogFileBegin = new string[] {
+            FileLog.storesAppendingLocks.Add("exception", new ReaderWriterLockSlim());
+            FileLog.hddWritingLocks.Add("exception", new ReaderWriterLockSlim());
+            FileLog.htmlLogFileBegin = new string[] {
 				@"<!DOCTYPE HTML><html lang=""en-US""><head><meta charset=""UTF-8""/><title>",
 				"</title><style>" 
 				+ Assets.logs_css + Assets.dumps_css + Assets.exception_css 
