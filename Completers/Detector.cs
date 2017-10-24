@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
@@ -150,8 +150,28 @@ namespace Desharp.Completers {
 		/// True if value is NameValueCollection.
 		/// </summary>
 		/// <param name="obj">Any value or null.</param>
+		/// <returns>True if obj is NameValueCollection.</returns>
 		public static bool IsNameValueCollection (object obj) {
 			if (obj is NameValueCollection) return true;
+			return false;
+		}
+		/// <summary>
+		/// True if obj is System.Func&lt;&gt;.
+		/// </summary>
+		/// <param name="obj">Any value or null</param>
+		/// <returns>True if obj is System.Func&lt;&gt;.</returns>
+		public static bool IsFunc(object obj) {
+			if (obj.ToString().IndexOf("System.Func`") == 0) return true;
+			return false;
+		}
+		/// <summary>
+		/// True if obj is System.Delegate.
+		/// </summary>
+		/// <param name="obj">Any value or null</param>
+		/// <returns>True if obj is System.Delegate.</returns>
+		public static bool IsDelegate(object obj) {
+			Type objType = obj.GetType();
+			if (objType.BaseType.FullName == "System.MulticastDelegate" || objType.BaseType.FullName == "System.Delegate") return true;
 			return false;
 		}
 	}

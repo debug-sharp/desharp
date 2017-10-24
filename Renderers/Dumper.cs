@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -11,6 +11,7 @@ using System.Web;
 using System.Collections.Specialized;
 using System.Text;
 using System.Runtime.CompilerServices;
+using System.Diagnostics;
 
 namespace Desharp.Renderers {
 	/// <summary>
@@ -228,6 +229,10 @@ namespace Desharp.Renderers {
 				result = Dumper._dumpEnumerable(obj, level, htmlOut, ids, maxDepth, maxLength, sequence);
 			} else if (Detector.IsCollection(obj)) {
 				result = Dumper._dumpCollection(obj, level, htmlOut, ids, maxDepth, maxLength, sequence);
+			} else if (Detector.IsFunc(obj)) {
+				result = Dumper._dumpFunc(obj, level, htmlOut, ids, maxDepth, maxLength, sequence);
+			} else if (Detector.IsDelegate(obj)) {
+				result = Dumper._dumpDelegate(obj, level, htmlOut, ids, maxDepth, maxLength, sequence);
 			} else if (!Detector.IsReflectionObject(obj) && !Detector.IsReflectionObjectArray(obj)) {
 				result = Dumper._dumpUnknown(obj, level, htmlOut, ids, maxDepth, maxLength, sequence);
 			} else {
@@ -562,7 +567,50 @@ namespace Desharp.Renderers {
 			if (htmlOut) result += "</div>";
 			return result;
 		}
-        private static string _dumpUnknown (object obj, int level, bool htmlOut, List<int> ids, int maxDepth, int maxLength, string sequence) {
+		private static string _dumpFunc(object obj, int level, bool htmlOut, List<int> ids, int maxDepth, int maxLength, string sequence) {
+			string result = "";
+			MethodInfo mi = obj.GetType().GetProperty("Method").GetValue(obj, null) as MethodInfo;
+			ParameterInfo[] prms = mi.GetParameters();
+			if (prms.Length > 0) { 
+				for (int i = 0, l = prms.Length; i < l; i += 1) {
+					result += (result.Length == 0
+						? "Func<"
+						: ", ") + prms[i].ParameterType.Name + " " + prms[i].Name;
+				}
+				result += ", out " + mi.ReturnType.Name + ">";
+			} else {
+				result += "Func<out " + mi.ReturnType.Name + ">";
+			}
+			if (htmlOut) {
+				result = $@"<div class=""item dump dump-{sequence}{obj.GetHashCode()} func"">"
+					 + result
+				+ "</div>";
+			}
+			return result;
+		}
+		private static string _dumpDelegate(object obj, int level, bool htmlOut, List<int> ids, int maxDepth, int maxLength, string sequence) {
+			string result = "";
+			Type objType = obj.GetType();
+			MethodInfo mi = objType.GetProperty("Method").GetValue(obj, null) as MethodInfo;
+			ParameterInfo[] prms = mi.GetParameters();
+			if (prms.Length > 0) { 
+				for (int i = 0, l = prms.Length; i < l; i += 1) {
+					result += (result.Length == 0
+						? mi.ReturnType.Name + " " + objType.FullName + "("
+						: ", ") + prms[i].ParameterType.Name;
+				}
+				result += ")";
+			} else {
+				result += mi.ReturnType.Name + " " + objType.FullName + "()";
+			}
+			if (htmlOut) {
+				result = $@"<div class=""item dump dump-{sequence}{obj.GetHashCode()} delegate"">"
+					 + result
+				+ "</div>";
+			}
+			return result;
+		}
+		private static string _dumpUnknown (object obj, int level, bool htmlOut, List<int> ids, int maxDepth, int maxLength, string sequence) {
 			if (obj == null) {
 				return Dumper._dumpUnknownNotTyped(obj, level, htmlOut, ids, maxDepth, maxLength, sequence);
 			} else {
@@ -755,9 +803,10 @@ namespace Desharp.Renderers {
         private static bool _isCompilerGenerated (MemberInfo fieldOrPropInfo) {
             if (Dispatcher.DumpCompillerGenerated) return false;
             return Attribute.GetCustomAttribute(fieldOrPropInfo, typeof(HiddenAttribute)) is HiddenAttribute |
+                Attribute.GetCustomAttribute(fieldOrPropInfo, typeof(DebuggerBrowsableAttribute)) is DebuggerBrowsableAttribute | 
                 Attribute.GetCustomAttribute(fieldOrPropInfo, typeof(CompilerGeneratedAttribute)) is CompilerGeneratedAttribute;
         }
-		private static dynamic _getSimpleTypeArray (object obj) {
+        private static dynamic _getSimpleTypeArray (object obj) {
 			if (obj is sbyte[]) return new { Data = (sbyte[])obj, Length = ((sbyte[])obj).Length };
 			if (obj is byte[]) return new { Data = (byte[])obj, Length = ((byte[])obj).Length };
 			if (obj is short[]) return new { Data = (short[])obj, Length = ((short[])obj).Length };
