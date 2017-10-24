@@ -1,4 +1,4 @@
-﻿using Desharp.Producers;
+using Desharp.Producers;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
@@ -13,7 +13,7 @@ using static Desharp.Core.AppExitWatcher;
 
 namespace Desharp.Core {
 	internal class Dispatcher {
-
+		internal static bool StaticInitialized = false;
         internal static ReaderWriterLockSlim StaticInitLock = new ReaderWriterLockSlim();
 		internal static EnvType EnvType;
 		internal static string AppRoot;
@@ -58,8 +58,14 @@ namespace Desharp.Core {
 		protected List<string> webExceptions = null;
 
 		static Dispatcher () {
-            Dispatcher.StaticInitLock.EnterWriteLock();
-            int cfgDepth = Config.GetDepth();
+            Dispatcher.StaticInitLock.EnterUpgradeableReadLock();
+			if (Dispatcher.StaticInitialized) {
+				Dispatcher.StaticInitLock.ExitUpgradeableReadLock();
+				return;
+			}
+			Dispatcher.StaticInitLock.EnterWriteLock();
+			Dispatcher.StaticInitLock.ExitUpgradeableReadLock();
+			int cfgDepth = Config.GetDepth();
             if (cfgDepth > 0) Dispatcher.DumpDepth = cfgDepth;
             int cfgMaxLength = Config.GetMaxLength();
             if (cfgMaxLength > 0) Dispatcher.DumpMaxLength = cfgMaxLength;

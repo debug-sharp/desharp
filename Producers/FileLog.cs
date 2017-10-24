@@ -19,21 +19,21 @@ namespace Desharp.Producers {
         protected static volatile Thread wrigingBgThread = null;
 
         protected volatile static Dictionary<string, StringBuilder> stores;
-        protected static volatile Dictionary<string, ReaderWriterLockSlim> storesAppendingLocks;
-        protected static volatile Dictionary<string, ReaderWriterLockSlim> hddWritingLocks;
+        protected static volatile Dictionary<string, object> storesAppendingLocks;
+        protected static volatile Dictionary<string, object> hddWritingLocks;
         
         internal static void StaticInit () {
 			FileLog.stores = new Dictionary<string, StringBuilder>();
-            FileLog.storesAppendingLocks = new Dictionary<string, ReaderWriterLockSlim>();
-            FileLog.hddWritingLocks = new Dictionary<string, ReaderWriterLockSlim>();
+            FileLog.storesAppendingLocks = new Dictionary<string, object>();
+            FileLog.hddWritingLocks = new Dictionary<string, object>();
 			foreach (var item in LevelValues.Values) {
 				FileLog.stores.Add(item.Value, new StringBuilder());
-                FileLog.storesAppendingLocks.Add(item.Value, new ReaderWriterLockSlim());
-                FileLog.hddWritingLocks.Add(item.Value, new ReaderWriterLockSlim());
+                FileLog.storesAppendingLocks.Add(item.Value, new object { });
+                FileLog.hddWritingLocks.Add(item.Value, new object { });
             }
 			FileLog.stores.Add("exception", new StringBuilder());
-            FileLog.storesAppendingLocks.Add("exception", new ReaderWriterLockSlim());
-            FileLog.hddWritingLocks.Add("exception", new ReaderWriterLockSlim());
+            FileLog.storesAppendingLocks.Add("exception", new object { });
+            FileLog.hddWritingLocks.Add("exception", new object { });
             FileLog.htmlLogFileBegin = new string[] {
 				@"<!DOCTYPE HTML><html lang=""en-US""><head><meta charset=""UTF-8""/><title>",
 				"</title><style>" 
@@ -47,7 +47,7 @@ namespace Desharp.Producers {
 		}
 		internal static void InitBackgroundWritingIfNecessary () {
             FileLog.wrigingBgThreadLock.EnterUpgradeableReadLock();
-            if (Dispatcher.LogWriteMilisecond > 0 && FileLog.wrigingBgThreadIsRunning) {
+            if (Dispatcher.LogWriteMilisecond > 0 && !FileLog.wrigingBgThreadIsRunning) {
                 FileLog.wrigingBgThreadLock.EnterWriteLock();
                 FileLog.wrigingBgThreadLock.ExitUpgradeableReadLock();
                 bool htmlOut = Dispatcher.GetCurrent().Output == LogFormat.Html;
@@ -79,20 +79,17 @@ namespace Desharp.Producers {
 		}
 		internal static void Log (string content, string level) {
 			if (Dispatcher.Levels[level] == 0) return;
-            ReaderWriterLockSlim lockObj;
             FileLog.wrigingBgThreadLock.EnterReadLock();
             if (FileLog.wrigingBgThreadIsRunning) {
                 FileLog.wrigingBgThreadLock.ExitReadLock();
-                lockObj = FileLog.storesAppendingLocks[level];
-                lockObj.EnterWriteLock();
-                FileLog.stores[level].Append(content);
-                lockObj.ExitWriteLock();
-            } else {
+                lock(FileLog.storesAppendingLocks[level]) {
+					FileLog.stores[level].Append(content);
+				}
+			} else {
                 FileLog.wrigingBgThreadLock.ExitReadLock();
-                lockObj = FileLog.hddWritingLocks[level];
-                lockObj.EnterWriteLock();
-                FileLog.writeStore(level, content, Dispatcher.GetCurrent().Output == LogFormat.Html);
-                lockObj.ExitWriteLock();
+				lock (FileLog.hddWritingLocks[level]) {
+					FileLog.writeStore(level, content, Dispatcher.GetCurrent().Output == LogFormat.Html);
+				}
             }
         }
         /*************************************************************************/
@@ -101,28 +98,26 @@ namespace Desharp.Producers {
             string[] storeKeys = LevelValues.Values.Values.ToArray();
             Dictionary<string, string> duplicatedStores = new Dictionary<string, string>();
             List<string> allStoreKeys = FileLog.stores.Keys.ToList<string>();
-            allStoreKeys.Add("exception");
-            ReaderWriterLockSlim lockObj;
             foreach (string storeKey in allStoreKeys) {
-                lockObj = FileLog.storesAppendingLocks[storeKey];
-                lockObj.EnterWriteLock();
-                duplicatedStores[storeKey] = FileLog.stores[storeKey].ToString();
-                FileLog.stores[storeKey].Clear();
-                lockObj.ExitWriteLock();
+				lock (FileLog.storesAppendingLocks[storeKey]) {
+					duplicatedStores[storeKey] = FileLog.stores[storeKey].ToString();
+					FileLog.stores[storeKey].Clear();
+					Debug.Dump(storeKey);
+				}
             }
             foreach (var item in duplicatedStores) {
-                lockObj = FileLog.hddWritingLocks[item.Key];
-                lockObj.EnterWriteLock();
-                try {
-                    FileLog.writeStore(item.Key, item.Value, htmlOut);
-                } catch {}
-                lockObj.ExitWriteLock();
+				lock (FileLog.hddWritingLocks[item.Key]) {
+					try {
+						FileLog.writeStore(item.Key, item.Value, htmlOut);
+					} catch {}
+                }
             }
         }
 		protected static bool writeStore (string filename, string writeContent, bool htmlOut) {
             string fullPath = FileLog.getFullPathFromFilename(filename, htmlOut);
 			bool logBegin = !File.Exists(fullPath) || (File.Exists(fullPath) && new FileInfo(fullPath).Length < 4 /* utf8bom has length 3 */);
             if (logBegin) {
+				if (writeContent.Length == 0) return false;
 				if (htmlOut) writeContent = FileLog.getHtmlLogFileBegin(filename) + writeContent;
 				return FileLog.writeFileStream(fullPath, writeContent,  true);
             } else {

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
@@ -15,37 +15,31 @@ namespace Desharp.Core {
 		protected static bool? failureFileExists = null;
 		protected static List<string> successNotifycationLevels = null;
 		protected static Thread bgNotifyThread = null;
-        protected static ReaderWriterLockSlim queueLock = new ReaderWriterLockSlim();
+        protected static object queueLock = new object { };
         protected static volatile List<object[]> queue = new List<object[]>();
 		protected static JavaScriptSerializer jsonSerializer = new JavaScriptSerializer();
 		internal static void Notify (string msg, string logLevel, bool htmlOut) {
-			bool runThread = false;
-            Mailer.queueLock.EnterWriteLock();
-			Mailer.queue.Add(new object[] { msg, logLevel, htmlOut });
-			if (Mailer.bgNotifyThread == null || (Mailer.bgNotifyThread is Thread && !Mailer.bgNotifyThread.IsAlive)) {
-				runThread = true;
-			}
-            Mailer.queueLock.ExitWriteLock();
-            if (runThread) {
-				Mailer.bgNotifyThread = new Thread(new ThreadStart(delegate () {
-					object[] args = Mailer.unshiftQueue();
-					if (args.Length == 0) return;
-					Mailer.bgNotify(args[0].ToString(), args[1].ToString(), (bool)args[2]);
-				}));
-				Mailer.bgNotifyThread.IsBackground = true;
-				Mailer.bgNotifyThread.Start();
+            lock (Mailer.queueLock) { 
+				Mailer.queue.Add(new object[] { msg, logLevel, htmlOut });
+				if (Mailer.bgNotifyThread == null || (Mailer.bgNotifyThread is Thread && !Mailer.bgNotifyThread.IsAlive)) {
+					Mailer.bgNotifyThread = new Thread(new ThreadStart(delegate () {
+						object[] args = Mailer.unshiftQueue();
+						if (args.Length == 0) return;
+						Mailer.bgNotify(args[0].ToString(), args[1].ToString(), (bool)args[2]);
+					}));
+					Mailer.bgNotifyThread.IsBackground = true;
+					Mailer.bgNotifyThread.Start();
+				}
 			}
 		}
-		protected static object[] unshiftQueue () {
+		protected static object[] unshiftQueue (bool useLock = true) {
 			object[] result = new object[] { };
-            Mailer.queueLock.EnterUpgradeableReadLock();
-            if (Mailer.queue.Count > 0) {
-                Mailer.queueLock.EnterWriteLock();
-                Mailer.queueLock.ExitUpgradeableReadLock();
-                result = Mailer.queue[0];
-                Mailer.queue.RemoveAt(0);
-                Mailer.queueLock.ExitWriteLock();
-            }
+			lock(Mailer.queueLock) { 
+				if (Mailer.queue.Count > 0) {
+					result = Mailer.queue[0];
+					Mailer.queue.RemoveAt(0);
+				}
+			}
 			return result;
 		}
 		protected static void bgNotify (string msg, string logLevel, bool htmlOut) {
@@ -69,8 +63,12 @@ namespace Desharp.Core {
 				);
 			}
 			object[] args = Mailer.unshiftQueue();
-			if (args.Length == 0) return;
-			Mailer.bgNotify(args[0].ToString(), args[1].ToString(), (bool)args[2]);
+			if (args.Length > 0) {
+				Mailer.bgNotify(args[0].ToString(), args[1].ToString(), (bool)args[2]);
+			} else {
+				Mailer.bgNotifyThread = null;
+				Thread.CurrentThread.Abort();
+			}
 		}
 		private static void bgNotifySended (object sender, AsyncCompletedEventArgs e) {
 			string msg = "";
