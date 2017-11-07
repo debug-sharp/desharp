@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
 	<metadata minClientVersion="2.6">
 		<id>Desharp</id>
-		<version>1.2.6.0</version>
+		<version>1.2.8.0</version>
 		<title>Desharp - C#/VB.NET Debugging Tool</title>
 		<authors>Tom Flidr</authors>
 		<owners>Tom Flidr</owners>
@@ -28,7 +28,6 @@ Dependencies .NET Framework >= 4.0.0.0 (Microsoft.CSharp, System, System.Configu
 			<frameworkAssembly assemblyName="System.Runtime.Serialization" />
 			<frameworkAssembly assemblyName="System.Web" />
 			<frameworkAssembly assemblyName="System.Web.Extensions" />
-			<frameworkAssembly assemblyName="System.Web.Xml" />
 		</frameworkAssemblies>
 		<releaseNotes>https://github.com/debug-sharp/desharp/releases</releaseNotes>
 	</metadata>
