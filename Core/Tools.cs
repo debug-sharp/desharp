@@ -1,4 +1,4 @@
-﻿using Microsoft.Win32;
+using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
@@ -80,14 +80,16 @@ namespace Desharp.Core {
 		/// </summary>
 		public static string GetClientIpAddress () {
             string clientIpAddress = "";
-            NameValueCollection serverVariables = System.Web.HttpContext.Current.Request.ServerVariables;
-            string ipAddress = serverVariables["HTTP_X_FORWARDED_FOR"];
-            if (!string.IsNullOrEmpty(ipAddress)) {
-                string[] addresses = ipAddress.Split(',');
-                if (addresses.Length != 0) clientIpAddress = addresses[0].Trim(new char[] { ' ', '\r', '\n', '\t', '\v' });
-            }
-            if (string.IsNullOrEmpty(clientIpAddress)) clientIpAddress = serverVariables["REMOTE_ADDR"];
-            return clientIpAddress;
+			try { 
+				NameValueCollection serverVariables = System.Web.HttpContext.Current.Request.ServerVariables;
+				string ipAddress = serverVariables["HTTP_X_FORWARDED_FOR"];
+				if (!string.IsNullOrEmpty(ipAddress)) {
+					string[] addresses = ipAddress.Split(',');
+					if (addresses.Length != 0) clientIpAddress = addresses[0].Trim(new char[] { ' ', '\r', '\n', '\t', '\v' });
+				}
+				if (string.IsNullOrEmpty(clientIpAddress)) clientIpAddress = serverVariables["REMOTE_ADDR"];
+			} catch (Exception e) { }
+			return clientIpAddress;
         }
 		/// <summary>
 		/// Returns true if called assembly is builded as Debug release.

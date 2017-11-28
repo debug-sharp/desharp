@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
@@ -322,6 +322,7 @@ namespace Desharp.Completers {
 		}
 		private static List<StackTraceItem> _completeStackTraceForSingleException (Exception e) {
 			List<StackTraceItem> result = new List<StackTraceItem>();
+			if (String.IsNullOrEmpty(e.StackTrace)) return result;
 			string rawStackTrace = Regex.Replace(e.StackTrace.ToString(), @"\r", "");
 			string[] rawStackTraceLines = rawStackTrace.Split('\n');
 			string methodAndPossibleFileNameAndLine;
