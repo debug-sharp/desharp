@@ -1,4 +1,4 @@
-﻿using Desharp.Core;
+using Desharp.Core;
 using Desharp.Renderers;
 using System;
 using System.Linq;
@@ -14,8 +14,28 @@ using Desharp.Panels.Routings;
 using System.Threading;
 
 namespace Desharp.Panels {
-	public class Routing: Abstract {
+	public class Routing: IPanel {
 		public static string PanelName = "routing";
+		public new int[] DefaultWindowSizes => new int[] { 350, 250 };
+		public string IconValue => Routing.PanelName;
+		public string Name => Routing.PanelName;
+		public PanelIconType PanelIconType => PanelIconType.Class;
+		public bool AddIfEmpty => false;
+		public PanelType PanelType => PanelType.BarBtnAndWindow;
+
+		public void SessionBegin () {
+			this._completeData();
+		}
+		public void SessionEnd () {}
+		public string[] RenderBarTitle() {
+			this._completeData();
+			return new string[] { this._barText };
+		}
+		public string RenderWindowContent() {
+			this._completeData();
+			return this._panelContent;
+		}
+
 		private static string _defaultControllersNamespace;
         private static ReaderWriterLockSlim _routeTargetsLock = new ReaderWriterLockSlim();
         private static volatile List<RouteTarget> _routeTargets = null;
@@ -25,29 +45,7 @@ namespace Desharp.Panels {
 		private string _allRoutesTable;
 		private string _dataTokensTable;
 		private MatchedCompleter _matchedCompleter = new MatchedCompleter();
-		public new int[] DefaultWindowSizes {
-			get { return new int[] { 350, 250 }; }
-		}
-		public override string IconValue {
-			get { return Routing.PanelName; }
-		}
-		public override string Name {
-			get { return Routing.PanelName; }
-		}
-		public override PanelIconType PanelIconType {
-			get { return PanelIconType.Class; }
-		}
-		public new void SessionBegin () {
-			this._completeData();
-		}
-		public override string RenderBarText () {
-			this._completeData();
-			return this._barText;
-		}
-		public override string RenderWindowContent () {
-			this._completeData();
-			return this._panelContent;
-		}
+
 		private static void _completeRouteTargetsAndDefaultNamespace () {
 			Routing._defaultControllersNamespace = String.Format("{0}.Controllers", Tools.GetWebEntryAssembly().GetName().Name);
 			Routing._routeTargets = new List<RouteTarget>();

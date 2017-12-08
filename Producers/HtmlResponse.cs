@@ -1,8 +1,11 @@
-﻿using Desharp.Core;
+using Desharp.Core;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Globalization;
 using System.Net;
 using System.Text;
+using System.Threading;
 using System.Web;
 
 namespace Desharp.Producers {
@@ -72,7 +75,7 @@ namespace Desharp.Producers {
 					if (jsCodeRequestBarContent.Length > 0 || (jsCodeRequestBarContent.Length == 0 && renderedPanel.AddIfEmpty)) {
 						jsCodeRequestBars.Add("{" +
 							"name:'" + renderedPanel.Name + "'," +
-							"title:'" + renderedPanel.Title + "'," +
+							"title:['" + String.Join("','", renderedPanel.Title) + "']," +
 							"mode:" + HtmlResponse._getBarModeByPanelType(renderedPanel.PanelType).ToString() + 
 							jsCodeRequestBarContent +
 						"}");
@@ -93,18 +96,10 @@ namespace Desharp.Producers {
 				.Append((responseIsXml ? "/* ]]> */" : "") + "</script>");
 			response.Write(responseCode.ToString());
         }
-		internal static List<RenderedPanel> RenderDebugPanels (Dictionary<string, Panels.Abstract> requestPanels = null) {
+		internal static List<RenderedPanel> RenderDebugPanels (Dictionary<string, Panels.IPanel> requestPanels = null) {
 			List<RenderedPanel> result = new List<RenderedPanel>();
-			result.Add(new RenderedPanel {
-				Name = "exec",
-				AddIfEmpty = true,
-				PanelType = PanelType.BarText,
-				PanelIconType = PanelIconType.None,
-				Title = Dispatcher.GetCurrent().WebRequestEndTime.ToString().Replace(',', '.') + " s",
-				Content = ""
-			});
 			if (requestPanels == null) return result;
-			Panels.Abstract panel;
+			Panels.IPanel panel;
 			Type panelType;
 			foreach (var item in requestPanels) {
 				panel = item.Value;
@@ -116,7 +111,7 @@ namespace Desharp.Producers {
 					PanelType = (PanelType)panelType.GetProperty("PanelType").GetValue(panel, null),
 					PanelIconType = panel.PanelIconType,
 					IconValue = panel.IconValue,
-					Title = panel.RenderBarText(),
+					Title = panel.RenderBarTitle(),
 					Content = panel.RenderWindowContent().Trim()
 				});
 			}

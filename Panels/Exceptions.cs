@@ -1,30 +1,28 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace Desharp.Panels {
-	public class Exceptions: Abstract {
+	public class Exceptions: IPanel {
 		public static string PanelName = "exceptions";
-		public override string Name {
-			get { return Exceptions.PanelName; }
-		}
-		public new PanelType PanelType {
-			get { return PanelType.BarBtnAndScreen; }
-		}
-		public override PanelIconType PanelIconType {
-			get { return PanelIconType.Class; }
-		}
-		public override string IconValue {
-			get { return Exceptions.PanelName; }
-		}
+		public string Name => Exceptions.PanelName;
+		public PanelType PanelType => PanelType.BarBtnAndScreen;
+		public PanelIconType PanelIconType => PanelIconType.Class;
+		public string IconValue => Exceptions.PanelName;
+		public bool AddIfEmpty => false;
+		public int[] DefaultWindowSizes => new int[] { 0, 0 };
+
 		private List<string> _exceptions = new List<string>();
-		public void AddRenderedException (string dumpedCode) {
-			this._exceptions.Add(dumpedCode);
+
+		public void SessionBegin() { }
+		public void SessionEnd() { }
+		public string[] RenderBarTitle () {
+			return new string[] { "Exceptions (" + this._exceptions.Count.ToString() + ")" };
 		}
-		public override string RenderBarText () {
-			return "Exceptions (" + this._exceptions.Count.ToString() + ")";
-		}
-		public override string RenderWindowContent () {
+		public string RenderWindowContent () {
 			return String.Join("", this._exceptions);
+		}
+		public void AddRenderedException(string dumpedCode) {
+			this._exceptions.Add(dumpedCode);
 		}
 	}
 }

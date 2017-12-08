@@ -5,6 +5,7 @@ using System.Collections.Specialized;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.Remoting.Messaging;
 using System.Threading;
 using System.Web;
 using System.Web.Hosting;
@@ -34,8 +35,9 @@ namespace Desharp.Core {
 			"text/html", "application/xhtml+xml", "text/xml",
 			"application/xml", "image/svg+xml", "application/rss+xml",
 		};
-        protected static ReaderWriterLockSlim dispatchersLock = new ReaderWriterLockSlim();
-        protected static volatile Dictionary<string, Dispatcher> dispatchers = new Dictionary<string, Dispatcher>();
+        //protected static ReaderWriterLockSlim dispatchersLock = new ReaderWriterLockSlim();
+        //protected static volatile Dictionary<string, Dispatcher> dispatchers = new Dictionary<string, Dispatcher>();
+		protected static string callContextKey = typeof(Dispatcher).FullName;
 		protected static Dictionary<string, Type> webBarRegisteredPanels = new Dictionary<string, Type>();
 
         internal Exception LastError = null;
@@ -54,7 +56,7 @@ namespace Desharp.Core {
 		protected int webRenderDesharpBar = 0;
 		protected bool webTransmitErrorPage = false;
 		protected List<List<RenderedPanel>> webReqEndSession = null;
-		protected Dictionary<string, Panels.Abstract> webBarPanels = null;
+		protected Dictionary<string, Panels.IPanel> webBarPanels = null;
 		protected List<string> webExceptions = null;
 
 		static Dispatcher () {
@@ -120,11 +122,18 @@ namespace Desharp.Core {
             Dispatcher.StaticInitLock.ExitWriteLock();
 		}
 		internal static Dispatcher GetCurrent (bool createIfNecessary = true) {
-			string dispatchedKey = Dispatcher.EnvType == EnvType.Web 
+			/*string dispatchedKey = Dispatcher.EnvType == EnvType.Web 
                 ? Tools.GetRequestId().ToString() 
-                : $"{Tools.GetProcessId()}:{Tools.GetThreadId()}";
+                : $"{Tools.GetProcessId()}:{Tools.GetThreadId()}";*/
             Dispatcher result = null;
-            Dispatcher.dispatchersLock.EnterUpgradeableReadLock();
+
+			result = CallContext.GetData(Dispatcher.callContextKey) as Dispatcher;
+			if (!(result is Dispatcher)) {
+				result = new Dispatcher();
+				CallContext.SetData(Dispatcher.callContextKey, result);
+			}
+
+			/*Dispatcher.dispatchersLock.EnterUpgradeableReadLock();
             if (!Dispatcher.dispatchers.ContainsKey(dispatchedKey) & createIfNecessary) {
                 Dispatcher.dispatchersLock.EnterWriteLock();
                 Dispatcher.dispatchersLock.ExitUpgradeableReadLock();
@@ -136,8 +145,9 @@ namespace Desharp.Core {
                 Dispatcher.dispatchersLock.ExitUpgradeableReadLock();
                 result = Dispatcher.dispatchers[dispatchedKey];
                 Dispatcher.dispatchersLock.ExitReadLock();
-            }
-            /*lock (Dispatcher.dispatchersLock) {
+            }*/
+
+			/*lock (Dispatcher.dispatchersLock) {
                 if (!Dispatcher.dispatchers.ContainsKey(dispatchedKey) && createIfNecessary) {
                     Dispatcher.dispatchers[dispatchedKey] = new Dispatcher();
                 }
@@ -145,22 +155,30 @@ namespace Desharp.Core {
                     result = Dispatcher.dispatchers[dispatchedKey];
                 }
             }*/
-            return result;
+
+			return result;
 		}
 		internal static bool Remove () {
-            bool removed = false;
+			/*bool removed = false;
             string dispatchedKey = Dispatcher.EnvType == EnvType.Web
                 ? Tools.GetRequestId().ToString()
-                : $"{Tools.GetProcessId()}:{Tools.GetThreadId()}";
-            Dispatcher.dispatchersLock.EnterWriteLock();
+                : $"{Tools.GetProcessId()}:{Tools.GetThreadId()}";*/
+
+			CallContext.FreeNamedDataSlot(Dispatcher.callContextKey);
+			return true;
+			/*
+			Dispatcher.dispatchersLock.EnterWriteLock();
             removed = Dispatcher.dispatchers.ContainsKey(dispatchedKey)
                 ? Dispatcher.dispatchers.Remove(dispatchedKey)
                 : false;
             Dispatcher.dispatchersLock.ExitWriteLock();
-            /*lock (Dispatcher.dispatchersLock) {
+			*/
+
+			/*lock (Dispatcher.dispatchersLock) {
                 removed = Dispatcher.dispatchers.Remove(dispatchedKey);
             }*/
-            return removed;
+
+			//return removed;
 		}
 		internal static void Disposed () {
 			FileLog.Disposed();
@@ -284,6 +302,15 @@ namespace Desharp.Core {
 				if (!Dispatcher.webBarRegisteredPanels.ContainsKey(panel.FullName)) {
 					Dispatcher.webBarRegisteredPanels.Add(panel.FullName, panel);
 				}
+			}
+			Type sysInfoPanelType = typeof(Panels.SystemInfo);
+			string sysInfoPanelName = sysInfoPanelType.FullName;
+			if (Dispatcher.webBarRegisteredPanels.ContainsKey(sysInfoPanelName)) {
+				Dispatcher.webBarRegisteredPanels.Remove(sysInfoPanelName);
+				Dispatcher.webBarRegisteredPanels = (
+					new Dictionary<string, Type> { { sysInfoPanelName, sysInfoPanelType } }
+				).Concat(Dispatcher.webBarRegisteredPanels)
+				.ToDictionary(k => k.Key, v => v.Value);
 			}
 		}
 		protected static void staticInitWebErrorPage (string cfgErrorPage) {
@@ -426,9 +453,7 @@ namespace Desharp.Core {
 			if (this.Enabled != true || this.webBarPanels == null) return;
 			foreach (var item in this.webBarPanels) {
 				try {
-					// item.Value.SessionBegin(); // do not use this line, it always calls abstract method
-					MethodInfo mi = item.Value.GetType().GetMethod("SessionBegin");
-					mi.Invoke(item.Value, null);
+					item.Value.SessionBegin();
 				} catch (Exception e) { }
 			}
 			this.WebRequestState = 2;
@@ -475,7 +500,8 @@ namespace Desharp.Core {
 					// manage Content-Security-Policy http header
 					this.webManageContentSecurityPolicyHeader();
 					// render debug bar for current request with any previous redirect records from session
-					List<List<RenderedPanel>> renderedPanels = this.webReqEndSession ?? Dispatcher.webGetSessionStorrage();
+					List<List<RenderedPanel>> renderedPanels = this.webReqEndSession 
+						?? Dispatcher.webGetSessionStorrage();
 					if (this.webBarPanels != null) {
 						renderedPanels.Insert(0, HtmlResponse.RenderDebugPanels(this.webBarPanels));
 						this.webBarPanels = null;
@@ -483,7 +509,8 @@ namespace Desharp.Core {
 					HtmlResponse.WriteDebugBarToResponse(renderedPanels);
 				}
 			} else {
-				if (this.webTransmitErrorPage && Dispatcher.WebStaticErrorPage.Length > 0) HtmlResponse.TransmitStaticErrorPage();
+				if (this.webTransmitErrorPage && Dispatcher.WebStaticErrorPage.Length > 0)
+					HtmlResponse.TransmitStaticErrorPage();
 			}
 		}
 		protected void webManageContentSecurityPolicyHeader () {
@@ -575,10 +602,10 @@ namespace Desharp.Core {
 		}
 		protected void webInitWebBarPanels (long crt = -1) {
 			if (this.webRenderDesharpBar < 1) return; // do not register any panels for non html/xml outputs
-			this.webBarPanels = new Dictionary<string, Panels.Abstract>();
-			Panels.Abstract panel;
+			this.webBarPanels = new Dictionary<string, Panels.IPanel>();
+			Panels.IPanel panel;
 			foreach (var item in Dispatcher.webBarRegisteredPanels) {
-				panel = (Panels.Abstract)Activator.CreateInstance(item.Value);
+				panel = (Panels.IPanel)Activator.CreateInstance(item.Value);
 				if (this.webBarPanels.ContainsKey(panel.Name)) {
 					throw new Exception(String.Format(
 						"Panel with name: '{0}' has been already registered, use different panel name.", panel.Name

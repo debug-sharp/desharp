@@ -1,30 +1,29 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace Desharp.Panels {
-	public class Dumps: Abstract {
+	public class Dumps: IPanel {
 		public static string PanelName = "dumps";
-		public override string Name {
-			get { return Dumps.PanelName; }
+		public string Name => Dumps.PanelName;
+		public int[] DefaultWindowSizes => new int[] { 300, 200 };
+		public PanelIconType PanelIconType => PanelIconType.Class;
+		public string IconValue => Dumps.PanelName;
+		public bool AddIfEmpty => false;
+		public PanelType PanelType => PanelType.BarBtnAndWindow;
+
+		protected List<string> dumps = new List<string>();
+
+		public void SessionBegin() { }
+		public void SessionEnd() { }
+		public string[] RenderBarTitle () {
+			return new string[] { "Dumps (" + this.dumps.Count.ToString() + ")" };
 		}
-		public new int[] DefaultWindowSizes {
-			get { return new int[] { 300, 200 }; }
+		public string RenderWindowContent () {
+			return String.Join("", this.dumps);
 		}
-		public override PanelIconType PanelIconType {
-			get { return PanelIconType.Class; }
-		}
-		public override string IconValue {
-			get { return Dumps.PanelName; }
-		}
-		private List<string> _dumps = new List<string>();
-		public void AddRenderedDump (string dumpedCode) {
-			this._dumps.Add(dumpedCode);
-		}
-		public override string RenderBarText () {
-			return "Dumps (" + this._dumps.Count.ToString() + ")";
-		}
-		public override string RenderWindowContent () {
-			return String.Join("", this._dumps);
+
+		public void AddRenderedDump(string dumpedCode) {
+			this.dumps.Add(dumpedCode);
 		}
 	}
 }

@@ -1,31 +1,26 @@
-﻿using Desharp.Core;
+using Desharp.Core;
 using System.Text;
 using System.Web;
 using System.Web.SessionState;
 
 namespace Desharp.Panels {
-	public class Session: Abstract {
+	public class Session: IPanel {
 		public static string PanelName = "session";
 		public static int DumpDepth = 0;
-		public new int[] DefaultWindowSizes {
-			get { return new int[] { 400, 300 }; }
-		}
-		public new bool AddIfEmpty {
-			get { return true; }
-		}
-		public override string IconValue {
-			get { return Session.PanelName; }
-		}
-		public override string Name {
-			get { return Session.PanelName; }
-		}
-		public override PanelIconType PanelIconType {
-			get { return PanelIconType.Class; }
-		}
+		public int[] DefaultWindowSizes => new int[] { 400, 300 };
+		public bool AddIfEmpty => true;
+		public string IconValue => Session.PanelName;
+		public string Name => Session.PanelName;
+		public PanelType PanelType => PanelType.BarBtnAndWindow;
+		public PanelIconType PanelIconType => PanelIconType.Class;
+
 		protected int count = 0;
 		protected StringBuilder content = new StringBuilder();
+
+		public void SessionBegin() { }
 		public void SessionEnd () {
 			HttpSessionState session = HttpContext.Current.Session;
+			if (session == null) return;
 			this.content.Append(@"<div class=""content"">");
 			this.content.Append(@"<b class=""heading"">Configuration:</b>");
 			this.content.Append(@"<table class=""session-configuration""><tbody>");
@@ -62,10 +57,10 @@ namespace Desharp.Panels {
 			}
 			this.content.Append("</div>");
 		}
-		public override string RenderBarText () {
-			return "Session (" + this.count + ")";
+		public string[] RenderBarTitle () {
+			return new string[] { "Session (" + this.count + ")" };
 		}
-		public override string RenderWindowContent () {
+		public string RenderWindowContent () {
 			return this.content.ToString();
 		}
 	}
