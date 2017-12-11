@@ -35,8 +35,11 @@ namespace Desharp.Core {
 			"text/html", "application/xhtml+xml", "text/xml",
 			"application/xml", "image/svg+xml", "application/rss+xml",
 		};
-        //protected static ReaderWriterLockSlim dispatchersLock = new ReaderWriterLockSlim();
-        //protected static volatile Dictionary<string, Dispatcher> dispatchers = new Dictionary<string, Dispatcher>();
+		
+		//protected static ReaderWriterLockSlim dispatchersLock = new ReaderWriterLockSlim();
+		protected static object dispatchersLock = new object { };
+		protected static volatile Dictionary<string, Dispatcher> dispatchers = new Dictionary<string, Dispatcher>();
+
 		protected static string callContextKey = typeof(Dispatcher).FullName;
 		protected static Dictionary<string, Type> webBarRegisteredPanels = new Dictionary<string, Type>();
 
@@ -122,16 +125,16 @@ namespace Desharp.Core {
             Dispatcher.StaticInitLock.ExitWriteLock();
 		}
 		internal static Dispatcher GetCurrent (bool createIfNecessary = true) {
-			/*string dispatchedKey = Dispatcher.EnvType == EnvType.Web 
+			string dispatchedKey = Dispatcher.EnvType == EnvType.Web 
                 ? Tools.GetRequestId().ToString() 
-                : $"{Tools.GetProcessId()}:{Tools.GetThreadId()}";*/
+                : $"{Tools.GetProcessId()}:{Tools.GetThreadId()}";
             Dispatcher result = null;
 
-			result = CallContext.GetData(Dispatcher.callContextKey) as Dispatcher;
+			/*result = CallContext.GetData(Dispatcher.callContextKey) as Dispatcher;
 			if (!(result is Dispatcher)) {
 				result = new Dispatcher();
 				CallContext.SetData(Dispatcher.callContextKey, result);
-			}
+			}*/
 
 			/*Dispatcher.dispatchersLock.EnterUpgradeableReadLock();
             if (!Dispatcher.dispatchers.ContainsKey(dispatchedKey) & createIfNecessary) {
@@ -147,38 +150,37 @@ namespace Desharp.Core {
                 Dispatcher.dispatchersLock.ExitReadLock();
             }*/
 
-			/*lock (Dispatcher.dispatchersLock) {
+			lock (Dispatcher.dispatchersLock) {
                 if (!Dispatcher.dispatchers.ContainsKey(dispatchedKey) && createIfNecessary) {
                     Dispatcher.dispatchers[dispatchedKey] = new Dispatcher();
                 }
                 if (Dispatcher.dispatchers.ContainsKey(dispatchedKey)) {
                     result = Dispatcher.dispatchers[dispatchedKey];
                 }
-            }*/
+            }
 
 			return result;
 		}
 		internal static bool Remove () {
-			/*bool removed = false;
+			bool removed = false;
             string dispatchedKey = Dispatcher.EnvType == EnvType.Web
                 ? Tools.GetRequestId().ToString()
-                : $"{Tools.GetProcessId()}:{Tools.GetThreadId()}";*/
+                : $"{Tools.GetProcessId()}:{Tools.GetThreadId()}";
 
-			CallContext.FreeNamedDataSlot(Dispatcher.callContextKey);
-			return true;
-			/*
-			Dispatcher.dispatchersLock.EnterWriteLock();
+			/*CallContext.FreeNamedDataSlot(Dispatcher.callContextKey);
+			return true;*/
+			
+			/*Dispatcher.dispatchersLock.EnterWriteLock();
             removed = Dispatcher.dispatchers.ContainsKey(dispatchedKey)
                 ? Dispatcher.dispatchers.Remove(dispatchedKey)
                 : false;
-            Dispatcher.dispatchersLock.ExitWriteLock();
-			*/
+            Dispatcher.dispatchersLock.ExitWriteLock();*/
 
-			/*lock (Dispatcher.dispatchersLock) {
+			lock (Dispatcher.dispatchersLock) {
                 removed = Dispatcher.dispatchers.Remove(dispatchedKey);
-            }*/
+            }
 
-			//return removed;
+			return removed;
 		}
 		internal static void Disposed () {
 			FileLog.Disposed();
