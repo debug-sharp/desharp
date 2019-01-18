@@ -6,7 +6,7 @@
 		<title>Desharp - C#/VB.NET Debugging Tool</title>
 		<authors>Tom Flidr</authors>
 		<owners>Tom Flidr</owners>
-		<licenseUrl>https://opensource.org/licenses/BSD-3-Clause</licenseUrl>
+		<license type="expression">BSD-3-Clause</license>
 		<projectUrl>https://github.com/debug-sharp</projectUrl>
 		<iconUrl>https://raw.githubusercontent.com/debug-sharp/desharp/master/gfx/desharp-icon.ico</iconUrl>
 		<language>en-US</language>
