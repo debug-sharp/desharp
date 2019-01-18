@@ -1,9 +1,11 @@
 using Desharp.Core;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Web;
 using System.Web.SessionState;
 
 namespace Desharp.Panels {
+	[ComVisible(true)]
 	public class Session: IPanel {
 		public static string PanelName = "session";
 		public static int DumpDepth = 0;

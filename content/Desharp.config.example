@@ -123,7 +123,7 @@
     <!--
       Custom web error page
       - not required, recomanded for production mode to be original
-      - if desharp is not enabled and there is uncatched exception in your application,
+      - if desharp is not enabled and there is uncaught exception in your application,
         you can use custom static error page to transfer into client browser
       - if not configured - desharp build-in error page is used by default
     -->

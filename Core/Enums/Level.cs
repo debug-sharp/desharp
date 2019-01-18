@@ -1,7 +1,10 @@
-﻿namespace Desharp {
+using System.Runtime.InteropServices;
+
+namespace Desharp {
 	/// <summary>
 	/// Application logging levels to define log filename used for Desharp.Debug.Log() calls and to define if log message will be written or not by config settings.
 	/// </summary>
+	[ComVisible(true)]
 	public enum Level {
 		/// <summary>
 		/// debug.log|debug.html, mostly used as default log file.

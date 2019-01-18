@@ -11,8 +11,10 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Web;
 using System.Web.Compilation;
+using System.Runtime.InteropServices;
 
 namespace Desharp.Core {
+	[ComVisible(true)]
 	/// <summary>
 	/// Usefull static functions used by Desharp assembly internaly, but it should be used for any general purposes.
 	/// </summary>

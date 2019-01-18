@@ -1,7 +1,10 @@
-﻿namespace Desharp {
+using System.Runtime.InteropServices;
+
+namespace Desharp {
 	/// <summary>
 	/// Specify log files format - should be only text or html.
 	/// </summary>
+	[ComVisible(true)]
 	public enum LogFormat {
 		/// <summary>
 		/// Log format will be determinated automaticly at first Desharp assembly use.

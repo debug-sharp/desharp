@@ -3,12 +3,14 @@ using System;
 using System.Diagnostics;
 using System.Globalization;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Web;
 using System.Web.SessionState;
 using System.Web.UI;
 
 namespace Desharp.Panels {
+	[ComVisible(true)]
 	public class SystemInfo: IPanel {
 		public static string PanelName = "systeminfo";
 		public int[] DefaultWindowSizes => new int[] { 430, 330 };

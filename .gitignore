@@ -294,3 +294,4 @@ __pycache__/
 .vs/
 Assets/node_modules
 _CreateNewNuGetPackage/*
+docs/*

@@ -1,10 +1,12 @@
-﻿using System;
+using System;
+using System.Runtime.InteropServices;
 
 namespace Desharp {
 	/// <summary>
 	/// Desharp web panel type.
 	/// </summary>
 	[Serializable]
+	[ComVisible(true)]
 	public enum PanelType {
 		/// <summary>
 		/// Web debug panel with text context, in bar, no window, no actions on mouse over or click.

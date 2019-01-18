@@ -1,4 +1,7 @@
+using System.Runtime.InteropServices;
+
 namespace Desharp.Panels {
+	[ComVisible(true)]
 	/// <summary>
 	/// Web debug bar panel base class.
 	/// </summary>

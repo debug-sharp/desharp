@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("Desharp - C#/VB.NET Debugging Tool")]
-[assembly: AssemblyDescription(".NET debuging utility to dump or log structuralized variables, exceptions, stack traces and much more into console, visual studio console, into html web response as floating window or into html/text log files.")]
+[assembly: AssemblyDescription(".NET debugging utility to dump or log structured variables, exceptions, stack traces and much more into console, visual studio console, into html web response as floating window or into html/text log files.")]
 #if DEBUG
     [assembly: AssemblyConfiguration("DEBUG")]
 #else
@@ -35,5 +35,5 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Build and Revision Numbers 
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("1.2.11.0")]
-[assembly: AssemblyFileVersion("1.2.11.0")]
+[assembly: AssemblyVersion("1.2.12.0")]
+[assembly: AssemblyFileVersion("1.2.12.0")]

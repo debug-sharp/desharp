@@ -1,7 +1,10 @@
-﻿namespace Desharp {
+using System.Runtime.InteropServices;
+
+namespace Desharp {
 	/// <summary>
 	/// Dump options for Desharp.Debug.Dump() calls to optimize how values or exceptions should be rendered or how to work with rendered results.
 	/// </summary>
+	[ComVisible(true)]
 	public struct DumpOptions {
 		/// <summary>
 		/// How many levels in complex type variables will be iterated throw to dump all it's properties, fields and other values.

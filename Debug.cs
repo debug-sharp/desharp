@@ -8,6 +8,7 @@ using Desharp.Renderers;
 using System.Reflection;
 using System.Diagnostics;
 using System.Globalization;
+using System.Runtime.InteropServices;
 
 namespace Desharp {
 	/// <summary>
@@ -15,9 +16,11 @@ namespace Desharp {
 	/// <li> Dump any object/exception to application output.</li><para />
 	/// <li> Store any dumped object/exception in text/html log files.</li><para />
 	/// <li> Enable/disable objects dumping to output.</li><para />
-	/// <li> Configure desharp from running application environment.</li>
+	/// <li> Configure Desharp from running application environment.</li>
 	/// </ul></summary>
+	[ComVisible(true)]
 	public class Debug {
+        //public static List<Exception> InitErrors = new List<Exception>();
 		/// <summary>
 		/// Desharp assembly Version.
 		/// </summary>
@@ -30,13 +33,17 @@ namespace Desharp {
             set { Dispatcher.GetCurrent().FireDump = value; }
         }
 		/// <summary>
-		/// Session storrage key to store Desharp data inside Web app session storrage.
+		/// Session storage key to store Desharp data inside Web app session storage.
 		/// </summary>
 		public const string SESSION_STORAGE_KEY = "$$$Desharp";
 		internal const string SELF_FILENAME = "Debug.cs";
 		static Debug () {
 			Debug.Version = Assembly.GetExecutingAssembly().GetName().Version;
-			Dispatcher.GetCurrent();
+			//try { 
+				Dispatcher.GetCurrent();
+			/*} catch (Exception e) {
+				Debug.InitErrors.Add(e);
+			}*/
 		}
 		/// <summary>Enable or disable variables dumping from application code environment for all threads.</summary>
 		/// <param name="enabled"><c>true</c> to enable, <c>false</c> to disable, if no param defined, no changes will be made.</param>
@@ -55,7 +62,7 @@ namespace Desharp {
 			return Dispatcher.GetCurrent().Enabled == true;
 		}
 		/// <summary>
-		/// Configure Desharp assembly from running application environment and override any XML config settings or automaticly detected settings.
+		/// Configure Desharp assembly from running application environment and override any XML config settings or automatically detected settings.
 		/// </summary>
 		/// <param name="cfg">Specialized Desharp configuration collection - just create new instance with public fields of that.</param>
 		/// <example>
@@ -71,16 +78,16 @@ namespace Desharp {
 			Dispatcher.GetCurrent().Configure(cfg);
 		}
 		/// <summary>
-		/// Return last uncatched Exception in request, mostly used in web applications by error page rendering process to know something about Exception before.
+		/// Return last uncaught Exception in request, mostly used in web applications by error page rendering process to know something about Exception before.
 		/// </summary>
-		/// <returns>Last Exception instance, including original exception callstack and possible inner exceptions.</returns>
+		/// <returns>Last Exception instance, including original exception call stack and possible inner exceptions.</returns>
 		public static Exception GetLastError () {
 			return Dispatcher.GetCurrent().LastError;
 		}
 		/// <summary>
-		/// Return spended request processing time for web applications or return application up time for all other platforms.
+		/// Return spent request processing time for web applications or return application up time for all other platforms.
 		/// </summary>
-		/// <returns>Returned values is number of seconds with 3 decimal places after comma with miliseconds.</returns>
+		/// <returns>Returned values is number of seconds with 3 decimal places after comma with milliseconds.</returns>
 		public static double GetProcessingTime () {
 			long startTicks = (Dispatcher.EnvType == EnvType.Windows)
 				? Process.GetCurrentProcess().StartTime.Ticks
@@ -89,9 +96,9 @@ namespace Desharp {
 			return Math.Round(r * 1000) / 1000;
         }
 		/// <summary>
-		/// Prints to ouput or into log file number of seconds from last timer call under called name in seconds with 3 floating point decimal spaces.<br /><para />
+		/// Prints to output or into log file number of seconds from last timer call under called name in seconds with 3 floating point decimal spaces.<br /><para />
 		/// If no name specified or name is empty string, there is returned:<para /><ul>
-		/// <li> <b>Web applications</b> - number of seconds from request beggining.</li><para />
+		/// <li> <b>Web applications</b> - number of seconds from request beginning.</li><para />
 		/// <li> <b>Desktop applications</b> - number of seconds from application start.</li><para />
 		/// </ul></summary>
 		/// <param name="name">Timer name, used as key to find last <c>Desharp.Debug.Timer(name);</c> call from internal dictionary to print the timespan in app output or log file.</param>
@@ -144,8 +151,8 @@ namespace Desharp {
         /// <summary>
         /// Print to application output or log into file (if enabled) first param to be <c>true</c> or not and describe what was equal or not in first param by second param <c>message</c>.
         /// </summary>
-        /// <param name="assertion">Comparation boolean to dump or log, way to compare things is up to you, you need to process it in method param space to send here boolean only.</param>
-        /// <param name="description">Any text to describe previous comparation.</param>
+        /// <param name="assertion">Comparison boolean to dump or log, way to compare things is up to you, you need to process it in method param space to send here boolean only.</param>
+        /// <param name="description">Any text to describe previous comparison.</param>
         /// <param name="logLevel">Log level, used only when printing to output is disabled, <c>"default.log"</c> used by default.</param>
         public static void Assert (bool assertion, string description = "", Level logLevel = Level.DEBUG) {
 			string result = String.Format(
@@ -181,10 +188,10 @@ namespace Desharp {
         /// Dump exception instance to application output if output dumping is enabled. It renders:<para /><ul>
         /// <li>exception <b>type</b><para /></li>
         /// <li>exception <b>message</b><para /></li>
-        /// <li>if exception has been <b>catched</b> or <b>not catched</b><para /></li>
+        /// <li>if exception has been <b>caught</b> or <b>not caught</b><para /></li>
         /// <li>exception <b>hash id</b><para /></li>
         /// <li><b>error file</b> where exception has been thrown<para /></li>
-        /// <li>thread callstack<para /></li>
+        /// <li>thread call stack<para /></li>
         /// <li>all inner exceptions after this exception in the same way<para /></li>
         /// </ul></summary>
         /// <param name="exception">Exception instance to dump.</param>
@@ -260,7 +267,7 @@ namespace Desharp {
 		/// <param name="options">Dump options collection (optional) - just create new instance with public fields of that:<para /><br />
 		/// For this dump call you can change options:<para /><ul>
 		/// <li><b>Depth</b> (int, optional) - how many levels in complex type variables will be iterated throw to dump all it's properties, fields and other values.<para /></li>
-		/// <li><b>MaxLength</b> (int, optional) - if any dumped string length is larger than this value, it will be cutted into this max. length.<para /></li>
+		/// <li><b>MaxLength</b> (int, optional) - if any dumped string length is larger than this value, it will be cut into this max. length.<para /></li>
 		/// <li><b>Return</b> (bool, optional)- if value will be dumped into application output (as default) or returned as dumped string value.<para /></li>
 		/// </ul></param>
 		/// <returns>Returns empty string by default or dumped variable string if you specify in second argument <c>DumpOptions.Return</c> to be <c>true</c>.</returns>
@@ -292,7 +299,7 @@ namespace Desharp {
 		/// <param name="options">Dump options collection (optional) - just create new instance with public fields of that:<para /><br />
 		/// For this dump call you can change options:<para /><ul>
 		/// <li><b>Depth</b> (int, optional) - how many levels in complex type variables will be iterated throw to dump all it's properties, fields and other values.<para /></li>
-		/// <li><b>MaxLength</b> (int, optional) - if any dumped string length is larger than this value, it will be cutted into this max. length.<para /></li>
+		/// <li><b>MaxLength</b> (int, optional) - if any dumped string length is larger than this value, it will be cut into this max. length.<para /></li>
 		/// <li><b>Return</b> (bool, optional)- if value will be dumped into application output (as default) or returned as dumped string value.<para /></li>
 		/// </ul></param>
 		/// <returns>Returns empty string by default or dumped variable string if you specify in second argument <c>DumpOptions.Return</c> to be <c>true</c>.</returns>
@@ -315,10 +322,10 @@ namespace Desharp {
 		/// Log exception instance as dumped string into <c>exceptions.log|exceptions.html</c> file. It stores:<para /><ul>
 		/// <li>exception <b>type</b><para /></li>
 		/// <li>exception <b>message</b><para /></li>
-		/// <li>if exception has been <b>catched</b> or <b>not catched</b><para /></li>
+		/// <li>if exception has been <b>caught</b> or <b>not caught</b><para /></li>
 		/// <li>exception <b>hash id</b><para /></li>
 		/// <li><b>error file</b> where exception has been thrown<para /></li>
-		/// <li>thread callstack<para /></li>
+		/// <li>thread call stack<para /></li>
 		/// <li>all inner exceptions after this exception in the same way<para /></li>
 		/// </ul></summary>
 		/// <param name="exception">Exception instance to print.</param>
@@ -336,7 +343,7 @@ namespace Desharp {
 		/// <param name="obj">Any type value to dump into application output.</param>
 		/// <param name="level">Log level to specify log file name and also to allow/prevent write dumped variable into proper log file by config settings.</param>
 		/// <param name="maxDepth">How many levels in complex type variables will be iterated throw to dump all it's properties, fields and other values.</param>
-		/// <param name="maxLength">If any dumped string length is larger than this value, it will be cutted into this max. length.</param>
+		/// <param name="maxLength">If any dumped string length is larger than this value, it will be cut into this max. length.</param>
 		/// <returns>Returns empty string by default or dumped variable string if you specify in second argument <c>DumpOptions.Return</c> to <c>true</c>.</returns>
 		public static void Log (object obj = null, Level level = Level.INFO, int maxDepth = 0, int maxLength = 0) {
 			Dispatcher dispatcher = Dispatcher.GetCurrent();

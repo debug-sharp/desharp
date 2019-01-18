@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 
 namespace Desharp.Panels {
+	[ComVisible(true)]
 	public class Exceptions: IPanel {
 		public static string PanelName = "exceptions";
 		public string Name => Exceptions.PanelName;

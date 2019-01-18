@@ -12,8 +12,10 @@ using System.Web.Routing;
 using System.Collections;
 using Desharp.Panels.Routings;
 using System.Threading;
+using System.Runtime.InteropServices;
 
 namespace Desharp.Panels {
+	[ComVisible(true)]
 	public class Routing: IPanel {
 		public static string PanelName = "routing";
 		public new int[] DefaultWindowSizes => new int[] { 350, 250 };

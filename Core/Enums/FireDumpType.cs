@@ -1,6 +1,7 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace Desharp {
@@ -8,6 +9,7 @@ namespace Desharp {
     /// Fire dumper message type to choose in client browser propert console method
     /// lie console.log(), console.debug(). console.trace() exc...
     /// </summary>
+	[ComVisible(true)]
     public enum FireDumpType {
         /// <summary>
         /// Print value in browser console by: console.debug();

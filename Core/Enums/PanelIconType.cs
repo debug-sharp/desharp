@@ -1,10 +1,12 @@
-﻿using System;
+using System;
+using System.Runtime.InteropServices;
 
 namespace Desharp {
 	/// <summary>
 	/// Panel icon type for custom web debug panel.
 	/// </summary>
 	[Serializable]
+	[ComVisible(true)]
 	public enum PanelIconType {
 		/// <summary>
 		/// Debug panels without icon.

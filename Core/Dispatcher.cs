@@ -5,6 +5,7 @@ using System.Collections.Specialized;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Runtime.Remoting.Messaging;
 using System.Threading;
 using System.Web;
@@ -37,12 +38,12 @@ namespace Desharp.Core {
 		};
 		
 		//protected static ReaderWriterLockSlim dispatchersLock = new ReaderWriterLockSlim();
-		protected static object dispatchersLock = new object { };
-		protected static volatile Dictionary<string, Dispatcher> dispatchers = new Dictionary<string, Dispatcher>();
+			internal static object dispatchersLock = new object { };
+			internal static volatile Dictionary<string, Dispatcher> dispatchers = new Dictionary<string, Dispatcher>();
 
 		protected static string callContextKey = typeof(Dispatcher).FullName;
 		protected static Dictionary<string, Type> webBarRegisteredPanels = new Dictionary<string, Type>();
-
+		
         internal Exception LastError = null;
 		internal int DumperSequence = 0;
 		internal string CurrentlyRendererView = "";
@@ -63,66 +64,88 @@ namespace Desharp.Core {
 		protected List<string> webExceptions = null;
 
 		static Dispatcher () {
-            Dispatcher.StaticInitLock.EnterUpgradeableReadLock();
-			if (Dispatcher.StaticInitialized) {
+			//try {
+				Dispatcher.StaticInitLock.EnterUpgradeableReadLock();
+				if (Dispatcher.StaticInitialized) {
+					Dispatcher.StaticInitLock.ExitUpgradeableReadLock();
+					return;
+				}
+				Dispatcher.StaticInitLock.EnterWriteLock();
 				Dispatcher.StaticInitLock.ExitUpgradeableReadLock();
-				return;
-			}
-			Dispatcher.StaticInitLock.EnterWriteLock();
-			Dispatcher.StaticInitLock.ExitUpgradeableReadLock();
-			int cfgDepth = Config.GetDepth();
-            if (cfgDepth > 0) Dispatcher.DumpDepth = cfgDepth;
-            int cfgMaxLength = Config.GetMaxLength();
-            if (cfgMaxLength > 0) Dispatcher.DumpMaxLength = cfgMaxLength;
-            Dispatcher.Levels = Config.GetLevels();
-            Dispatcher.LogWriteMilisecond = Config.GetLogWriteMilisecond();
-            Dispatcher.VirtualPathProvider = HostingEnvironment.VirtualPathProvider;
-            if (HttpRuntime.AppDomainAppId != null && HostingEnvironment.IsHosted) {
-                Dispatcher.EnvType = EnvType.Web;
-                Dispatcher.AppRoot = HttpContext.Current.Server.MapPath("~").Replace('\\', '/').TrimEnd('/');
-                Dispatcher.WebDebugIps = Config.GetDebugIps();
-                Dispatcher.staticInitWebRegisterPanels(typeof(Panels.Exceptions), typeof(Panels.Dumps));
-                Dispatcher.staticInitWebRegisterPanels(Config.GetDebugPanels());
-                Dispatcher.staticInitWebErrorPage(Config.GetErrorPage());
-            } else {
-                Dispatcher.EnvType = EnvType.Windows;
-                Dispatcher.AppRoot = System.IO.Path.GetDirectoryName(
-                    System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName
-                ).Replace('\\', '/').TrimEnd('/');
-                AppDomain.CurrentDomain.UnhandledException += delegate (object o, UnhandledExceptionEventArgs e) {
-                    Debug.Log(e.ExceptionObject as Exception);
-                    if (e.IsTerminating) Dispatcher.Disposed();
-                };
-                if (Dispatcher.LogWriteMilisecond > 0) {
-                    bool exited = false;
-                    AppDomain.CurrentDomain.ProcessExit += delegate (object o, EventArgs e) {
-                        Dispatcher.Disposed();
-                        exited = true;
-                    };
-                    AppExitWatcher.SetConsoleCtrlHandler(new HandlerRoutine((type) => {
-                        if (exited) return true;
-                        Dispatcher.Disposed();
-                        return true;
-                    }), true);
-                }
-            }
-            if (Tools.IsWindows()) Dispatcher.AppRoot = Dispatcher.AppRoot.Substring(0, 1).ToUpper() + Dispatcher.AppRoot.Substring(1);
-            if (
-                Tools.IsWindows() && (
-                    Dispatcher.AppRoot.IndexOf("/bin/Debug") == Dispatcher.AppRoot.Length - 10 ||
-                    Dispatcher.AppRoot.IndexOf("/bin/Release") == Dispatcher.AppRoot.Length - 12
-                )
-            ) {
-                Dispatcher.SourcesRoot = System.IO.Path.GetFullPath(Dispatcher.AppRoot + "/../..").Replace('\\', '/');
-            } else {
-                Dispatcher.SourcesRoot = "";
-            }
-            Dispatcher.staticInitEnabledGlobal();
-            Dispatcher.staticInitOutputGlobal();
-            Dispatcher.staticInitDumpCompillerGenerated();
-            Dispatcher.staticInitDirectory(Config.GetDirectory());
-            FileLog.StaticInit();
-            Dispatcher.StaticInitLock.ExitWriteLock();
+				int cfgDepth = Config.GetDepth();
+				if (cfgDepth > 0) Dispatcher.DumpDepth = cfgDepth;
+				int cfgMaxLength = Config.GetMaxLength();
+				if (cfgMaxLength > 0) Dispatcher.DumpMaxLength = cfgMaxLength;
+				Dispatcher.Levels = Config.GetLevels();
+				Dispatcher.LogWriteMilisecond = Config.GetLogWriteMilisecond();
+				Dispatcher.VirtualPathProvider = HostingEnvironment.VirtualPathProvider;
+				bool appRootInitialized = false;
+				if (HttpRuntime.AppDomainAppId != null && HostingEnvironment.IsHosted) {
+					Dispatcher.EnvType = EnvType.Web;
+					if (HttpContext.Current != null) {
+						try { 
+							Dispatcher.AppRoot = HttpContext.Current.Server
+								.MapPath("~").Replace('\\', '/').TrimEnd('/');
+							appRootInitialized = true;
+						} catch (Exception e4) {
+						}
+					}
+					Dispatcher.WebDebugIps = Config.GetDebugIps();
+					Dispatcher.staticInitWebRegisterPanels(typeof(Panels.Exceptions), typeof(Panels.Dumps));
+					Dispatcher.staticInitWebRegisterPanels(Config.GetDebugPanels());
+					Dispatcher.staticInitWebErrorPage(Config.GetErrorPage());
+				} else {
+					Dispatcher.EnvType = EnvType.Windows;
+					try { 
+						Dispatcher.AppRoot = System.IO.Path.GetDirectoryName(
+							System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName
+						).Replace('\\', '/').TrimEnd('/');
+						appRootInitialized = true;
+					} catch (Exception e5) {
+					}
+					AppDomain.CurrentDomain.UnhandledException += delegate (object o, UnhandledExceptionEventArgs e1) {
+						Debug.Log(e1.ExceptionObject as Exception);
+						if (e1.IsTerminating) Dispatcher.Disposed();
+					};
+					if (Dispatcher.LogWriteMilisecond > 0) {
+						bool exited = false;
+						AppDomain.CurrentDomain.ProcessExit += delegate (object o, EventArgs e2) {
+							Dispatcher.Disposed();
+							exited = true;
+						};
+						AppExitWatcher.SetConsoleCtrlHandler(new HandlerRoutine((type) => {
+							if (exited) return true;
+							Dispatcher.Disposed();
+							return true;
+						}), true);
+					}
+				}
+				bool isWindows = Tools.IsWindows();
+				if (appRootInitialized && isWindows)
+					Dispatcher.AppRoot = Dispatcher.AppRoot.Substring(0, 1).ToUpper() 
+						+ Dispatcher.AppRoot.Substring(1);
+				if (
+					appRootInitialized && isWindows && (
+						Dispatcher.AppRoot.IndexOf("/bin/Debug") == Dispatcher.AppRoot.Length - 10 ||
+						Dispatcher.AppRoot.IndexOf("/bin/Release") == Dispatcher.AppRoot.Length - 12
+					)
+				) {
+					Dispatcher.SourcesRoot = System.IO.Path.GetFullPath(
+						Dispatcher.AppRoot + "/../.."
+					).Replace('\\', '/');
+				} else {
+					Dispatcher.SourcesRoot = "";
+				}
+				Dispatcher.staticInitEnabledGlobal();
+				Dispatcher.staticInitOutputGlobal();
+				Dispatcher.staticInitDumpCompillerGenerated();
+				if (appRootInitialized)
+					Dispatcher.staticInitDirectory(Config.GetDirectory());
+				FileLog.StaticInit();
+				Dispatcher.StaticInitLock.ExitWriteLock();
+			/*} catch (Exception e3) {
+				Debug.InitErrors.Add(e3);
+			}*/
 		}
 		internal static Dispatcher GetCurrent (bool createIfNecessary = true) {
 			string dispatchedKey = Dispatcher.EnvType == EnvType.Web 
@@ -378,6 +401,7 @@ namespace Desharp.Core {
             return this.FireDump;
         }
 		internal void Configure (DebugConfig cfg) {
+			return;
 			if (cfg.EnvType != EnvType.Auto) Dispatcher.EnvType = cfg.EnvType;
 			if (cfg.Enabled.HasValue) this.Enabled = cfg.Enabled.Value;
 			if (cfg.LogFormat != LogFormat.Auto) this.Output = cfg.LogFormat;
@@ -437,7 +461,8 @@ namespace Desharp.Core {
 				if (this.WebRequestState == 0) this.WebRequestBegin();
 				if (this.WebRequestState == 1) this.WebRequestSessionBegin();
 				if (this.WebRequestState == 2) this.WebRequestSessionEnd();
-				this.WebRequestEnd();
+				this.WebRequestPreSendHeaders();
+				this.WebRequestPreSendBody();
 				Dispatcher.Remove();
 				HttpContext.Current.Response.End();
 			} else {
@@ -485,7 +510,8 @@ namespace Desharp.Core {
 			}
 			this.WebRequestState = 3;
 		}
-		internal void WebRequestEnd () {
+		internal void WebRequestPreSendHeaders () {
+			this.GetFireDump().CloseHeaders();
 			if (this.Enabled == true) {
 				if (!this.webRedirect.HasValue) this.webRedirect = Dispatcher.webCheckIfResponseIsRedirect();
 				// add possible rendered exceptions and debug bar if necessary
@@ -501,6 +527,15 @@ namespace Desharp.Core {
 					}
 					// manage Content-Security-Policy http header
 					this.webManageContentSecurityPolicyHeader();
+				}
+			} else {
+				if (this.webTransmitErrorPage && Dispatcher.WebStaticErrorPage.Length > 0)
+					HtmlResponse.TransmitStaticErrorPagePrepareHeaders();
+			}
+		}
+		internal void WebRequestPreSendBody() {
+			if (this.Enabled == true) {
+				if (this.webRenderDesharpBar == 1 && this.webRedirect != true) {
 					// render debug bar for current request with any previous redirect records from session
 					List<List<RenderedPanel>> renderedPanels = this.webReqEndSession 
 						?? Dispatcher.webGetSessionStorrage();
@@ -512,7 +547,7 @@ namespace Desharp.Core {
 				}
 			} else {
 				if (this.webTransmitErrorPage && Dispatcher.WebStaticErrorPage.Length > 0)
-					HtmlResponse.TransmitStaticErrorPage();
+					HtmlResponse.TransmitStaticErrorPageSendContent();
 			}
 		}
 		protected void webManageContentSecurityPolicyHeader () {

@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace Desharp {
     /// <summary>
@@ -8,6 +9,7 @@ namespace Desharp {
     /// To print always everything, add to your (App|Web).config: 
     /// &#60;add key="Desharp:DumpCompillerGenerated" value="true" /&#62;
     /// </summary>
+	[ComVisible(true)]
     public class HiddenAttribute: Attribute {
     }
 }

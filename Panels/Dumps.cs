@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 
 namespace Desharp.Panels {
+	[ComVisible(true)]
 	public class Dumps: IPanel {
 		public static string PanelName = "dumps";
 		public string Name => Dumps.PanelName;

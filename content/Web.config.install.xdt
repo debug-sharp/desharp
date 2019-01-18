@@ -5,6 +5,14 @@
       <add name="Desharp" type="Desharp.Module" xdt:Transform="InsertIfMissing" xdt:Locator="Match(name)" />
     </modules>
     <httpErrors errorMode="DetailedLocalOnly" xdt:Transform="InsertIfMissing" xdt:Locator="Match(errorMode)" />
+    <security xdt:Transform="InsertIfMissing">
+      <requestFiltering xdt:Transform="InsertIfMissing">
+        <hiddenSegments xdt:Transform="InsertIfMissing">
+          <add segment="logs" xdt:Transform="InsertIfMissing" xdt:Locator="Match(segment)" />
+          <add segment="Desharp.config.example" xdt:Transform="InsertIfMissing" xdt:Locator="Match(segment)" />
+        </hiddenSegments>
+      </requestFiltering>
+    </security>
   </system.webServer>
   <appSettings xdt:Transform="InsertIfMissing">
     <add key="Desharp:Enabled" value="1" xdt:Transform="InsertIfMissing" xdt:Locator="Match(key)" />

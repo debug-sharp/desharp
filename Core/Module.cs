@@ -1,11 +1,13 @@
-﻿using Desharp.Core;
+using Desharp.Core;
 using System;
+using System.Runtime.InteropServices;
 using System.Web;
 
 namespace Desharp {
 	/// <summary>
 	/// ASP.NET Http module to dispatch Desharp separately from original application.
 	/// </summary>
+	[ComVisible(true)]
 	public class Module: IHttpModule {
 		/// <summary>
 		/// Unique module name
@@ -41,15 +43,26 @@ namespace Desharp {
 					Dispatcher.GetCurrent().WebRequestSessionEnd();
 				} catch { }
 			};
-			application.EndRequest += delegate (object o, EventArgs e) {
+			/*application.EndRequest += delegate (object o, EventArgs e) {
 				try {
 					// be carefull, EndRequest event is sometimes called twice (...if there is exception in your application)
 					Dispatcher dispatcher = Dispatcher.GetCurrent(false);
 					if (dispatcher is Dispatcher) {
-                        dispatcher.GetFireDump().CloseHeaders();
-                        dispatcher.WebRequestEnd();
+						dispatcher.WebRequestPreSendHeaders();
+						dispatcher.WebRequestPreSendBody();
 						Dispatcher.Remove();
 					}
+				} catch { }
+			};*/
+			application.PreSendRequestHeaders += delegate (object o, EventArgs e) {
+				try {
+					Dispatcher.GetCurrent().WebRequestPreSendHeaders();
+				} catch { }
+			};
+			application.PreSendRequestContent += delegate (object o, EventArgs e) {
+				try {
+					Dispatcher.GetCurrent().WebRequestPreSendBody();
+					Dispatcher.Remove();
 				} catch { }
 			};
 			application.Error += delegate (object o, EventArgs e) {

@@ -36,10 +36,11 @@ namespace Desharp.Producers {
 			Dispatcher.GetCurrent().WebAssetsInserted = true;
             HttpContext.Current.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
 		}
-		internal static void TransmitStaticErrorPage () {
-			HttpResponse response = HttpContext.Current.Response;
-			response.StatusCode = 500;
-			response.Write(Dispatcher.WebStaticErrorPage);
+		internal static void TransmitStaticErrorPagePrepareHeaders () {
+			HttpContext.Current.Response.StatusCode = 500;
+		}
+		internal static void TransmitStaticErrorPageSendContent() {
+			HttpContext.Current.Response.Write(Dispatcher.WebStaticErrorPage);
 		}
 		public static void WriteDebugBarToResponse (List<List<RenderedPanel>> allRequestRenderedPanels = null) {
 			HttpResponse response = HttpContext.Current.Response;
@@ -95,7 +96,8 @@ namespace Desharp.Producers {
 				.Append(jsCode)
 				.Append((responseIsXml ? "/* ]]> */" : "") + "</script>");
 			response.Write(responseCode.ToString());
-        }
+			response.Flush();
+		}
 		internal static List<RenderedPanel> RenderDebugPanels (Dictionary<string, Panels.IPanel> requestPanels = null) {
 			List<RenderedPanel> result = new List<RenderedPanel>();
 			if (requestPanels == null) return result;

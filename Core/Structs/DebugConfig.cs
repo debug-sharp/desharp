@@ -1,9 +1,11 @@
-﻿using System;
+using System;
+using System.Runtime.InteropServices;
 
 namespace Desharp {
 	/// <summary>
 	/// Desharp configuration collection for Desharp.Debug.Configure(); calls.
 	/// </summary>
+	[ComVisible(true)]
 	public struct DebugConfig {
 		/// <summary>How many levels in complex type variables will be iterated throw to dump all it's properties, fields and other values.</summary>
 		public int? Depth;

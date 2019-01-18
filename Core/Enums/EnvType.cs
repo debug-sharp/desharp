@@ -1,7 +1,10 @@
-﻿namespace Desharp {
+using System.Runtime.InteropServices;
+
+namespace Desharp {
 	/// <summary>
 	/// Application general environment - should be only defined as web or desktop.
 	/// </summary>
+	[ComVisible(true)]
 	public enum EnvType {
 		/// <summary>
 		/// Environment will be defined by Desharp assembly at first Desharp call.

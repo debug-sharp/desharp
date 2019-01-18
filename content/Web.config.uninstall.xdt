@@ -5,6 +5,14 @@
       <add name="Desharp" type="Desharp.Module" xdt:Transform="Remove" xdt:Locator="Match(name)" />
     </modules>
     <httpErrors errorMode="DetailedLocalOnly" xdt:Transform="Remove" xdt:Locator="Match(errorMode)" />
+	<security>
+      <requestFiltering>
+        <hiddenSegments>
+          <add segment="logs" xdt:Transform="Remove" xdt:Locator="Match(segment)" />
+          <add segment="Desharp.config.example" xdt:Transform="Remove" xdt:Locator="Match(segment)" />
+        </hiddenSegments>
+      </requestFiltering>
+    </security>
   </system.webServer>
   <appSettings>
     <add key="Desharp:Enabled" value="1" xdt:Transform="Remove" xdt:Locator="Match(key)" />

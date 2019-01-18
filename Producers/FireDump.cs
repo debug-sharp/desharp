@@ -4,6 +4,7 @@ using System.Web.Script.Serialization;
 using System.Web;
 using System.Diagnostics;
 using Desharp.Core;
+using System.Runtime.InteropServices;
 
 namespace Desharp {
     /// <summary>
@@ -65,6 +66,7 @@ namespace Desharp {
     /// 	);
     /// </code>
     /// </example>
+	[ComVisible(true)]
     public class FireDump {
         internal const string SELF_FILENAME = "FireDump.cs";
         private bool _dumpCallStackInfo = false;

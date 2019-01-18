@@ -12,11 +12,13 @@ using System.Collections.Specialized;
 using System.Text;
 using System.Runtime.CompilerServices;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 
 namespace Desharp.Renderers {
 	/// <summary>
 	/// Reflection class to dump any type value into string representation by Desharp.Renderers.Dumper.Dump(value);
 	/// </summary>
+	[ComVisible(true)]
 	public class Dumper {
 		internal static string[] HtmlDumpWrapper = new string[] { @"<div class=""desharp-dump"">", "</div>" };
 		internal static string[] TooLongIndicator = new string[] { @"<span class=""too-deep"">...</span>", "..." };

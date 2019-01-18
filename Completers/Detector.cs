@@ -4,11 +4,13 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Data;
 using System.Reflection;
+using System.Runtime.InteropServices;
 
 namespace Desharp.Completers {
 	/// <summary>
 	/// Detecting class to check value types to dump them correctly, always internaly used by Desharp, but it should be used for any general purposes.
 	/// </summary>
+	[ComVisible(true)]
     public class Detector {
 		/// <summary>
 		/// True if value is Type object.
