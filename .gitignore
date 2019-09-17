@@ -289,7 +289,7 @@ __pycache__/
 *.xsd.cs
 
 
-
+obj/Dev/*
 *.user
 .vs/
 Assets/node_modules

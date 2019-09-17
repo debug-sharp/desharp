@@ -31,17 +31,23 @@ namespace Desharp {
 			application.BeginRequest += delegate (object o, EventArgs e) {
 				try {
 					Dispatcher.GetCurrent().WebRequestBegin();
-				} catch { }
+				} catch (Exception ex) {
+					Desharp.Debug.Log(ex.Message + "\r\n" + ex.StackTrace);
+				}
 			};
 			application.AcquireRequestState += delegate (object o, EventArgs e) {
 				try {
 					Dispatcher.GetCurrent().WebRequestSessionBegin();
-				} catch { }
+				} catch (Exception ex) {
+					Desharp.Debug.Log(ex.Message + "\r\n" + ex.StackTrace);
+				}
 			};
 			application.PostRequestHandlerExecute += delegate (object o, EventArgs e) {
 				try {
 					Dispatcher.GetCurrent().WebRequestSessionEnd();
-				} catch { }
+				} catch (Exception ex) {
+					Desharp.Debug.Log(ex.Message + "\r\n" + ex.StackTrace);
+				}
 			};
 			/*application.EndRequest += delegate (object o, EventArgs e) {
 				try {
@@ -52,28 +58,38 @@ namespace Desharp {
 						dispatcher.WebRequestPreSendBody();
 						Dispatcher.Remove();
 					}
-				} catch { }
+				} catch (Exception ex) {
+					Desharp.Debug.Log(ex.Message + "\r\n" + ex.StackTrace);
+				}
 			};*/
 			application.PreSendRequestHeaders += delegate (object o, EventArgs e) {
 				try {
 					Dispatcher.GetCurrent().WebRequestPreSendHeaders();
-				} catch { }
+				} catch (Exception ex) {
+					Desharp.Debug.Log(ex.Message + "\r\n" + ex.StackTrace);
+				}
 			};
 			application.PreSendRequestContent += delegate (object o, EventArgs e) {
 				try {
 					Dispatcher.GetCurrent().WebRequestPreSendBody();
 					Dispatcher.Remove();
-				} catch { }
+				} catch (Exception ex) {
+					Desharp.Debug.Log(ex.Message + "\r\n" + ex.StackTrace);
+				}
 			};
 			application.Error += delegate (object o, EventArgs e) {
 				try {
 					Dispatcher.GetCurrent().WebRequestError();
-				} catch { }
+				} catch (Exception ex) {
+					Desharp.Debug.Log(ex.Message + "\r\n" + ex.StackTrace);
+				}
 			};
 			application.Disposed += delegate (object o, EventArgs e) {
 				try {
 					Dispatcher.Disposed();
-				} catch { }
+				} catch (Exception ex) {
+					Desharp.Debug.Log(ex.Message + "\r\n" + ex.StackTrace);
+				}
 			};
 		}
 	}

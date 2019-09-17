@@ -68,6 +68,7 @@ namespace Desharp.Core {
 			Tools.Editor = cfgEditor;
 		}
 		internal static string RelativeSourceFullPath (string fileName) {
+			if (String.IsNullOrEmpty(Dispatcher.AppRoot)) return fileName;
 			int appRootPos = fileName.IndexOf(Dispatcher.AppRoot);
 			if (appRootPos == 0) {
 				fileName = fileName.Substring(Dispatcher.AppRoot.Length);

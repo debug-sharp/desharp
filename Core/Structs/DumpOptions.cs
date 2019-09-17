@@ -18,6 +18,9 @@ namespace Desharp {
 		/// Set true if you want to return dumped string as result of Desharp.Debug.Dump() function call.
 		/// </summary>
 		public bool? Return;
-		internal bool? CatchedException;
+        /// <summary>
+        /// Set true if you want to render red exception over whole browser screen.
+        /// </summary>
+        public bool? CatchedException;
 	}
 }

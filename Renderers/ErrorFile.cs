@@ -128,14 +128,11 @@ namespace Desharp.Renderers {
 		}
 		private static string _readErrorFile (string fileFullPath) {
 			string result = "";
-			StreamReader streamReader = null;
-			try {
-				streamReader = new StreamReader(fileFullPath);
-				result = streamReader.ReadToEnd();
-				streamReader.Close();
-			} catch (Exception e) {
-				streamReader.Close();
-			}
+            try {
+                result = File.ReadAllText(fileFullPath);
+            } catch (Exception e) {
+                result = e.Message;
+            }
 			return result;
 		}
 	}

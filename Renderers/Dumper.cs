@@ -576,17 +576,17 @@ namespace Desharp.Renderers {
 			if (prms.Length > 0) { 
 				for (int i = 0, l = prms.Length; i < l; i += 1) {
 					result += (result.Length == 0
-						? "Func<"
-						: ", ") + prms[i].ParameterType.Name + " " + prms[i].Name;
+						? "Func<param "
+						: ", param ") + prms[i].ParameterType.Name + " " + prms[i].Name;
 				}
-				result += ", out " + mi.ReturnType.Name + ">";
+				result += ", return " + mi.ReturnType.Name + ">()";
 			} else {
-				result += "Func<out " + mi.ReturnType.Name + ">";
+				result += "Func<return " + mi.ReturnType.Name + ">()";
 			}
 			if (htmlOut) {
-				result = $@"<div class=""item dump dump-{sequence}{obj.GetHashCode()} func"">"
-					 + result
-				+ "</div>";
+				result = $@"<span class=""runtimetype func"">"
+					 + result.Replace("<", "&lt;").Replace(">", "&gt;")
+				+ @"</span>&nbsp;<span class=""type"">[System.Func]</span>";
 			}
 			return result;
 		}
@@ -606,9 +606,9 @@ namespace Desharp.Renderers {
 				result += mi.ReturnType.Name + " " + objType.FullName + "()";
 			}
 			if (htmlOut) {
-				result = $@"<div class=""item dump dump-{sequence}{obj.GetHashCode()} delegate"">"
+				result = $@"<span class=""runtimetype delegate"">"
 					 + result
-				+ "</div>";
+				+ @"</span>&nbsp;<span class=""type"">[System.Delegate]</span>";
 			}
 			return result;
 		}

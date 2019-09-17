@@ -71,7 +71,11 @@ namespace Desharp.Completers {
 				ErrorFileStackTrace = errorFile,
 				AllStackTraces = stackTraceItems,
 				ExceptionMessage = message,
-				ExceptionType = exceptionType.Length > 0 ? exceptionType : ""
+				ExceptionType = exceptionType.Length > 0 ? exceptionType : "",
+				ExceptionHash = "",
+				CausedByHash = "",
+				CausedByMessage = "",
+				CausedByType = "",
 			};
         }
         internal static StackTraceItem CompleteCallerPoint () {
@@ -99,7 +103,7 @@ namespace Desharp.Completers {
             return result;
         }
         internal static RenderingCollection RenderStackTraceForException (ExceptionToRender exceptionToRender, bool fileSystemLog = true, bool htmlOut = false, int index = 0) {
-			StackTraceItem? possibleViewExceptionStackTrace;
+			//StackTraceItem? possibleViewExceptionStackTrace;
 			List<StackTraceItem> stackTraceItems = StackTrace._completeStackTraceForSingleException(exceptionToRender.Exception);
 			StackTraceItem? errorFile = null;
 			string causedByHash = "";
@@ -113,7 +117,9 @@ namespace Desharp.Completers {
 					errorFile = possibleViewExceptionStackTrace;
 				}*/
 				if (exceptionToRender.Exception is HttpCompileException) {
-					PropertyInfo[] props = exceptionToRender.Exception.GetType().GetProperties(BindingFlags.NonPublic | BindingFlags.Instance);
+					PropertyInfo[] props = exceptionToRender.Exception.GetType().GetProperties(
+                        BindingFlags.NonPublic | BindingFlags.Instance
+                    );
 					PropertyInfo prop;
 					for (int i = 0, l = props.Length; i < l; i += 1) {
 						prop = props[i];
