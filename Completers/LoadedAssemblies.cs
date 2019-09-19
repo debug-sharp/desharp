@@ -37,7 +37,7 @@ namespace Desharp.Completers {
 					result.Add(bodyItems.ToArray());
 					index++;
 				}
-			} catch (Exception e) {
+			} catch {
 				//throw e;
 			}
 			return result;

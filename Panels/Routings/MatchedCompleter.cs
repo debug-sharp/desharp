@@ -309,11 +309,13 @@ namespace Desharp.Panels.Routings {
 				string newDummyValue = "";
 				primaryValueHashCode = newDummyValue.GetHashCode().ToString();
 			}
+			object paramPrimaryValue = paramData.PrimaryValue;
+			Type paramPrimaryValueType = paramPrimaryValue == null ? null : paramPrimaryValue.GetType();
 			DumpType type = (paramData.PrimaryValue is string)
-				? Dumper.GetDumpTypes(paramData.PrimaryValue, paramData.PrimaryValue.ToString().Length.ToString(), true, false, "99")
+				? Dumper.GetDumpTypes(ref paramPrimaryValue, ref paramPrimaryValueType, paramPrimaryValue.ToString().Length.ToString(), true, false, "99")
 				: (paramData.PrimaryValue is System.DBNull
 					? new DumpType { ValueTypeCode = "" }
-					: Dumper.GetDumpTypes(paramData.PrimaryValue, "", true, false, "99")
+					: Dumper.GetDumpTypes(ref paramPrimaryValue, ref paramPrimaryValueType, "", true, false, "99")
 				);
 			string renderedValue = paramData.PrimaryValue == null
 				? Dumper.GetNullCode(true)
@@ -340,11 +342,15 @@ namespace Desharp.Panels.Routings {
 			if (paramData.ValueVariations.Count > 0) {
 				result += @"<div class=""item dump dump-99" + primaryValueHashCode + @""">";
 				int i = 0;
+				object itemValue;
+				Type itemValueType;
 				foreach (var item in paramData.ValueVariations) {
 					if (i > 0) result += "<br />";
+					itemValue = item.Value;
+					itemValueType = itemValue == null ? null : itemValue.GetType();
 					type = (item.Value is string)
-						? Dumper.GetDumpTypes(item.Value, item.Value.ToString().Length.ToString(), true, false, "99")
-						: Dumper.GetDumpTypes(item.Value, "", true, false, "99");
+						? Dumper.GetDumpTypes(ref itemValue, ref itemValueType, item.Value.ToString().Length.ToString(), true, false, "99")
+						: Dumper.GetDumpTypes(ref itemValue, ref itemValueType, "", true, false, "99");
 					renderedValue = item.Value == null
 						? Dumper.GetNullCode(true)
 						: Dumper.RenderPrimitiveTypeValue(item.Value, true, Dispatcher.DumpMaxLength);

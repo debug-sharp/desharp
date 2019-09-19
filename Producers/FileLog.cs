@@ -143,7 +143,7 @@ namespace Desharp.Producers {
 				stream.Write(bytes, 0, bytes.Length);
 				stream.Flush();
 				r = true;
-			} catch (Exception e) {
+			} catch {
 				r = false;
 			} finally {
 				if (stream != null) stream.Close();

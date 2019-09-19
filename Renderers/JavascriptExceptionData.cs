@@ -49,7 +49,7 @@ namespace Desharp.Renderers {
 				string result = "";
 				try {
 					result = new JavaScriptSerializer().Serialize(jsExceptionProps);
-				} catch (Exception e) { }
+				} catch { }
 				return result;
 			}
 		}

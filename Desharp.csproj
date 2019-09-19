@@ -56,6 +56,7 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -91,6 +92,7 @@
     <Compile Include="Core\Structs\RouteMatchedParam.cs" />
     <Compile Include="Core\Structs\RouteTarget.cs" />
     <Compile Include="Core\Structs\RouteTargetArg.cs" />
+    <Compile Include="Core\Vba.cs" />
     <Compile Include="Core\WinDebuggerAttaching.cs" />
     <Compile Include="Debug.cs" />
     <Compile Include="Core\Config.cs" />

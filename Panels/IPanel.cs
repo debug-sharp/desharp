@@ -1,10 +1,10 @@
 using System.Runtime.InteropServices;
 
 namespace Desharp.Panels {
-	[ComVisible(true)]
 	/// <summary>
 	/// Web debug bar panel base class.
 	/// </summary>
+	[ComVisible(true)]
 	public interface IPanel {
 		/// <summary>
 		/// Unique bar panel name, required.

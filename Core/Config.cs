@@ -54,7 +54,7 @@ namespace Desharp.Core {
 						if (value != null && !result.Contains(value)) {
 							result.Add(value);
 						}
-					} catch (Exception e) { }
+					} catch { }
 				}
 			}
 			return result.ToArray();
@@ -193,7 +193,7 @@ namespace Desharp.Core {
 					// so let's deserialize string data
 					JavaScriptSerializer jsonSerializer = new JavaScriptSerializer();
 					result = jsonSerializer.Deserialize<Dictionary<string, object>>(rawJson);
-				} catch (Exception e) { }
+				} catch { }
 			}
 			return result;
 		}

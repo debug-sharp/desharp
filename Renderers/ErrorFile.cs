@@ -21,7 +21,7 @@ namespace Desharp.Renderers {
 			try {
 				if (errorFileStackTrace.Line.Length > 0) lineInt = Convert.ToInt32(errorFileStackTrace.Line);
 				if (errorFileStackTrace.Column.Length > 0) columnInt = Convert.ToInt32(errorFileStackTrace.Column);
-			} catch (Exception e) { }
+			} catch { }
 			if (lineInt > -1) {
 				int beginLine;
 				int endLine;

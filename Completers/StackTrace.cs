@@ -210,7 +210,7 @@ namespace Desharp.Completers {
 							currentExceptionImprint = baseExceptionImprint;
 						}
 					}
-				} catch (Exception _e1) {
+				} catch {
 				}
 				safeCounter++;
 				if (breakWhile) break;

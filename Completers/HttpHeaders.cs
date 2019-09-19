@@ -26,7 +26,7 @@ namespace Desharp.Completers {
 						 });
 					}
 				}
-			} catch (Exception e) { }
+			} catch { }
 			return headers;
 		}
 	}

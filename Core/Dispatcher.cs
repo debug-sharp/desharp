@@ -87,7 +87,7 @@ namespace Desharp.Core {
 							Dispatcher.AppRoot = HttpContext.Current.Server
 								.MapPath("~").Replace('\\', '/').TrimEnd('/');
 							appRootInitialized = true;
-						} catch (Exception e4) {
+						} catch {
 						}
 					}
 					Dispatcher.WebDebugIps = Config.GetDebugIps();
@@ -101,7 +101,7 @@ namespace Desharp.Core {
 							System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName
 						).Replace('\\', '/').TrimEnd('/');
 						appRootInitialized = true;
-					} catch (Exception e5) {
+					} catch {
 					}
 					AppDomain.CurrentDomain.UnhandledException += delegate (object o, UnhandledExceptionEventArgs e1) {
 						Debug.Log(e1.ExceptionObject as Exception);
@@ -401,7 +401,6 @@ namespace Desharp.Core {
             return this.FireDump;
         }
 		internal void Configure (DebugConfig cfg) {
-			return;
 			if (cfg.EnvType != EnvType.Auto) Dispatcher.EnvType = cfg.EnvType;
 			if (cfg.Enabled.HasValue) this.Enabled = cfg.Enabled.Value;
 			if (cfg.LogFormat != LogFormat.Auto) this.Output = cfg.LogFormat;
@@ -481,7 +480,7 @@ namespace Desharp.Core {
 			foreach (var item in this.webBarPanels) {
 				try {
 					item.Value.SessionBegin();
-				} catch (Exception e) { }
+				} catch { }
 			}
 			this.WebRequestState = 2;
 		}
@@ -633,7 +632,7 @@ namespace Desharp.Core {
 						// item.Value.SessionEnd(); // do not use this line, it always calls abstract method
 						MethodInfo mi = item.Value.GetType().GetMethod("SessionEnd");
 						mi.Invoke(item.Value, null);
-					} catch (Exception e) { }
+					} catch { }
 				}
 			}
 		}

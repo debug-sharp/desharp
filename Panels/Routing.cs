@@ -18,7 +18,7 @@ namespace Desharp.Panels {
 	[ComVisible(true)]
 	public class Routing: IPanel {
 		public static string PanelName = "routing";
-		public new int[] DefaultWindowSizes => new int[] { 350, 250 };
+		public int[] DefaultWindowSizes => new int[] { 350, 250 };
 		public string IconValue => Routing.PanelName;
 		public string Name => Routing.PanelName;
 		public PanelIconType PanelIconType => PanelIconType.Class;
@@ -352,7 +352,8 @@ namespace Desharp.Panels {
 			} else if (obj.GetType().Name == "UrlParameter") {
 				return @"<span class=""type"">[Optional]</span>";
 			} else {
-				return Dumper.DumpPrimitiveType(obj, 0, true, Dispatcher.DumpMaxLength, "");
+				Type objType = obj.GetType();
+				return Dumper.DumpPrimitiveType(ref obj, ref objType, 0, true, Dispatcher.DumpMaxLength, "");
 			}
 		}
 		private static string[] _completeRouteCssClassAndFirstColumn (ref Route route, int matched) {

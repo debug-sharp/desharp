@@ -160,7 +160,7 @@ namespace Desharp.Core {
 				if (File.Exists(fullPath)) {
 					try {
 						Mailer.successNotifycationLevels = Mailer.jsonSerializer.Deserialize<List<string>>(File.ReadAllText(fullPath));
-					} catch (Exception e) { }
+					} catch { }
 				}
 			}
 			return Mailer.successNotifycationLevels.Contains(levelValue);
@@ -170,13 +170,13 @@ namespace Desharp.Core {
 			try {
 				string jsonData = Mailer.jsonSerializer.Serialize(Mailer.successNotifycationLevels);
 				File.WriteAllText(Dispatcher.Directory + "/" + Mailer.MAIL_SENDED_FILE, jsonData, System.Text.Encoding.UTF8);
-			} catch (Exception e) {
+			} catch {
 			}
 		}
 		protected static void storeFailure (string msg) {
 			try {
 				File.WriteAllText(Dispatcher.Directory + "/" + Mailer.MAIL_NOT_SENDED_FILE, msg, System.Text.Encoding.UTF8);
-			} catch (Exception e) {
+			} catch {
 			}
 			Mailer.failureFileExists = true;
 		}

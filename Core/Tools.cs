@@ -14,13 +14,13 @@ using System.Web.Compilation;
 using System.Runtime.InteropServices;
 
 namespace Desharp.Core {
-	[ComVisible(true)]
 	/// <summary>
 	/// Usefull static functions used by Desharp assembly internaly, but it should be used for any general purposes.
 	/// </summary>
+	[ComVisible(true)]
     public class Tools {
 		internal static string Editor = "";
-		private const string _EDITOR_DEFAULT = "MSVS2015";
+		private const string _EDITOR_DEFAULT = "MSVS";
 		private static Dictionary<string, string> _versionsVsEditors = new Dictionary<string, string>() {
 			{  "7.0", "MSVS2002" },
 			{  "7.1", "MSVS2003" },
@@ -31,6 +31,7 @@ namespace Desharp.Core {
 			{ "12.0", "MSVS2013" },
 			{ "14.0", "MSVS2015" },
 			{ "16.0", "MSVS2017" },
+			{ "16.2", "MSVS2019" },
 		};
 		static Tools () {
 			// prefered editor for <a href="editor://open/..."></a> links
@@ -91,7 +92,7 @@ namespace Desharp.Core {
 					if (addresses.Length != 0) clientIpAddress = addresses[0].Trim(new char[] { ' ', '\r', '\n', '\t', '\v' });
 				}
 				if (string.IsNullOrEmpty(clientIpAddress)) clientIpAddress = serverVariables["REMOTE_ADDR"];
-			} catch (Exception e) { }
+			} catch { }
 			return clientIpAddress;
         }
 		/// <summary>
@@ -207,7 +208,7 @@ namespace Desharp.Core {
 		/// Return string with so many spaces as defined by first param.
 		/// </summary>
 		/// <param name="spaces">number of spaces in result string.</param>
-		/// <param name="htmlOut">If true, all spaces will be rendered as &nbsp; entity.</param>
+		/// <param name="htmlOut">If true, all spaces will be rendered as &#64;nbsp; entity.</param>
 		public static string SpaceIndent (int spaces = 0, bool htmlOut = true) {
 			string s = "";
 			for (var i = 0; i < spaces; i++) {
@@ -271,7 +272,7 @@ namespace Desharp.Core {
 						break;
 					}
 				}
-			} catch (Exception e) {
+			} catch {
 			}
 			return type;
 
