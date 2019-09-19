@@ -146,7 +146,7 @@ You can configure by `app.config`/`web.config` or directly by calling `Debug.Con
   - alert
   - emergency
   - javascript
-- favourite editor to open files from html output by `editor://` protocol (MSVS2015 by default)
+- favourite editor to open files from html output by `editor://` protocol (MSVS by default)
 
 ### Configuration examples
 
@@ -259,11 +259,11 @@ You can configure by `app.config`/`web.config` or directly by calling `Debug.Con
         <!-- 
             Default editor param value
             - not required, marginal
-            - for file opening links by 'editor://file=...&line=...&editor=MSVS2015'
+            - for file opening links by 'editor://file=...&line=...&editor=MSVS'
             - possible values: any string key to open your editor from html output by
             - if not configured, value is automaticly detected by Visual Studio instalation on current system
         -->
-        <add key="Desharp:Editor" value="MSVS2015" />
+        <add key="Desharp:Editor" value="MSVS" />
         
     </appSettings>
 </configuration>
@@ -419,11 +419,11 @@ You can configure by `app.config`/`web.config` or directly by calling `Debug.Con
         <!-- 
             Default editor param value
             - not required, marginal
-            - for file opening links by 'editor://file=...&line=...&editor=MSVS2015'
+            - for file opening links by 'editor://file=...&line=...&editor=MSVS'
             - possible values: any string key to open your editor from html output by
             - if not configured, value is automaticly detected by Visual Studio instalation on current system
         -->
-        <add key="Desharp:Editor" value="MSVS2015" />
+        <add key="Desharp:Editor" value="MSVS" />
         
     </appSettings>
 </configuration>
