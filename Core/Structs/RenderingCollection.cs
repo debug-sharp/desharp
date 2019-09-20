@@ -2,15 +2,15 @@
 
 namespace Desharp {
 	internal struct RenderingCollection {
-		public StackTraceItem? ErrorFileStackTrace;
-		public List<StackTraceItem> AllStackTraces;
-		public List<string[]> Headers;
-		public bool Catched;
-		public string ExceptionHash;
-		public string ExceptionType;
-		public string ExceptionMessage;
-		public string CausedByHash;
-		public string CausedByType;
-		public string CausedByMessage;
+		internal StackTraceItem? ErrorFileStackTrace;
+		internal List<StackTraceItem> AllStackTraces;
+		internal List<string[]> Headers;
+		internal bool Catched;
+		internal string ExceptionHash;
+		internal string ExceptionType;
+		internal string ExceptionMessage;
+		internal string CausedByHash;
+		internal string CausedByType;
+		internal string CausedByMessage;
 	}
 }

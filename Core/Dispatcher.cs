@@ -103,12 +103,25 @@ namespace Desharp.Core {
 						appRootInitialized = true;
 					} catch {
 					}
+					bool exited = false;
+					/*
+					var bgThread = new System.Threading.Thread(new ThreadStart(delegate () {
+						while (true) { 
+							System.Threading.Thread.Sleep(1000);
+							if (exited) break;
+						}
+					}));
+					bgThread.IsBackground = true;
+					bgThread.Priority = ThreadPriority.Lowest;
+					bgThread.Start();
+					*/
 					AppDomain.CurrentDomain.UnhandledException += delegate (object o, UnhandledExceptionEventArgs e1) {
 						Debug.Log(e1.ExceptionObject as Exception);
+						exited = true;
 						if (e1.IsTerminating) Dispatcher.Disposed();
+						Environment.Exit(1);
 					};
 					if (Dispatcher.LogWriteMilisecond > 0) {
-						bool exited = false;
 						AppDomain.CurrentDomain.ProcessExit += delegate (object o, EventArgs e2) {
 							Dispatcher.Disposed();
 							exited = true;

@@ -5,6 +5,7 @@ using System.Collections.Specialized;
 using System.Data;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Text;
 
 namespace Desharp.Completers {
 	/// <summary>
@@ -25,6 +26,15 @@ namespace Desharp.Completers {
 		/// </summary>
 		protected static Type delegateType = typeof(System.Delegate);
 		/// <summary>
+		/// `System.Tuple` string value (backwards compatibility for .NET 4.0+)
+		/// </summary>
+		protected static string systemTupleStr = "System.Tuple";
+		/// <summary>
+		/// `System.Tuple` string value length (backwards compatibility for .NET 4.0+)
+		/// </summary>
+		protected static int systemTupleStrLen = 12;
+
+		/// <summary>
 		/// True if value is sbyte | byte | short | ushort | int | uint | long | ulong | float | double | decimal | char | bool | string | object.
 		/// </summary>
 		/// <param name="obj">Any value except null.</param>
@@ -32,7 +42,7 @@ namespace Desharp.Completers {
 		/// <returns>True if `obj` is any primitive value except `enum`, `struct` and `unmanaged`.</returns>
 		public static bool IsPrimitiveType (ref object obj, ref Type objType) {
 			// https://docs.microsoft.com/en-US/dotnet/api/system.type.isprimitive?view=netframework-4.8
-			if (objType.IsPrimitive || obj is string || obj is decimal || obj is System.Decimal) return true; // decimal and string is not primitive
+			if (objType.IsPrimitive || obj is string || obj is decimal || obj is System.DBNull) return true; // decimal and string is not primitive
 			return false;
 		}
 		/// <summary>
@@ -69,9 +79,9 @@ namespace Desharp.Completers {
 				if (objType.IsGenericType && objType.GetGenericTypeDefinition() == typeof(Dictionary<,>)) {
 					return true;
 				} else if (
-					objType.GetProperty("Count") is PropertyInfo && 
-					objType.GetProperty("Keys") is PropertyInfo && 
-					objType.GetProperty("Values") is PropertyInfo
+					objType.GetProperty("Count", BindingFlags.Instance | BindingFlags.Public) is PropertyInfo && 
+					objType.GetProperty("Keys", BindingFlags.Instance | BindingFlags.Public) is PropertyInfo && 
+					objType.GetProperty("Values", BindingFlags.Instance | BindingFlags.Public) is PropertyInfo
 				) {
 					return true;
 				}
@@ -105,7 +115,7 @@ namespace Desharp.Completers {
 		/// <param name="objType">Type object for value or null.</param>
 		/// <returns>True if `obj` is `Type` object.</returns>
         public static bool IsTypeObject (ref object obj, ref Type objType) {
-            if (obj is Type) return true;
+            if (obj is _Type) return true;
             return false;
 		}
         /// <summary>
@@ -137,7 +147,10 @@ namespace Desharp.Completers {
 		/// <returns>True if `obj` is `System.Func&lt;,&gt;`.</returns>
 		public static bool IsTuple(ref object obj, ref Type objType) {
 			// this string comparison is because of backward compatibility for .NET 4.0+
-			if (objType.FullName.IndexOf("System.Tuple") == 0) return true;
+			//if (objType.FullName.IndexOf("System.Tuple") == 0) return true;
+			string objTypefullName = objType.FullName;
+			int sysTupleLen = Detector.systemTupleStrLen;
+			if (objTypefullName.Length >= sysTupleLen && Detector.systemTupleStr == objTypefullName.Substring(0, sysTupleLen)) return true;
 			return false;
 		}
 		/// <summary>
@@ -163,7 +176,6 @@ namespace Desharp.Completers {
 			) return true;
 			return false;
 		}
-
 		/// <summary>
 		/// True if value is MethodInfo | PropertyInfo | FieldInfo | EventInfo | MemberInfo | ConstructorInfo.
 		/// </summary>
@@ -171,7 +183,17 @@ namespace Desharp.Completers {
 		/// <param name="objType">Type object for value or null.</param>
 		/// <returns>True if value is MethodInfo | PropertyInfo | FieldInfo | EventInfo | MemberInfo | ConstructorInfo.</returns>
 		public static bool IsReflectionObject (ref object obj, ref Type objType) {
-            if (obj is MemberInfo || obj is _MemberInfo) return true;
+            if (obj is _MemberInfo) return true;
+            return false;
+		}
+		/// <summary>
+		/// True if `obj` implements `IFormattable` or if `obj` is `Stringbuilder`
+		/// </summary>
+		/// <param name="obj">Any value except null.</param>
+		/// <param name="objType">Type object for value or null.</param>
+		/// <returns>True if `obj` implements `IFormattable` or if `obj` is `Stringbuilder`</returns>
+		public static bool IsExtraFormatedObject (ref object obj, ref Type objType) {
+            if (obj is IFormattable || obj is StringBuilder || obj is System.Guid) return true;
             return false;
 		}
 	}

@@ -22,8 +22,14 @@ namespace Desharp.Renderers {
 	[ComVisible(true)]
 	public class Dumper {
 		internal static string[] HtmlDumpWrapper = new string[] { @"<div class=""desharp-dump"">", "</div>" };
+		internal static string[] NullCode = new string[] { @"<span class=""null"">null</span>", "null", @"<span class=""null"">DBNull</span>", "DBNull",  };
 		private static string[] _tooLongIndicator = new string[] { @"<span class=""too-deep"">...</span>", "..." };
 		private static CultureInfo _englishCultureInfo = new CultureInfo("en-US");
+		private static Dictionary<Type, string> _extraFormats = new Dictionary<Type, string>() {
+			// { typeof(System.DateTimeOffset), "o" },
+			// { typeof(System.DateTime), "o" },
+			// { typeof(System.TimeSpan), @"d\.hh\:mm\:ss\.fffffff" },
+		};
 		private static string[][] _anonymousTypeBaseNames = new string[][] {
 			// beginning, generics begin char
 			new string[] {"<>f__AnonymousType", "<"},
@@ -33,6 +39,11 @@ namespace Desharp.Renderers {
 		private static Type _hiddenAttributeType = typeof(HiddenAttribute);
 		private static Type _debuggerBrowsableAttributeType = typeof(DebuggerBrowsableAttribute);
 		private static Type _compilerGeneratedAttributeType = typeof(CompilerGeneratedAttribute);
+		private static BindingFlags _staticPublic = BindingFlags.Static | BindingFlags.Public;
+		private static BindingFlags _staticNonPublic = BindingFlags.Static | BindingFlags.NonPublic;
+		private static BindingFlags _instancePublic = BindingFlags.Instance | BindingFlags.Public;
+		private static BindingFlags _instanceNonPublic = BindingFlags.Instance | BindingFlags.NonPublic;
+		private static BindingFlags _staticInstancePrivatePublic = BindingFlags.Static | BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
 		/// <summary>
 		/// Dump any type value into string representation and returns itg, this is direct dumper, no Desharp configuration will be used to process this dump.
 		/// </summary>
@@ -53,9 +64,6 @@ namespace Desharp.Renderers {
 			result.Append(htmlOut ? Dumper.HtmlDumpWrapper[1] : System.Environment.NewLine);
 			return result.ToString();
 		}
-		internal static string GetNullCode (bool htmlOut) {
-			return htmlOut ? @"<span class=""null"">null</span>" : "null";
-		}
 		internal static string TabsIndent (int tabs, bool htmlOut) {
 			string s = "";
 			if (htmlOut) {
@@ -65,16 +73,18 @@ namespace Desharp.Renderers {
 			}
 			return s;
 		}
-		internal static string DumpPrimitiveType (ref object obj, ref Type objType, int level, bool htmlOut, int maxLength, string sequence) {
+		internal static string DumpPrimitiveType (ref object obj, ref Type objType, ref Type underlyingType, int level, bool htmlOut, int maxLength, string sequence) {
 			string renderedValue;
-			if (obj == null) {
-				renderedValue = Dumper.GetNullCode(htmlOut);
+			bool underlyingTypeDefined = underlyingType != null;
+			Type typeForDump = underlyingTypeDefined ? underlyingType : objType;
+			if (obj == null || obj is System.DBNull) {
+				return Dumper._getNullCode(ref obj, ref typeForDump, htmlOut, sequence);
 			} else {
-				renderedValue = Dumper.RenderPrimitiveTypeValue(obj, htmlOut, maxLength);
+				renderedValue = Dumper.RenderPrimitiveTypeValue(ref obj, ref typeForDump, htmlOut, maxLength);
 			}
-			DumpType type = (obj is string)
-				? Dumper.GetDumpTypes(ref obj, ref objType, obj.ToString().Length.ToString(), htmlOut, false, sequence)
-				: Dumper.GetDumpTypes(ref obj, ref objType, "", htmlOut, false, sequence);
+			int? length = null;
+			if (obj is string) length = obj.ToString().Length;
+			DumpType type = Dumper.GetDumpTypes(ref obj, ref typeForDump, length, htmlOut, false, sequence, underlyingTypeDefined);
 			string result = "";
 			if (htmlOut) {
 				result = @"<span class=""" + type.NameCssClass + @""">" + renderedValue + "</span>&nbsp;" + type.ValueTypeCode;
@@ -83,7 +93,7 @@ namespace Desharp.Renderers {
 			}
 			return result;
 		}
-		internal static string RenderPrimitiveTypeValue (object obj, bool htmlOut, int maxLength) {
+		internal static string RenderPrimitiveTypeValue (ref object obj, ref Type objType, bool htmlOut, int maxLength) {
 			string renderedValue = "";
 			if (obj is char) {
 				renderedValue = obj.ToString();
@@ -114,14 +124,17 @@ namespace Desharp.Renderers {
 			} else if (obj is float) {
 				renderedValue = ((float) obj).ToString(Dumper._englishCultureInfo);
 			} else if (obj is byte || obj is sbyte) {
-				renderedValue = obj.ToString();
 				byte byteAbs;
 				string sign = " ";
-				if (obj is sbyte && (sbyte)obj < 0) {
+				if (obj is sbyte) {
 					sbyte objSbyte = (sbyte)obj;
-					int objSbyteInt = Math.Abs((int)objSbyte);
-					byteAbs = (byte)objSbyteInt;
-					sign = "-";
+					if (objSbyte < 0) {
+						int objSbyteInt = Math.Abs((int)objSbyte);
+						byteAbs = (byte)objSbyteInt;
+						sign = "-";
+					} else {
+						byteAbs = (byte)objSbyte;
+					}
 				} else {
 					byteAbs = (byte)obj;
 				}
@@ -136,24 +149,39 @@ namespace Desharp.Renderers {
 			}
 			return renderedValue;
 		}
-		internal static DumpType GetDumpTypes (ref object obj, ref Type objType, string length, bool htmlOut, bool fullTypeName, string sequence) {
+		internal static DumpType GetDumpTypes (ref object obj, ref Type objType, int? length, bool htmlOut, bool fullTypeName, string sequence, bool? underlyingType = null) {
 			string typeStr = "";
 			string valueTypeHtml = "";
 			string nameTypeClass = "";
 			string valueTypeClickClass = "";
+			string lengthStr = length.HasValue ? length.ToString() : "";
 			string[] lowerAndbiggerThenChars = htmlOut ? new string[] { "&lt;", "&gt;" } : new string[] { "<", ">" };
-			if (obj == null) {
-				typeStr = "null";
+			bool objIsNUll = objType == null;
+			bool objTypeIsNull = objType == null;
+			if ((objIsNUll && objTypeIsNull) || obj is System.DBNull) {
+				return new DumpType {
+					Text = "",
+					ValueTypeCode = "",
+					NameCssClass = ""
+				};
+			} else if (underlyingType.HasValue && !underlyingType.Value) {
+				Type[] gta = objType.GetGenericArguments();
+				if (gta.Length == 1) {
+					typeStr = gta[0].Name;
+					underlyingType = true;
+				} else {
+					typeStr = Dumper._getTypeStringWithGenerics(ref objType, htmlOut, fullTypeName);
+				}
 			} else {
-				int lengthInt = length.Length > 0 ? Int32.Parse(length) : 0;
-				valueTypeClickClass = (length.Length > 0 && lengthInt > 0 && !(obj is string)) ? "click click-" + sequence + obj.GetHashCode().ToString() : "";
 				typeStr = Dumper._getTypeStringWithGenerics(ref objType, htmlOut, fullTypeName);
 			}
 			string anonymousGenericTypes = Dumper._getAnonymousTypeGenericNames(typeStr);
 			if (anonymousGenericTypes != null)  // mostly simple base object with key/value passed into Dump method
 				typeStr = "Object" + anonymousGenericTypes;
 			nameTypeClass = typeStr.ToLower();
-			if (length.Length > 0) {
+			if (underlyingType.HasValue && underlyingType.Value)
+				typeStr += "?";
+			if (length.HasValue) {
 				int lastArrCharsPos = typeStr.LastIndexOf("[]");
 				if (lastArrCharsPos == typeStr.Length - 2) {
 					int startIndex = lastArrCharsPos; // typeStr.Length - 2
@@ -169,12 +197,15 @@ namespace Desharp.Renderers {
 						}
 						safeCounter++;
 					}
-					typeStr = typeStr.Substring(0, lastArrCharsPos) + "[" + length + "]" + typeStr.Substring(lastArrCharsPos + 2);
+					typeStr = typeStr.Substring(0, lastArrCharsPos) + "[" + lengthStr + "]" + typeStr.Substring(lastArrCharsPos + 2);
 				} else if (obj != null) {
-					typeStr = typeStr + "(" + length + ")";
+					typeStr = typeStr + "[" + lengthStr + "]";
 				}
 			}
 			if (htmlOut) {
+				valueTypeClickClass = (length.HasValue && length > 0 && !(obj is string)) 
+					? "click click-" + sequence + obj.GetHashCode().ToString() 
+					: "";
 				valueTypeHtml = @"<span class=""type " + valueTypeClickClass + @""" title=""" + (obj != null ? obj.GetHashCode().ToString() : "") + @""">[" + typeStr + "]</span>";
 			} else {
 				valueTypeHtml = "[" + typeStr + "]";
@@ -193,6 +224,12 @@ namespace Desharp.Renderers {
 				};
 			}
 		}
+		private static string _getNullCode (ref object obj, ref Type objType, bool htmlOut, string sequence) {
+			int nullCodeIndex = (htmlOut ? 0 : 1) + (obj is System.DBNull ? 2 : 0);
+			string result = Dumper.NullCode[nullCodeIndex];
+			DumpType type = Dumper.GetDumpTypes(ref obj, ref objType, null, htmlOut, false, sequence);
+			return result + (type.ValueTypeCode.Length > 0 ? " " + type.ValueTypeCode : "");
+		}
 		private static string _getTypeStringWithGenerics (ref Type objType, bool htmlOut, bool fullTypeName) {
 			string result = "";
 			if (objType != null) {
@@ -200,19 +237,32 @@ namespace Desharp.Renderers {
 					? new string[] { "&lt;", "&gt;" } 
 					: new string[] { "<", ">" };
 				Type[] gta = objType.GetGenericArguments();
+				Type gtaItem = null;
+				Type underType = null;
 				string typeName = objType.Name;
 				string typeFullName = objType.FullName;
 				int backSingleQuotPos = 0;
-				result = fullTypeName ? typeFullName : typeName;
+				result = fullTypeName 
+					? typeFullName 
+					: typeName;
 				if (gta.Length > 0) {
 					backSingleQuotPos = result.IndexOf('`');
 					if (backSingleQuotPos > -1) {
 						result = result.Substring(0, backSingleQuotPos);
 						List<string> gtaStrs = new List<string>();
 						for (int i = 0, l = gta.Length; i < l; i++) {
-							gtaStrs.Add(gta[i].Name.ToString());
+							gtaItem = gta[i];
+							underType = System.Nullable.GetUnderlyingType(gtaItem);
+							if (underType != null) {
+								gtaStrs.Add(underType.Name.ToString() + "?");
+							} else {
+								gtaStrs.Add(gtaItem.Name.ToString());
+							}
 						}
-						result += lowerAndbiggerThenChars[0] + String.Join(",", gtaStrs.ToArray()) + lowerAndbiggerThenChars[1];
+						result += lowerAndbiggerThenChars[0] + String.Join(
+							",", 
+							gtaStrs.ToArray()
+						) + lowerAndbiggerThenChars[1];
 						backSingleQuotPos = typeName.IndexOf('`');
 						if (backSingleQuotPos > -1) typeName = typeName.Substring(0, backSingleQuotPos);
 						if (result.IndexOf(typeName) == -1) {
@@ -227,7 +277,7 @@ namespace Desharp.Renderers {
 		}
 		private static string _dumpRecursive (ref object obj,ref Type objType,  bool htmlOut, int maxDepth, int maxLength, int level, List<int> ids, string sequence) {
 			if (obj == null) {
-				return Dumper.GetNullCode(htmlOut);
+				return Dumper._getNullCode(ref obj, ref objType, htmlOut, sequence);
 			} else {
 				int objId = obj.GetHashCode();
 				if (ids.Contains(objId)) {
@@ -240,9 +290,10 @@ namespace Desharp.Renderers {
 			if (level == maxDepth)
 				return Dumper._dumpRecursiveHandleLastLevelDepth(ref obj, ref objType, htmlOut, maxLength, level, sequence);
 			string result;
-			//Type objType = obj.GetType();
-			if (Detector.IsPrimitiveType(ref obj, ref objType)) {
-				result = Dumper.DumpPrimitiveType(ref obj, ref objType, level, htmlOut, maxLength, sequence);
+			bool isPrimitiveType = Detector.IsPrimitiveType(ref obj, ref objType);
+			Type underlyingType = System.Nullable.GetUnderlyingType(objType);
+			if (isPrimitiveType || (!isPrimitiveType && underlyingType != null)) {
+				result = Dumper.DumpPrimitiveType(ref obj, ref objType, ref underlyingType, level, htmlOut, maxLength, sequence);
 			} else if (Detector.IsArray(ref obj, ref objType)) {
 				result = Dumper._dumpArray(ref obj, ref objType, level, htmlOut, ids, maxDepth, maxLength, sequence);
 			} else if (Detector.IsNameValueCollection(ref obj, ref objType)) {
@@ -265,19 +316,21 @@ namespace Desharp.Renderers {
 				result = Dumper._dumpFunc(ref obj, ref objType, level, htmlOut);
 			} else if (Detector.IsDelegate(ref obj, ref objType)) {
 				result = Dumper._dumpDelegate(ref obj, ref objType, level, htmlOut);
-			} else if (!Detector.IsReflectionObject(ref obj, ref objType)) {
-				result = Dumper._dumpUnknown(ref obj, ref objType, level, htmlOut, ids, maxDepth, maxLength, sequence);
+			} else if (Detector.IsReflectionObject(ref obj, ref objType)) {
+				result = Dumper._dumpReflectionObject(ref obj, ref objType, htmlOut, sequence);
+			} else if (Detector.IsExtraFormatedObject(ref obj, ref objType)) {
+				result = Dumper._dumpExtraFormated(ref obj, ref objType, htmlOut, sequence);
 			} else {
-				result = obj.ToString();
-				if (htmlOut) result = @"<span class=""unknown"">" + result + "</span>";
+				result = Dumper._dumpUnknown(ref obj, ref objType, level, htmlOut, ids, maxDepth, maxLength, sequence);
 			}
 			return result;
 		}
 		private static string _dumpRecursiveHandleLastLevelDepth (ref object obj, ref Type objType, bool htmlOut, int maxLength, int level, string sequence) {
 			// in last level - print out only single line prints, complex object only as: ... [Type]
-			//Type objType = obj.GetType();
-			if (Detector.IsPrimitiveType(ref obj, ref objType)) {
-				return Dumper.DumpPrimitiveType(ref obj, ref objType, level, htmlOut, maxLength, sequence);
+			bool isPrimitiveType = Detector.IsPrimitiveType(ref obj, ref objType);
+			Type underlyingType = System.Nullable.GetUnderlyingType(objType);
+			if (isPrimitiveType || (!isPrimitiveType && underlyingType != null)) {
+				return Dumper.DumpPrimitiveType(ref obj, ref objType, ref underlyingType, level, htmlOut, maxLength, sequence);
 			} else if (Detector.IsEnum(ref obj, ref objType)) {
 				return Dumper._dumpEnum(ref obj, ref objType, level, htmlOut, sequence);
 			} else if (Detector.IsTypeObject(ref obj, ref objType)) {
@@ -286,22 +339,53 @@ namespace Desharp.Renderers {
 				return Dumper._dumpFunc(ref obj, ref objType, level, htmlOut);
 			} else if (Detector.IsDelegate(ref obj, ref objType)) {
 				return Dumper._dumpDelegate(ref obj, ref objType, level, htmlOut);
+			} else if (Detector.IsExtraFormatedObject(ref obj, ref objType)) {
+				return Dumper._dumpExtraFormated(ref obj, ref objType, htmlOut, sequence);
+			} else if (Detector.IsReflectionObject(ref obj, ref objType)) {
+				return Dumper._dumpReflectionObject(ref obj, ref objType, htmlOut, sequence);
 			} else {
-				DumpType type = Dumper.GetDumpTypes(ref obj, ref objType, "", htmlOut, true, sequence);
+				DumpType type = Dumper.GetDumpTypes(ref obj, ref objType, null, htmlOut, true, sequence);
 				return Dumper._tooLongIndicator[htmlOut ? 0 : 1] + type.ValueTypeCode;
 			}
 		}
+		private static string _dumpReflectionObject (ref object obj, ref Type objType, bool htmlOut, string sequence) {
+			string renderedValue;
+			if (obj == null) {
+				renderedValue = Dumper._getNullCode(ref obj, ref objType, htmlOut, sequence);
+			} else {
+				PropertyInfo fullNameProp = objType.GetProperty("FullName", Dumper._staticInstancePrivatePublic);
+				if (fullNameProp != null) {
+					renderedValue = fullNameProp.GetValue(obj, null).ToString();
+				} else {
+					renderedValue = (obj as _MemberInfo).Name;
+				}
+			}
+			DumpType type = Dumper.GetDumpTypes(ref obj, ref objType, null, htmlOut, false, sequence);
+			string result;
+			if (htmlOut) {
+				result = @"<span class=""" + type.Text + @""">" + renderedValue + "</span>&nbsp;" + type.ValueTypeCode;
+			} else {
+				result = renderedValue + " [" + type.Text + "]";
+			}
+			return result;
+		}
+		private static string _dumpToString (ref object obj, bool htmlOut) {
+			string result = obj.ToString();
+			if (htmlOut) result = @"<span class=""unknown"">" + result + "</span>";
+			return result;
+		}
 		private static string _dumpArray (ref object obj, ref Type objType, int level, bool htmlOut, List<int> ids, int maxDepth, int maxLength, string sequence) {
 			dynamic objArr = obj;
-			string objArrLengthStr = objArr.Length.ToString();
-			DumpType type = Dumper.GetDumpTypes(ref obj, ref objType, objArrLengthStr, htmlOut, false, sequence);
+			bool? nullableArray = null;
+			if (objType.FullName.Length > 15 && objType.FullName.Substring(0, 15) == "System.Nullable") nullableArray = false; 
+			DumpType type = Dumper.GetDumpTypes(ref obj, ref objType, objArr.Length, htmlOut, false, sequence, nullableArray);
 			string result = type.ValueTypeCode;
 			string dumpedChild;
 			object child;
 			Type childType;
 			if (htmlOut) result += @"<div class=""item dump dump-" + sequence + obj.GetHashCode().ToString() + @""">";
 			string tabsStr = Dumper.TabsIndent(level + 1, htmlOut);
-			int maxKeyDigits = objArrLengthStr.Length;
+			int maxKeyDigits = objArr.Length.ToString().Length;
 			string key;
 			for (int i = 0, l = objArr.Length; i < l; i += 1) {
 				key = i.ToString();
@@ -324,7 +408,7 @@ namespace Desharp.Renderers {
 		private static string _dumpNameValueCollection (ref object obj, ref Type objType, int level, bool htmlOut, List<int> ids, int maxDepth, int maxLength, string sequence) {
 			NameValueCollection objCol = (NameValueCollection)obj;
 			string[] objColKeys = objCol.AllKeys;
-			DumpType type = Dumper.GetDumpTypes(ref obj, ref objType, objColKeys.Length.ToString(), htmlOut, true, sequence);
+			DumpType type = Dumper.GetDumpTypes(ref obj, ref objType, objColKeys.Length, htmlOut, true, sequence);
 			string result = type.ValueTypeCode;
 			string dumpedChild;
 			object key;
@@ -344,8 +428,8 @@ namespace Desharp.Renderers {
 					keyStr = key.ToString();
 					child = objCol.Get(keyStr);
 					childType = child == null ? null : child.GetType();
-					subTypeKey = Dumper.GetDumpTypes(ref key, ref keyType, "", htmlOut, false, sequence);
-					subTypeValue = Dumper.GetDumpTypes(ref child, ref childType, "", htmlOut, false, sequence);
+					subTypeKey = Dumper.GetDumpTypes(ref key, ref keyType, null, htmlOut, false, sequence);
+					subTypeValue = Dumper.GetDumpTypes(ref child, ref childType, null, htmlOut, false, sequence);
 					dumpedChild = Dumper._dumpRecursive(ref child, ref childType, htmlOut, maxDepth, maxLength, level + 1, new List<int>(ids), sequence);
 					if (subTypeKey.NameCssClass == "char") keyStr = "'" + keyStr + "'";
 					if (subTypeKey.NameCssClass == "string") keyStr = @"""" + keyStr + @"""";
@@ -362,8 +446,8 @@ namespace Desharp.Renderers {
 					keyStr = key.ToString();
 					child = objCol.Get(keyStr);
 					childType = child == null ? null : child.GetType();
-					subTypeKey = Dumper.GetDumpTypes(ref key, ref keyType, "", htmlOut, false, sequence);
-					subTypeValue = Dumper.GetDumpTypes(ref child, ref childType, "", htmlOut, false, sequence);
+					subTypeKey = Dumper.GetDumpTypes(ref key, ref keyType, null, htmlOut, false, sequence);
+					subTypeValue = Dumper.GetDumpTypes(ref child, ref childType, null, htmlOut, false, sequence);
 					dumpedChild = Dumper._dumpRecursive(ref child, ref childType, htmlOut, maxDepth, maxLength, level + 1, new List<int>(ids), sequence);
 					if (subTypeKey.NameCssClass == "char") keyStr = "'" + keyStr + "'";
 					if (subTypeKey.NameCssClass == "string") keyStr = @"""" + keyStr + @"""";
@@ -379,15 +463,15 @@ namespace Desharp.Renderers {
 		}
 		private static string _dumpDictionary (ref object obj, ref Type objType, int level, bool htmlOut, List<int> ids, int maxDepth, int maxLength, string sequence) {
 			// IDictionary objDct = (IDictionary)obj; // do not use this retype - causes exception for additional ditionaries
-			PropertyInfo countPropInfo = objType.GetProperty("Count");
-			PropertyInfo keysPropInfo = objType.GetProperty("Keys");
-			PropertyInfo valuesPropInfo = objType.GetProperty("Values");
-			int count = (int)countPropInfo.GetValue(obj, null);
+			PropertyInfo countPropInfo = objType.GetProperty("Count", BindingFlags.Instance | BindingFlags.Public);
+			PropertyInfo keysPropInfo = objType.GetProperty("Keys", BindingFlags.Instance | BindingFlags.Public);
+			PropertyInfo valuesPropInfo = objType.GetProperty("Values", BindingFlags.Instance | BindingFlags.Public);
+			int count = (int)countPropInfo.GetValue(obj, new object[] { });
 			IEnumerable keys = keysPropInfo.GetValue(obj, null) as IEnumerable;
 			IEnumerable values = valuesPropInfo.GetValue(obj, null) as IEnumerable;
 			IEnumerator keysEnum = keys.GetEnumerator();
 			IEnumerator valuesEnum = values.GetEnumerator();
-			DumpType type = Dumper.GetDumpTypes(ref obj, ref objType, count.ToString(), htmlOut, false, sequence);
+			DumpType type = Dumper.GetDumpTypes(ref obj, ref objType, count, htmlOut, false, sequence);
 			string result = type.ValueTypeCode;
 			string dumpedChild;
 			object key;
@@ -405,11 +489,11 @@ namespace Desharp.Renderers {
 					keyType = key == null ? null : key.GetType();
 					valuesEnum.MoveNext();
 					child = valuesEnum.Current;
-					childType = child == null ? null : key.GetType();
+					childType = child == null ? null : child.GetType();
 					keyStr = Detector.IsPrimitiveType(ref key, ref keyType) 
 						? key.ToString().Replace("<", "&lt;").Replace(">", "&gt;") 
 						: Dumper._dumpRecursive(ref key, ref keyType, htmlOut, maxDepth, maxLength, level + 1, new List<int>(ids), sequence);
-					subTypeKey = Dumper.GetDumpTypes(ref key, ref keyType, "", htmlOut, false, sequence);
+					subTypeKey = Dumper.GetDumpTypes(ref key, ref keyType, null, htmlOut, false, sequence);
 					dumpedChild = Dumper._dumpRecursive(ref child, ref childType, htmlOut, maxDepth, maxLength, level + 1, new List<int>(ids), sequence);
 					if (subTypeKey.NameCssClass == "char")
 						keyStr = "'" + Tools.HtmlEntities(keyStr) + "'";
@@ -428,11 +512,11 @@ namespace Desharp.Renderers {
 					keyType = key == null ? null : key.GetType();
 					valuesEnum.MoveNext();
 					child = valuesEnum.Current;
-					childType = child == null ? null : key.GetType();
+					childType = child == null ? null : child.GetType();
 					keyStr = Detector.IsPrimitiveType(ref key, ref keyType) 
 						? key.ToString() 
 						: Dumper._dumpRecursive(ref key, ref keyType, htmlOut, maxDepth, maxLength, level + 1, new List<int>(ids), sequence);
-					subTypeKey = Dumper.GetDumpTypes(ref key, ref keyType, "", htmlOut, false, sequence);
+					subTypeKey = Dumper.GetDumpTypes(ref key, ref keyType, null, htmlOut, false, sequence);
 					dumpedChild = Dumper._dumpRecursive(ref child, ref childType, htmlOut, maxDepth, maxLength, level + 1, new List<int>(ids), sequence);
 					if (subTypeKey.NameCssClass == "char")
 						keyStr = "'" + HttpUtility.JavaScriptStringEncode(keyStr) + "'";
@@ -460,7 +544,7 @@ namespace Desharp.Renderers {
 			if (obj is DataSet) {
                 DataSet ds = obj as DataSet;
                 length = ds.Tables.Count;
-                type = Dumper.GetDumpTypes(ref obj, ref objType, length.ToString(), htmlOut, false, sequence);
+                type = Dumper.GetDumpTypes(ref obj, ref objType, length, htmlOut, false, sequence);
                 result += type.ValueTypeCode;
                 for (int i = 0; i < length; i++) {
                     child = ds.Tables[i];
@@ -479,7 +563,7 @@ namespace Desharp.Renderers {
                 DataTable ds = obj as DataTable;
                 DataRowCollection rows = ds.Rows;
                 length = rows.Count;
-                type = Dumper.GetDumpTypes(ref obj, ref objType, length.ToString(), htmlOut, false, sequence);
+                type = Dumper.GetDumpTypes(ref obj, ref objType, length, htmlOut, false, sequence);
                 result += type.ValueTypeCode;
                 for (int i = 0; i < length; i++) {
                     child = rows[i];
@@ -497,13 +581,13 @@ namespace Desharp.Renderers {
                 DataRow row = obj as DataRow;
                 DataColumnCollection columns = row.Table.Columns;
                 length = columns.Count;
-                type = Dumper.GetDumpTypes(ref obj, ref objType, length.ToString(), htmlOut, false, sequence);
+                type = Dumper.GetDumpTypes(ref obj, ref objType, length, htmlOut, false, sequence);
                 result += type.ValueTypeCode;
 				int i = 0;
                 foreach (DataColumn column in columns) {
 					child = row[column];
 					childType = child == null || child is System.DBNull ? null : child.GetType();
-                    DumpType subTypeValue = Dumper.GetDumpTypes(ref child, ref childType, "", htmlOut, false, sequence);
+                    DumpType subTypeValue = Dumper.GetDumpTypes(ref child, ref childType, null, htmlOut, false, sequence);
 					string subTypeCls = subTypeValue.Text.ToString().ToLower();
                     string val = subTypeCls == "dbnull" ? "DBNull" : child.ToString();
 					if (htmlOut) {
@@ -524,7 +608,7 @@ namespace Desharp.Renderers {
 		private static string _dumpEnum (ref object obj, ref Type objType, int level, bool htmlOut, string sequence) {
 			Enum objEnum = obj as Enum;
 			int objInt = Convert.ToInt32(objEnum);
-			DumpType type = Dumper.GetDumpTypes(ref obj, ref objType, "", htmlOut, true, sequence);
+			DumpType type = Dumper.GetDumpTypes(ref obj, ref objType, null, htmlOut, true, sequence);
 			List<string> resultItems = new List<string>();
 			string result;
 			Array allValues = Enum.GetValues(objType);
@@ -546,9 +630,9 @@ namespace Desharp.Renderers {
 		}
 		private static string _dumpTypeObject (ref object obj, ref Type objType, int level, bool htmlOut, string sequence) {
 			string renderedValue = obj == null 
-				? Dumper.GetNullCode(htmlOut) 
+				? Dumper._getNullCode(ref obj, ref objType, htmlOut, sequence) 
 				: (obj as Type).FullName;
-			DumpType type = Dumper.GetDumpTypes(ref obj, ref objType, "", htmlOut, false, sequence);
+			DumpType type = Dumper.GetDumpTypes(ref obj, ref objType, null, htmlOut, false, sequence);
 			string result = "";
 			if (htmlOut) {
 				result = @"<span class=""" + type.Text + @""">" + renderedValue + "</span>&nbsp;" + type.ValueTypeCode;
@@ -585,7 +669,7 @@ namespace Desharp.Renderers {
                 index += 1;
             }
 			if (htmlOut) result += "</div>";
-            DumpType dumpType = Dumper.GetDumpTypes(ref obj, ref objType, index.ToString(), htmlOut, true, sequence);
+            DumpType dumpType = Dumper.GetDumpTypes(ref obj, ref objType, index, htmlOut, true, sequence);
             return dumpType.ValueTypeCode + result;
 		}
 		private static string _dumpCollection (ref object obj, ref Type objType, int level, bool htmlOut, List<int> ids, int maxDepth, int maxLength, string sequence) {
@@ -611,8 +695,8 @@ namespace Desharp.Renderers {
 					child = objEnum.Current;
 					childType = child == null ? null : child.GetType();
 					dumpedChild = Dumper._dumpRecursive(ref child, ref childType, htmlOut, maxDepth, maxLength, level + 1, new List<int>(ids), sequence);
-					subTypeKey = Dumper.GetDumpTypes(ref iObj, ref intType, "", htmlOut, false, sequence);
-					subTypeValue = Dumper.GetDumpTypes(ref child, ref childType, "", htmlOut, false, sequence);
+					subTypeKey = Dumper.GetDumpTypes(ref iObj, ref intType, null, htmlOut, false, sequence);
+					subTypeValue = Dumper.GetDumpTypes(ref child, ref childType, null, htmlOut, false, sequence);
 					keyStr = i.ToString().Replace("<", "&lt;").Replace(">", "&gt;");
 					result += (i > 0 ? "<br />" : "")
 						+ tabsStr + @"<span class=""" + subTypeKey.NameCssClass + @""">" + keyStr + "</span>" 
@@ -627,8 +711,8 @@ namespace Desharp.Renderers {
 					child = objEnum.Current;
 					childType = child == null ? null : child.GetType();
 					dumpedChild = Dumper._dumpRecursive(ref child, ref childType, htmlOut, maxDepth, maxLength, level + 1, new List<int>(ids), sequence);
-					subTypeKey = Dumper.GetDumpTypes(ref iObj, ref intType, "", htmlOut, true, sequence);
-					subTypeValue = Dumper.GetDumpTypes(ref child, ref childType, "", htmlOut, true, sequence);
+					subTypeKey = Dumper.GetDumpTypes(ref iObj, ref intType, null, htmlOut, true, sequence);
+					subTypeValue = Dumper.GetDumpTypes(ref child, ref childType, null, htmlOut, true, sequence);
 					keyStr = i.ToString();
 					if (keyStr.Length > maxKeyLength) maxKeyLength = keyStr.Length;
 					dumpedItems.Add(new string[] { keyStr, dumpedChild });
@@ -655,8 +739,7 @@ namespace Desharp.Renderers {
 				for (int i = 0, l = props.Length; i < l; i += 1)
 					members.Add(props[i].GetValue(obj, new object[] { }));
 			}
-			string membersCountStr = members.Count.ToString();
-			DumpType type = Dumper.GetDumpTypes(ref obj, ref objType, membersCountStr, htmlOut, false, sequence);
+			DumpType type = Dumper.GetDumpTypes(ref obj, ref objType, members.Count, htmlOut, false, sequence);
 			string result = type.ValueTypeCode;
 			string dumpedChild;
 			object child;
@@ -687,16 +770,27 @@ namespace Desharp.Renderers {
 			string result = "";
 			MethodInfo mi = objType.GetProperty("Method").GetValue(obj, null) as MethodInfo;
 			ParameterInfo[] prms = mi.GetParameters();
+			ParameterInfo prmItem;
+			Type prmType;
+			Type prmUnderType;
+			string paramTypeName;
 			if (prms.Length > 0) { 
 				for (int i = 0, l = prms.Length; i < l; i += 1) {
+					prmItem = prms[i];
+					prmType = prms[i].ParameterType;
+					prmUnderType = System.Nullable.GetUnderlyingType(prmType);
+					paramTypeName = prmUnderType != null ? prmUnderType.Name + "?" : prmType.Name;
 					result += (result.Length == 0
 						? "Func<"
-						: ", ") + prms[i].ParameterType.Name + " " + prms[i].Name;
+						: ", ") + paramTypeName + " " + prmItem.Name;
 				}
-				result += ", return " + mi.ReturnType.Name + ">()";
+				result += ", ";
 			} else {
-				result += "Func<return " + mi.ReturnType.Name + ">()";
+				result += "Func<";
 			}
+			prmUnderType = System.Nullable.GetUnderlyingType(mi.ReturnType);
+			paramTypeName = prmUnderType != null ? prmUnderType.Name + "?" : mi.ReturnType.Name;
+			result += "return " + paramTypeName + ">()";
 			if (htmlOut) {
 				result = $@"<span class=""runtimetype func"">"
 					 + result.Replace("<", "&lt;").Replace(">", "&gt;")
@@ -739,7 +833,7 @@ namespace Desharp.Renderers {
         }
         private static string _dumpUnknownNotTyped (ref object obj, ref Type objType, int level, bool htmlOut, List<int> ids, int maxDepth, int maxLength, string sequence) {
             PropertyDescriptorCollection objProperties = TypeDescriptor.GetProperties(obj);
-            DumpType type = Dumper.GetDumpTypes(ref obj, ref objType, objProperties.Count.ToString(), htmlOut, false, sequence);
+            DumpType type = Dumper.GetDumpTypes(ref obj, ref objType, objProperties.Count, htmlOut, false, sequence);
             string result = type.ValueTypeCode;
             string name;
             object child;
@@ -752,7 +846,7 @@ namespace Desharp.Renderers {
                 name = descriptor.Name;
                 try {
                     child = descriptor.GetValue(obj);
-					childType = child == null ? null : child.GetType();
+					childType = child == null ? System.Nullable.GetUnderlyingType(descriptor.PropertyType) : descriptor.PropertyType;
 					dumpedChild = Dumper._dumpRecursive(ref child, ref childType, htmlOut, maxDepth, maxLength, level + 1, new List<int>(ids), sequence);
 				} catch (Exception e) {
 					child = htmlOut ? @"<span class=""getexc"">" + e.Message + "</span>" : "Exception: " + e.Message;
@@ -776,15 +870,21 @@ namespace Desharp.Renderers {
             string indexerPropertyName = Dumper._getIndexerPropertyName(objType);
             int flagsLength = 0;
 			int namesLength = 0;
+			//Dictionary<string, FieldInfo> allPotentialEvents = objType.GetFields(Dumper._staticInstancePrivatePublic).ToDictionary<FieldInfo, string>(item => item.Name);
 			Dictionary<string, object[]> items = new Dictionary<string, object[]>();
-			Dumper._getUnknownTypedProperties(items, ref flagsLength, ref namesLength, obj, level, htmlOut, ids, maxDepth, maxLength, sequence, objType, BindingFlags.Static | BindingFlags.Public, indexerPropertyName);
-			Dumper._getUnknownTypedProperties(items, ref flagsLength, ref namesLength, obj, level, htmlOut, ids, maxDepth, maxLength, sequence, objType, BindingFlags.Instance | BindingFlags.Public, indexerPropertyName);
-			Dumper._getUnknownTypedFields(items, ref flagsLength, ref namesLength, obj, level, htmlOut, ids, maxDepth, maxLength, sequence, objType, BindingFlags.Static | BindingFlags.Public);
-			Dumper._getUnknownTypedFields(items, ref flagsLength, ref namesLength, obj, level, htmlOut, ids, maxDepth, maxLength, sequence, objType, BindingFlags.Instance | BindingFlags.Public);
-			Dumper._getUnknownTypedProperties(items, ref flagsLength, ref namesLength, obj, level, htmlOut, ids, maxDepth, maxLength, sequence, objType, BindingFlags.Static | BindingFlags.NonPublic, indexerPropertyName);
-			Dumper._getUnknownTypedProperties(items, ref flagsLength, ref namesLength, obj, level, htmlOut, ids, maxDepth, maxLength, sequence, objType, BindingFlags.Instance | BindingFlags.NonPublic, indexerPropertyName);
-			Dumper._getUnknownTypedFields(items, ref flagsLength, ref namesLength, obj, level, htmlOut, ids, maxDepth, maxLength, sequence, objType, BindingFlags.Static | BindingFlags.NonPublic);
-			Dumper._getUnknownTypedFields(items, ref flagsLength, ref namesLength, obj, level, htmlOut, ids, maxDepth, maxLength, sequence, objType, BindingFlags.Instance | BindingFlags.NonPublic);
+			Dumper._getUnknownTypedEvents(items, ref flagsLength, ref namesLength, obj, level, htmlOut, ids, maxDepth, maxLength, sequence, objType, Dumper._staticPublic);
+			Dumper._getUnknownTypedEvents(items, ref flagsLength, ref namesLength, obj, level, htmlOut, ids, maxDepth, maxLength, sequence, objType, Dumper._instancePublic);
+			Dumper._getUnknownTypedProperties(items, ref flagsLength, ref namesLength, obj, level, htmlOut, ids, maxDepth, maxLength, sequence, objType, Dumper._staticPublic, indexerPropertyName);
+			Dumper._getUnknownTypedProperties(items, ref flagsLength, ref namesLength, obj, level, htmlOut, ids, maxDepth, maxLength, sequence, objType, Dumper._instancePublic, indexerPropertyName);
+			Dumper._getUnknownTypedFields(items, ref flagsLength, ref namesLength, obj, level, htmlOut, ids, maxDepth, maxLength, sequence, objType, Dumper._staticPublic);
+			Dumper._getUnknownTypedFields(items, ref flagsLength, ref namesLength, obj, level, htmlOut, ids, maxDepth, maxLength, sequence, objType, Dumper._instancePublic);
+
+			Dumper._getUnknownTypedEvents(items, ref flagsLength, ref namesLength, obj, level, htmlOut, ids, maxDepth, maxLength, sequence, objType, Dumper._staticNonPublic);
+			Dumper._getUnknownTypedEvents(items, ref flagsLength, ref namesLength, obj, level, htmlOut, ids, maxDepth, maxLength, sequence, objType, Dumper._instanceNonPublic);
+			Dumper._getUnknownTypedProperties(items, ref flagsLength, ref namesLength, obj, level, htmlOut, ids, maxDepth, maxLength, sequence, objType, Dumper._staticNonPublic, indexerPropertyName);
+			Dumper._getUnknownTypedProperties(items, ref flagsLength, ref namesLength, obj, level, htmlOut, ids, maxDepth, maxLength, sequence, objType, Dumper._instanceNonPublic, indexerPropertyName);
+			Dumper._getUnknownTypedFields(items, ref flagsLength, ref namesLength, obj, level, htmlOut, ids, maxDepth, maxLength, sequence, objType, Dumper._staticNonPublic);
+			Dumper._getUnknownTypedFields(items, ref flagsLength, ref namesLength, obj, level, htmlOut, ids, maxDepth, maxLength, sequence, objType, Dumper._instanceNonPublic);
 			// for static properties and static fields only defined in parent classes,
 			// search through in parent classes, because they are not automaticly returned through Type reflection
 			Type objectType = typeof(Object);
@@ -793,13 +893,15 @@ namespace Desharp.Renderers {
 			while (true && safeCounter < 50) {
 				currentType = currentType.BaseType;
 				if (currentType == null || currentType.Equals(objectType)) break;
-				Dumper._getUnknownTypedProperties(items, ref flagsLength, ref namesLength, obj, level, htmlOut, ids, maxDepth, maxLength, sequence, currentType, BindingFlags.Static | BindingFlags.Public, indexerPropertyName);
-				Dumper._getUnknownTypedFields(items, ref flagsLength, ref namesLength, obj, level, htmlOut, ids, maxDepth, maxLength, sequence, currentType, BindingFlags.Static | BindingFlags.Public);
-				Dumper._getUnknownTypedProperties(items, ref flagsLength, ref namesLength, obj, level, htmlOut, ids, maxDepth, maxLength, sequence, currentType, BindingFlags.Static | BindingFlags.NonPublic, indexerPropertyName);
-				Dumper._getUnknownTypedFields(items, ref flagsLength, ref namesLength, obj, level, htmlOut, ids, maxDepth, maxLength, sequence, currentType, BindingFlags.Static | BindingFlags.NonPublic);
+				Dumper._getUnknownTypedEvents(items, ref flagsLength, ref namesLength, obj, level, htmlOut, ids, maxDepth, maxLength, sequence, currentType, Dumper._staticPublic);
+				Dumper._getUnknownTypedProperties(items, ref flagsLength, ref namesLength, obj, level, htmlOut, ids, maxDepth, maxLength, sequence, currentType, Dumper._staticPublic, indexerPropertyName);
+				Dumper._getUnknownTypedFields(items, ref flagsLength, ref namesLength, obj, level, htmlOut, ids, maxDepth, maxLength, sequence, currentType, Dumper._staticPublic);
+				Dumper._getUnknownTypedEvents(items, ref flagsLength, ref namesLength, obj, level, htmlOut, ids, maxDepth, maxLength, sequence, currentType, Dumper._staticNonPublic);
+				Dumper._getUnknownTypedProperties(items, ref flagsLength, ref namesLength, obj, level, htmlOut, ids, maxDepth, maxLength, sequence, currentType, Dumper._staticNonPublic, indexerPropertyName);
+				Dumper._getUnknownTypedFields(items, ref flagsLength, ref namesLength, obj, level, htmlOut, ids, maxDepth, maxLength, sequence, currentType, Dumper._staticNonPublic);
 				safeCounter++;
 			}
-            DumpType type = Dumper.GetDumpTypes(ref obj, ref objType, items.Count.ToString(), htmlOut, true, sequence);
+            DumpType type = Dumper.GetDumpTypes(ref obj, ref objType, items.Count, htmlOut, true, sequence);
             string flags;
 			string name;
 			string cssClass;
@@ -847,7 +949,7 @@ namespace Desharp.Renderers {
 					if (prop.CanRead) {
 						try {
 							child = prop.GetValue(obj, null);
-							childType = child == null ? null : child.GetType();
+							childType = child == null ? System.Nullable.GetUnderlyingType(prop.PropertyType) : prop.PropertyType;
 							dumpedChild = Dumper._dumpRecursive(ref child, ref childType, htmlOut, maxDepth, maxLength, level + 1, new List<int>(ids), sequence);
 						} catch (Exception e) {
 							child = htmlOut ? @"<span class=""getexc"">" + e.Message + "</span>" : "Exception: " + e.Message;
@@ -900,9 +1002,10 @@ namespace Desharp.Renderers {
 					}
 					try {
 						child = field.GetValue(obj);
-						childType = child == null ? null : child.GetType();
+						childType = child == null ? System.Nullable.GetUnderlyingType(field.FieldType)  : field.FieldType;
 						dumpedChild = Dumper._dumpRecursive(ref child, ref childType, htmlOut, maxDepth, maxLength, level + 1, new List<int>(ids), sequence);
 					} catch (Exception e) {
+						//Debug.Dump(e);
 						child = htmlOut ? @"<span class=""getexc"">" + e.Message + "</span>" : "Exception: " + e.Message;
 						dumpedChild = child.ToString();
 					}
@@ -918,6 +1021,96 @@ namespace Desharp.Renderers {
 				flag = item.Value[0].ToString();
 				if (flag.Length > flagsLength) flagsLength = flag.Length;
 				items.Add(item.Key, item.Value);
+			}
+		}
+		private static void _getUnknownTypedEvents (Dictionary<string, object[]> items, ref int flagsLength, ref int namesLength, object obj, int level, bool htmlOut, List<int> ids, int maxDepth, int maxLength, string sequence, Type objType, BindingFlags bindingFlags) {
+            IEnumerable<EventInfo> events = objType.GetEvents(bindingFlags);
+            if (events.Count() == 0) return;
+            Dictionary<string, object[]> newItems = new Dictionary<string, object[]>();
+			List<string> flags = new List<string>();
+			if (bindingFlags.HasFlag(BindingFlags.Public)) flags.Add(htmlOut ? "public" : "publ");
+			if (bindingFlags.HasFlag(BindingFlags.NonPublic)) flags.Add(htmlOut ? "nonpublic" : "nonpub");
+			if (bindingFlags.HasFlag(BindingFlags.Static)) flags.Add(htmlOut ? "static" : "stat");
+			flags.Add("event");
+			string flag = String.Join(",", flags);
+			string flag2;
+			List<System.Delegate> handlers;
+			List<MethodInfo> handlerMethods;
+			object child;
+			Type childType;
+			string dumpedChild;
+			foreach (EventInfo evnt in events) {
+				if (!items.ContainsKey(evnt.Name) && !newItems.ContainsKey(evnt.Name) && !Dumper._isCompilerGenerated(evnt)) {
+					if (evnt.Name.Length > namesLength) namesLength = evnt.Name.Length;
+					FieldInfo field = objType.GetField(evnt.Name, Dumper._staticInstancePrivatePublic);
+					if (field != null) {
+						if (field.IsPrivate && !bindingFlags.HasFlag(BindingFlags.Public)) {
+							flag2 = flag.Replace(htmlOut ? "nonpublic" : "nonpub", htmlOut ? "private" : "priv");
+						} else {
+							flag2 = flag.Replace(htmlOut ? "nonpublic" : "nonpub", htmlOut ? "protected" : "prot");
+						}
+					} else {
+						childType = evnt.EventHandlerType;
+						child = null;
+						flag2 = flag;
+					}
+					try {
+						System.Delegate del = field.GetValue(obj) as System.Delegate;
+						if (del != null) {
+							childType = field.FieldType;
+							handlers = del.GetInvocationList().ToList();
+							handlerMethods = new List<MethodInfo>();
+							foreach (var handler in handlers) 
+								handlerMethods.Add(handler.Method);
+							child = handlerMethods;
+						} else {
+							childType = evnt.EventHandlerType;
+							child = null;
+						}
+						dumpedChild = Dumper._dumpRecursive(ref child, ref childType, htmlOut, maxDepth, maxLength, level + 1, new List<int>(ids), sequence);
+					} catch (Exception e) {
+						//Debug.Dump(e);
+						child = htmlOut ? @"<span class=""getexc"">" + e.Message + "</span>" : "Exception: " + e.Message;
+						dumpedChild = child.ToString();
+					}
+					newItems.Add(
+						evnt.Name, 
+						new object[] { flag2, dumpedChild }
+					);
+				}
+			}
+			IOrderedEnumerable<KeyValuePair<string, object[]>> sorter = newItems.OrderBy(key => key.Key);
+			newItems = sorter.ToDictionary((keyItem) => keyItem.Key, (valueItem) => valueItem.Value);
+			foreach (var item in newItems) {
+				flag = item.Value[0].ToString();
+				if (flag.Length > flagsLength) flagsLength = flag.Length;
+				items.Add(item.Key, item.Value);
+			}
+		}
+		private static string _dumpExtraFormated (ref object obj, ref Type objType, bool htmlOut, string sequence) {
+			string format = null;
+			if (obj is System.DateTimeOffset) {
+				format = @"yyyy\-MM\-dd HH\:mm\:ss\.fffffff zzz";
+			} else if (obj is System.DateTime) {
+				format = @"yyyy\-MM\-dd HH\:mm\:ss\.fffffff";
+			} else if (obj is TimeSpan) {
+				format = @"d\.hh\:mm\:ss\.fffffff";
+			} /*else if (!(obj is StringBuilder) && Dumper._extraFormats.Count > 0) {
+				foreach (var item in Dumper._extraFormats) {
+					if (item.Key.IsAssignableFrom(objType)) {
+						format = item.Value;
+						break;
+					}
+				}
+			}*/
+			string result = format != null 
+				? ((IFormattable)obj).ToString(format, Dumper._englishCultureInfo) 
+				: obj.ToString();
+			DumpType type = Dumper.GetDumpTypes(ref obj, ref objType, null, htmlOut, false, sequence);
+			if (htmlOut) {
+				return @"<span class=""" + type.NameCssClass + @""">" + result + "</span>&nbsp;" + type.ValueTypeCode;
+			} else {
+				return result + " [" + type.Text + "]";
 			}
 		}
 		private static string _getAnonymousTypeGenericNames (string typeStr) {

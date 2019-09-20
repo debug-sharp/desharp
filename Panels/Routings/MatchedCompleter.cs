@@ -300,30 +300,28 @@ namespace Desharp.Panels.Routings {
 
 
 		private static string _renderParamWithVariations (string paramName, RouteMatchedParam paramData) {
-			Type valType = null;
 			string primaryValueHashCode = "";
-			if (paramData.PrimaryValue != null && !(paramData.PrimaryValue is System.DBNull)) {
-				valType = paramData.PrimaryValue.GetType();
-				primaryValueHashCode = paramData.PrimaryValue.GetHashCode().ToString();
+			object paramPrimaryValue = paramData.PrimaryValue;
+			Type paramPrimaryValueType = paramPrimaryValue == null ? null : paramPrimaryValue.GetType();
+			if (paramPrimaryValue != null && !(paramPrimaryValue is System.DBNull)) {
+				primaryValueHashCode = paramPrimaryValue.GetHashCode().ToString();
 			} else {
 				string newDummyValue = "";
 				primaryValueHashCode = newDummyValue.GetHashCode().ToString();
 			}
-			object paramPrimaryValue = paramData.PrimaryValue;
-			Type paramPrimaryValueType = paramPrimaryValue == null ? null : paramPrimaryValue.GetType();
-			DumpType type = (paramData.PrimaryValue is string)
-				? Dumper.GetDumpTypes(ref paramPrimaryValue, ref paramPrimaryValueType, paramPrimaryValue.ToString().Length.ToString(), true, false, "99")
-				: (paramData.PrimaryValue is System.DBNull
+			DumpType type = (paramPrimaryValue is string)
+				? Dumper.GetDumpTypes(ref paramPrimaryValue, ref paramPrimaryValueType, paramPrimaryValue.ToString().Length, true, false, "99")
+				: (paramPrimaryValue is System.DBNull
 					? new DumpType { ValueTypeCode = "" }
-					: Dumper.GetDumpTypes(ref paramPrimaryValue, ref paramPrimaryValueType, "", true, false, "99")
+					: Dumper.GetDumpTypes(ref paramPrimaryValue, ref paramPrimaryValueType, null, true, false, "99")
 				);
-			string renderedValue = paramData.PrimaryValue == null
-				? Dumper.GetNullCode(true)
-				: Dumper.RenderPrimitiveTypeValue(paramData.PrimaryValue, true, Dispatcher.DumpMaxLength);
+			string renderedValue = paramPrimaryValue == null
+				? Dumper.NullCode[0]
+				: Dumper.RenderPrimitiveTypeValue(ref paramPrimaryValue, ref paramPrimaryValueType, true, Dispatcher.DumpMaxLength);
 			string renderedDescription = @"<i class=""" + paramData.PrimaryValueDescription[0] + @"""" + (paramData.PrimaryValueDescription.Length > 2 ? @" title=""" + paramData.PrimaryValueDescription[2] + @"""" : "") + ">"
 					+ paramData.PrimaryValueDescription[1].Replace(" ", "&nbsp;")
 				+ "</i>";
-			if (paramData.PrimaryValue == null || paramData.PrimaryValue is System.DBNull) {
+			if (paramPrimaryValue == null || paramPrimaryValue is System.DBNull) {
 				type.ValueTypeCode = "<span></span>";
 				if (paramData.ValueVariations.Count > 0)
 					renderedDescription = @"<span class=""click click-99" + primaryValueHashCode + @" type"">" + renderedDescription + "</span>";
@@ -331,11 +329,11 @@ namespace Desharp.Panels.Routings {
 				if (paramData.ValueVariations.Count > 0) type.ValueTypeCode = type.ValueTypeCode
 					.Replace(@"<span class=""", @"<span class=""click click-99" + primaryValueHashCode + " ");
 			}
-			type.ValueTypeCode = type.ValueTypeCode.Replace("</span>", (paramData.PrimaryValue is System.DBNull ? "" : "&nbsp;") + renderedDescription + "</span>");
+			type.ValueTypeCode = type.ValueTypeCode.Replace("</span>", (paramPrimaryValue is System.DBNull ? "" : "&nbsp;") + renderedDescription + "</span>");
 			string result = @"<div class=""desharp-dump"">"
 				+ @"<span class=""route-param"">" + Tools.HtmlEntities(paramName) + "</span>"
-				+ (paramData.PrimaryValue is System.DBNull ? @"<s>:</s>" : @"<s>:&nbsp;</s>")
-				+ (paramData.PrimaryValue == null
+				+ (paramPrimaryValue is System.DBNull ? @"<s>:</s>" : @"<s>:&nbsp;</s>")
+				+ (paramPrimaryValue == null
 					? renderedValue + "&nbsp;" + renderedDescription
 					: @"<span class=""" + type.NameCssClass + @""">" + renderedValue + "</span>&nbsp;" + type.ValueTypeCode
 				);
@@ -349,11 +347,11 @@ namespace Desharp.Panels.Routings {
 					itemValue = item.Value;
 					itemValueType = itemValue == null ? null : itemValue.GetType();
 					type = (item.Value is string)
-						? Dumper.GetDumpTypes(ref itemValue, ref itemValueType, item.Value.ToString().Length.ToString(), true, false, "99")
-						: Dumper.GetDumpTypes(ref itemValue, ref itemValueType, "", true, false, "99");
-					renderedValue = item.Value == null
-						? Dumper.GetNullCode(true)
-						: Dumper.RenderPrimitiveTypeValue(item.Value, true, Dispatcher.DumpMaxLength);
+						? Dumper.GetDumpTypes(ref itemValue, ref itemValueType, itemValue.ToString().Length, true, false, "99")
+						: Dumper.GetDumpTypes(ref itemValue, ref itemValueType, null, true, false, "99");
+					renderedValue = itemValue == null
+						? Dumper.NullCode[0]
+						: Dumper.RenderPrimitiveTypeValue(ref itemValue, ref itemValueType, true, Dispatcher.DumpMaxLength);
 					result += Dumper.TabsIndent(1, true)
 						+ @"<span class=""param-place"">" + item.Key.Replace(" ", "&nbsp;") + "</span>"
 						+ @"<s>:&nbsp;</s>"

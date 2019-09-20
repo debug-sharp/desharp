@@ -348,12 +348,13 @@ namespace Desharp.Panels {
 		}
 		private static string _renderUrlParamValue (object obj) {
 			if (obj == null) {
-				return Dumper.GetNullCode(true);
+				return Dumper.NullCode[0];
 			} else if (obj.GetType().Name == "UrlParameter") {
 				return @"<span class=""type"">[Optional]</span>";
 			} else {
 				Type objType = obj.GetType();
-				return Dumper.DumpPrimitiveType(ref obj, ref objType, 0, true, Dispatcher.DumpMaxLength, "");
+				Type underlyingType = null;
+				return Dumper.DumpPrimitiveType(ref obj, ref objType, ref underlyingType, 0, true, Dispatcher.DumpMaxLength, "");
 			}
 		}
 		private static string[] _completeRouteCssClassAndFirstColumn (ref Route route, int matched) {
