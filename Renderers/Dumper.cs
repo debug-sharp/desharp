@@ -55,8 +55,9 @@ namespace Desharp.Renderers {
 		public static string Dump (object obj, bool htmlOut = false, int maxDepth = 0, int maxLength = 0) {
 			if (maxDepth == 0) maxDepth = Dispatcher.DumpDepth;
 			if (maxLength == 0) maxLength = Dispatcher.DumpMaxLength;
-			string newDumpSequence = Dispatcher.GetCurrent().DumperSequence.ToString();
-			Dispatcher.GetCurrent().DumperSequence += 1;
+            Dispatcher dispatched = Dispatcher.GetCurrent();
+			string newDumpSequence = dispatched.DumperSequence.ToString();
+			dispatched.DumperSequence += 1;
 			StringBuilder result = new StringBuilder();
 			if (htmlOut) result.Append(Dumper.HtmlDumpWrapper[0]);
 			Type objType = obj == null ? null : obj.GetType();

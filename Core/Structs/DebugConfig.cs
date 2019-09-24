@@ -22,5 +22,7 @@ namespace Desharp {
 		public EnvType EnvType;
 		/// <summary>Custom web debug panel types, implementing Desharp.Panels.Abstract to create their instances for each web request where debuging enabled.</summary>
 		public Type[] Panels;
+        /// <summary>Always dump source location, from where dump was called.</summary>
+        public bool? SourceLocation;
 	}
 }

@@ -21,5 +21,9 @@ namespace Desharp {
         /// Set true if you want to render red exception over whole browser screen.
         /// </summary>
         public bool? CatchedException;
+        /// <summary>
+        /// Dump source location, from where dump was called.
+        /// </summary>
+        public bool? SourceLocation;
 	}
 }

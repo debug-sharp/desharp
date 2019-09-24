@@ -100,10 +100,10 @@ System.Exception (Hash Code: 50632145):
 
 You can dump or log:
 - any variables
-  - primitive variables and it's primitive arrays like: `char`, `int[]` and more 
+  - primitive variables and it's primitive arrays like: `char`, `int?[]` and more 
   - `Lists`, `Arrays` or `Dictionaries` (`IList`, `IEnumerable`, `ICollection`, `IDictionary`...)
   - database results (`DataSet`, `DataTable`, `DataRow`)
-  - **any custom class instances** with rendered property and field values
+  - **any custom class instances** with rendered events targets and properties and fields values
   - **anonymous objects**
   - much more... you can try:-)
 - exceptions

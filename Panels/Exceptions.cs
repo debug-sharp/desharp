@@ -15,8 +15,6 @@ namespace Desharp.Panels {
 
 		private List<string> _exceptions = new List<string>();
 
-		public void SessionBegin() { }
-		public void SessionEnd() { }
 		public string[] RenderBarTitle () {
 			return new string[] { "Exceptions (" + this._exceptions.Count.ToString() + ")" };
 		}

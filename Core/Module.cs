@@ -2,13 +2,14 @@ using Desharp.Core;
 using System;
 using System.Runtime.InteropServices;
 using System.Web;
+using System.Web.SessionState;
 
 namespace Desharp {
 	/// <summary>
 	/// ASP.NET Http module to dispatch Desharp separately from original application.
 	/// </summary>
 	[ComVisible(true)]
-	public class Module: IHttpModule {
+	public class Module: IHttpModule/*, IRequiresSessionState*/ {
 		/// <summary>
 		/// Unique module name
 		/// </summary>
@@ -30,21 +31,28 @@ namespace Desharp {
 		public void Init(HttpApplication application) {
 			application.BeginRequest += delegate (object o, EventArgs e) {
 				try {
-					Dispatcher.GetCurrent().WebRequestBegin();
+					Dispatcher.GetCurrent(true).WebRequestBegin();
 				} catch (Exception ex) {
 					Desharp.Debug.Log(ex.Message + "\r\n" + ex.StackTrace);
 				}
 			};
+            application.PostAuthorizeRequest += delegate (object o, EventArgs e) {
+                HttpContext.Current.SetSessionStateBehavior(SessionStateBehavior.Required);
+            };
 			application.AcquireRequestState += delegate (object o, EventArgs e) {
 				try {
-					Dispatcher.GetCurrent().WebRequestSessionBegin();
+                    Dispatcher dispatcher = Dispatcher.GetCurrent(false);
+                    if (dispatcher != null) 
+					    dispatcher.WebRequestSessionBegin();
 				} catch (Exception ex) {
 					Desharp.Debug.Log(ex.Message + "\r\n" + ex.StackTrace);
 				}
 			};
-			application.PostRequestHandlerExecute += delegate (object o, EventArgs e) {
+			application.PostAcquireRequestState += delegate (object o, EventArgs e) {
 				try {
-					Dispatcher.GetCurrent().WebRequestSessionEnd();
+                    Dispatcher dispatcher = Dispatcher.GetCurrent(false);
+					if (dispatcher != null) 
+					    dispatcher.WebRequestSessionEnd();
 				} catch (Exception ex) {
 					Desharp.Debug.Log(ex.Message + "\r\n" + ex.StackTrace);
 				}
@@ -64,22 +72,31 @@ namespace Desharp {
 			};*/
 			application.PreSendRequestHeaders += delegate (object o, EventArgs e) {
 				try {
-					Dispatcher.GetCurrent().WebRequestPreSendHeaders();
+                    Dispatcher dispatcher = Dispatcher.GetCurrent(false);
+                    if (dispatcher != null) { 
+					    dispatcher.WebRequestSessionEnd();
+					    dispatcher.WebRequestPreSendHeaders();
+                    }
 				} catch (Exception ex) {
 					Desharp.Debug.Log(ex.Message + "\r\n" + ex.StackTrace);
 				}
 			};
 			application.PreSendRequestContent += delegate (object o, EventArgs e) {
 				try {
-					Dispatcher.GetCurrent().WebRequestPreSendBody();
-					Dispatcher.Remove();
+					Dispatcher dispatcher = Dispatcher.GetCurrent(false);
+                    if (dispatcher != null) {
+                        dispatcher.WebRequestPreSendBody();
+                        //Dispatcher.Remove();
+                    }
 				} catch (Exception ex) {
 					Desharp.Debug.Log(ex.Message + "\r\n" + ex.StackTrace);
 				}
 			};
 			application.Error += delegate (object o, EventArgs e) {
 				try {
-					Dispatcher.GetCurrent().WebRequestError();
+					Dispatcher dispatcher = Dispatcher.GetCurrent(true);
+                    if (dispatcher != null)
+                        dispatcher.WebRequestError();
 				} catch (Exception ex) {
 					Desharp.Debug.Log(ex.Message + "\r\n" + ex.StackTrace);
 				}

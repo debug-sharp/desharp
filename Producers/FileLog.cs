@@ -40,7 +40,7 @@ namespace Desharp.Producers {
 				+ Assets.logs_css + Assets.dumps_css + Assets.exception_css 
 				+ "</style><script>" 
 				+ Assets.logs_js.Replace("__LINK_EDITOR__", Tools.Editor) 
-				+ @"</script></head><body id=""desharp"">" 
+				+ @"</script></head><body id=""desharp"" class=""desharp-screen"">" 
 				+ Environment.NewLine
 			};
 			FileLog.InitBackgroundWritingIfNecessary();

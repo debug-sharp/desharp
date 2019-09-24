@@ -31,14 +31,6 @@ namespace Desharp.Panels {
 		/// </summary>
 		string IconValue { get; }
 		/// <summary>
-		/// Called at session begin request event, called before Controller/action execution.
-		/// </summary>
-		void SessionBegin();
-		/// <summary>
-		/// Called at session end request event, called after Controller/action execution.
-		/// </summary>
-		void SessionEnd();
-		/// <summary>
 		/// Render text content for web bar button.
 		/// </summary>
 		/// <returns>Text content for web bar button</returns>

@@ -104,12 +104,14 @@
     <Compile Include="Panels\Dumps.cs" />
     <Compile Include="Panels\IPanel.cs" />
     <Compile Include="Panels\Exceptions.cs" />
+    <Compile Include="Panels\ISessionPanel.cs" />
     <Compile Include="Panels\Routing.cs" />
     <Compile Include="Panels\Routings\MatchedCompleter.cs" />
     <Compile Include="Panels\SystemInfo.cs" />
     <Compile Include="Panels\Session.cs" />
     <Compile Include="Core\Mailer.cs" />
     <Compile Include="Renderers\ErrorFile.cs" />
+    <Compile Include="Renderers\FileLink.cs" />
     <Compile Include="Renderers\JavascriptExceptionData.cs" />
     <Compile Include="Core\Structs\DebugConfig.cs" />
     <Compile Include="Core\Structs\LevelValues.cs" />
@@ -133,27 +135,50 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
+    <None Include="Assets\exception.css" />
     <None Include="content\App.config.install.xdt" />
     <None Include="content\App.config.uninstall.xdt" />
     <None Include="content\Desharp.config.example" />
     <None Include="content\Web.config.install.xdt" />
+    <None Include="content\Web.config.uninstall.xdt" />
     <None Include="Desharp.nuspec">
       <SubType>Designer</SubType>
     </None>
-    <None Include="content\Web.config.uninstall.xdt" />
-    <None Include="packages.config" />
     <None Include="Tom Flidr - .NET.pfx" />
   </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
-    <Folder Include="Assets\node_modules\desharp-assets\src\" />
+    <None Include="Assets\bar-exception.css" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Assets\bar-panels.css" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Assets\bar-window.css" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Assets\bar.css" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Assets\dumps.css" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Assets\dumps.js" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Assets\error.html" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Assets\logs.css" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Assets\logs.js" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PreBuildEvent>@IF $(ConfigurationName) NEQ Dev (
-   @IF EXIST $(ProjectDir)Assets\node_modules\desharp-assets (
-      CD $(ProjectDir)Assets\node_modules\desharp-assets\dev-tools
-     build.cmd
-   )
+    <PreBuildEvent>@IF EXIST $(ProjectDir)Assets\node_modules\desharp-assets (
+   CD $(ProjectDir)Assets\node_modules\desharp-assets\dev-tools
+  build.cmd
 )</PreBuildEvent>
   </PropertyGroup>
   <PropertyGroup>

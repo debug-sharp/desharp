@@ -12,15 +12,18 @@ namespace Desharp.Completers {
 				HttpRequest request = HttpContext.Current.Request;
 				NameValueCollection headersCol = request.Headers;
 				if (headersCol != null) {
-					headers.Add(new string[] { "URL", request.Url.ToString() });
+					string fullUrl = HttpUtility.HtmlEncode(request.Url.AbsoluteUri.ToString());
+					headers.Add(new string[] { "URL", fullUrl });
 					headers.Add(new string[] { "IP", Tools.GetClientIpAddress() });
 					string headerName;
 					string headerValue;
 					for (int i = 0; i < headersCol.Count; i++) {
 						headerName = headersCol.GetKey(i);
-						headerValue = headersCol.Get(i);
-						if (headerName.Length > Dispatcher.DumpMaxLength) headerName = headerName.Substring(0, Dispatcher.DumpMaxLength);
-						if (headerValue.Length > Dispatcher.DumpMaxLength) headerValue = headerValue.Substring(0, Dispatcher.DumpMaxLength);
+						headerValue = HttpUtility.HtmlEncode(headersCol.Get(i));
+						if (headerName.Length > Dispatcher.DumpMaxLength)
+							headerName = headerName.Substring(0, Dispatcher.DumpMaxLength);
+						if (headerValue.Length > Dispatcher.DumpMaxLength)
+							headerValue = headerValue.Substring(0, Dispatcher.DumpMaxLength);
 						headers.Add(new string[] {
 							headerName, headerValue
 						 });

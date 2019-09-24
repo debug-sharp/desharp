@@ -4,7 +4,7 @@
     <modules>
       <add name="Desharp" type="Desharp.Module" xdt:Transform="Remove" xdt:Locator="Match(name)" />
     </modules>
-    <httpErrors errorMode="DetailedLocalOnly" xdt:Transform="Remove" xdt:Locator="Match(errorMode)" />
+    <httpErrors errorMode="Detailed" xdt:Transform="Remove" xdt:Locator="Match(errorMode)" />
 	<security>
       <requestFiltering>
         <hiddenSegments>

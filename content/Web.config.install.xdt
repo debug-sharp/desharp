@@ -4,7 +4,7 @@
     <modules xdt:Transform="InsertIfMissing">
       <add name="Desharp" type="Desharp.Module" xdt:Transform="InsertIfMissing" xdt:Locator="Match(name)" />
     </modules>
-    <httpErrors errorMode="DetailedLocalOnly" xdt:Transform="InsertIfMissing" xdt:Locator="Match(errorMode)" />
+    <httpErrors errorMode="Detailed" xdt:Transform="InsertIfMissing" xdt:Locator="Match(errorMode)" />
     <security xdt:Transform="InsertIfMissing">
       <requestFiltering xdt:Transform="InsertIfMissing">
         <hiddenSegments xdt:Transform="InsertIfMissing">

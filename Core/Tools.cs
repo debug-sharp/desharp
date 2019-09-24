@@ -70,12 +70,13 @@ namespace Desharp.Core {
 		}
 		internal static string RelativeSourceFullPath (string fileName) {
 			if (String.IsNullOrEmpty(Dispatcher.AppRoot)) return fileName;
-			int appRootPos = fileName.IndexOf(Dispatcher.AppRoot);
+			int appRootPos = fileName.IndexOf(Dispatcher.AppRoot, StringComparison.CurrentCultureIgnoreCase);
 			if (appRootPos == 0) {
-				fileName = fileName.Substring(Dispatcher.AppRoot.Length);
+				fileName = "." + fileName.Substring(Dispatcher.AppRoot.Length);
 			} else if (Dispatcher.SourcesRoot.Length > 0) {
-				appRootPos = fileName.IndexOf(Dispatcher.SourcesRoot);
-				if (appRootPos == 0) fileName = fileName.Substring(Dispatcher.SourcesRoot.Length);
+				appRootPos = fileName.IndexOf(Dispatcher.SourcesRoot, StringComparison.CurrentCultureIgnoreCase);
+				if (appRootPos == 0)
+                    fileName = "." + fileName.Substring(Dispatcher.SourcesRoot.Length);
 			}
 			return fileName;
 		}

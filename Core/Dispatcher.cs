@@ -25,6 +25,7 @@ namespace Desharp.Core {
 		internal static List<string> WebDebugIps = null;
 		internal static int DumpDepth = 3;
 		internal static int DumpMaxLength = 1024;
+        internal static bool SourceLocation = false;
 		internal static bool? EnabledGlobal = null;
         internal static bool DumpCompillerGenerated = false;
         internal static LogFormat? OutputGlobal = null;
@@ -38,8 +39,8 @@ namespace Desharp.Core {
 		};
 		
 		//protected static ReaderWriterLockSlim dispatchersLock = new ReaderWriterLockSlim();
-			internal static object dispatchersLock = new object { };
-			internal static volatile Dictionary<string, Dispatcher> dispatchers = new Dictionary<string, Dispatcher>();
+		internal static object dispatchersLock = new object { };
+		internal static volatile Dictionary<string, Dispatcher> dispatchers = new Dictionary<string, Dispatcher>();
 
 		protected static string callContextKey = typeof(Dispatcher).FullName;
 		protected static Dictionary<string, Type> webBarRegisteredPanels = new Dictionary<string, Type>();
@@ -64,101 +65,105 @@ namespace Desharp.Core {
 		protected List<string> webExceptions = null;
 
 		static Dispatcher () {
-			//try {
-				Dispatcher.StaticInitLock.EnterUpgradeableReadLock();
-				if (Dispatcher.StaticInitialized) {
-					Dispatcher.StaticInitLock.ExitUpgradeableReadLock();
-					return;
-				}
-				Dispatcher.StaticInitLock.EnterWriteLock();
-				Dispatcher.StaticInitLock.ExitUpgradeableReadLock();
-				int cfgDepth = Config.GetDepth();
-				if (cfgDepth > 0) Dispatcher.DumpDepth = cfgDepth;
-				int cfgMaxLength = Config.GetMaxLength();
-				if (cfgMaxLength > 0) Dispatcher.DumpMaxLength = cfgMaxLength;
-				Dispatcher.Levels = Config.GetLevels();
-				Dispatcher.LogWriteMilisecond = Config.GetLogWriteMilisecond();
-				Dispatcher.VirtualPathProvider = HostingEnvironment.VirtualPathProvider;
-				bool appRootInitialized = false;
-				if (HttpRuntime.AppDomainAppId != null && HostingEnvironment.IsHosted) {
-					Dispatcher.EnvType = EnvType.Web;
-					if (HttpContext.Current != null) {
-						try { 
-							Dispatcher.AppRoot = HttpContext.Current.Server
-								.MapPath("~").Replace('\\', '/').TrimEnd('/');
-							appRootInitialized = true;
-						} catch {
-						}
-					}
-					Dispatcher.WebDebugIps = Config.GetDebugIps();
-					Dispatcher.staticInitWebRegisterPanels(typeof(Panels.Exceptions), typeof(Panels.Dumps));
-					Dispatcher.staticInitWebRegisterPanels(Config.GetDebugPanels());
-					Dispatcher.staticInitWebErrorPage(Config.GetErrorPage());
-				} else {
-					Dispatcher.EnvType = EnvType.Windows;
-					try { 
-						Dispatcher.AppRoot = System.IO.Path.GetDirectoryName(
-							System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName
-						).Replace('\\', '/').TrimEnd('/');
-						appRootInitialized = true;
-					} catch {
-					}
-					bool exited = false;
-					/*
-					var bgThread = new System.Threading.Thread(new ThreadStart(delegate () {
-						while (true) { 
-							System.Threading.Thread.Sleep(1000);
-							if (exited) break;
-						}
-					}));
-					bgThread.IsBackground = true;
-					bgThread.Priority = ThreadPriority.Lowest;
-					bgThread.Start();
-					*/
-					AppDomain.CurrentDomain.UnhandledException += delegate (object o, UnhandledExceptionEventArgs e1) {
-						Debug.Log(e1.ExceptionObject as Exception);
-						exited = true;
-						if (e1.IsTerminating) Dispatcher.Disposed();
-						Environment.Exit(1);
-					};
-					if (Dispatcher.LogWriteMilisecond > 0) {
-						AppDomain.CurrentDomain.ProcessExit += delegate (object o, EventArgs e2) {
-							Dispatcher.Disposed();
-							exited = true;
-						};
-						AppExitWatcher.SetConsoleCtrlHandler(new HandlerRoutine((type) => {
-							if (exited) return true;
-							Dispatcher.Disposed();
-							return true;
-						}), true);
-					}
-				}
-				bool isWindows = Tools.IsWindows();
-				if (appRootInitialized && isWindows)
-					Dispatcher.AppRoot = Dispatcher.AppRoot.Substring(0, 1).ToUpper() 
-						+ Dispatcher.AppRoot.Substring(1);
-				if (
-					appRootInitialized && isWindows && (
-						Dispatcher.AppRoot.IndexOf("/bin/Debug") == Dispatcher.AppRoot.Length - 10 ||
-						Dispatcher.AppRoot.IndexOf("/bin/Release") == Dispatcher.AppRoot.Length - 12
-					)
-				) {
-					Dispatcher.SourcesRoot = System.IO.Path.GetFullPath(
-						Dispatcher.AppRoot + "/../.."
-					).Replace('\\', '/');
-				} else {
-					Dispatcher.SourcesRoot = "";
-				}
-				Dispatcher.staticInitEnabledGlobal();
-				Dispatcher.staticInitOutputGlobal();
-				Dispatcher.staticInitDumpCompillerGenerated();
-				if (appRootInitialized)
-					Dispatcher.staticInitDirectory(Config.GetDirectory());
-				FileLog.StaticInit();
-				Dispatcher.StaticInitLock.ExitWriteLock();
-			/*} catch (Exception e3) {
-				Debug.InitErrors.Add(e3);
-			}*/
+            lock (Dispatcher.dispatchersLock) {
+                //try {
+                    Dispatcher.StaticInitLock.EnterUpgradeableReadLock();
+                    if (Dispatcher.StaticInitialized) {
+                        Dispatcher.StaticInitLock.ExitUpgradeableReadLock();
+                        return;
+                    }
+                    Dispatcher.StaticInitLock.EnterWriteLock();
+                    Dispatcher.StaticInitLock.ExitUpgradeableReadLock();
+                    int cfgDepth = Config.GetDepth();
+                    if (cfgDepth > 0) Dispatcher.DumpDepth = cfgDepth;
+                    int cfgMaxLength = Config.GetMaxLength();
+                    if (cfgMaxLength > 0) Dispatcher.DumpMaxLength = cfgMaxLength;
+                    bool? cfgSourceLoc = Config.GetSourceLocation();
+                    if (cfgSourceLoc.HasValue) Dispatcher.SourceLocation = cfgSourceLoc.Value;
+                    Dispatcher.Levels = Config.GetLevels();
+                    Dispatcher.LogWriteMilisecond = Config.GetLogWriteMilisecond();
+                    Dispatcher.VirtualPathProvider = HostingEnvironment.VirtualPathProvider;
+                    bool appRootInitialized = false;
+                    if (HttpRuntime.AppDomainAppId != null && HostingEnvironment.IsHosted) {
+                        Dispatcher.EnvType = EnvType.Web;
+                        if (HttpContext.Current != null) {
+                            try {
+                                Dispatcher.AppRoot = HttpContext.Current.Server
+                                    .MapPath("~").Replace('\\', '/').TrimEnd('/');
+                                appRootInitialized = true;
+                            } catch {
+                            }
+                        }
+                        Dispatcher.WebDebugIps = Config.GetDebugIps();
+                        Dispatcher.staticInitWebRegisterPanels(typeof(Panels.Exceptions), typeof(Panels.Dumps));
+                        Dispatcher.staticInitWebRegisterPanels(Config.GetDebugPanels());
+                        Dispatcher.staticInitWebErrorPage(Config.GetErrorPage());
+                    } else {
+                        Dispatcher.EnvType = EnvType.Windows;
+                        try {
+                            Dispatcher.AppRoot = System.IO.Path.GetDirectoryName(
+                                System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName
+                            ).Replace('\\', '/').TrimEnd('/');
+                            appRootInitialized = true;
+                        } catch {
+                        }
+                        bool exited = false;
+                        /*
+					    var bgThread = new System.Threading.Thread(new ThreadStart(delegate () {
+						    while (true) { 
+							    System.Threading.Thread.Sleep(1000);
+							    if (exited) break;
+						    }
+					    }));
+					    bgThread.IsBackground = true;
+					    bgThread.Priority = ThreadPriority.Lowest;
+					    bgThread.Start();
+					    */
+                        AppDomain.CurrentDomain.UnhandledException += delegate (object o, UnhandledExceptionEventArgs e1) {
+                            Debug.Log(e1.ExceptionObject as Exception);
+                            exited = true;
+                            if (e1.IsTerminating) Dispatcher.Disposed();
+                            Environment.Exit(1);
+                        };
+                        if (Dispatcher.LogWriteMilisecond > 0) {
+                            AppDomain.CurrentDomain.ProcessExit += delegate (object o, EventArgs e2) {
+                                Dispatcher.Disposed();
+                                exited = true;
+                            };
+                            AppExitWatcher.SetConsoleCtrlHandler(new HandlerRoutine((type) => {
+                                if (exited) return true;
+                                Dispatcher.Disposed();
+                                return true;
+                            }), true);
+                        }
+                    }
+                    bool isWindows = Tools.IsWindows();
+                    if (appRootInitialized && isWindows)
+                        Dispatcher.AppRoot = Dispatcher.AppRoot.Substring(0, 1).ToUpper()
+                            + Dispatcher.AppRoot.Substring(1);
+                    if (
+                        appRootInitialized && isWindows && (
+                            Dispatcher.AppRoot.IndexOf("/bin/Debug") == Dispatcher.AppRoot.Length - 10 ||
+                            Dispatcher.AppRoot.IndexOf("/bin/Release") == Dispatcher.AppRoot.Length - 12
+                        )
+                    ) {
+                        Dispatcher.SourcesRoot = System.IO.Path.GetFullPath(
+                            Dispatcher.AppRoot + "/../.."
+                        ).Replace('\\', '/');
+                    } else {
+                        Dispatcher.SourcesRoot = "";
+                    }
+                    Dispatcher.staticInitEnabledGlobal();
+                    Dispatcher.staticInitOutputGlobal();
+                    Dispatcher.staticInitDumpCompillerGenerated();
+                    if (appRootInitialized)
+                        Dispatcher.staticInitDirectory(Config.GetDirectory());
+                    FileLog.StaticInit();
+                    Dispatcher.StaticInitLock.ExitWriteLock();
+                /*} catch (Exception e3) {
+                    Debug.InitErrors.Add(e3);
+                }*/
+            }
 		}
 		internal static Dispatcher GetCurrent (bool createIfNecessary = true) {
 			string dispatchedKey = Dispatcher.EnvType == EnvType.Web 
@@ -363,24 +368,25 @@ namespace Desharp.Core {
 					errorPage = File.ReadAllText(cfgErrorPage);
 				}
 			}
-			if (errorPage.Length == 0) errorPage = Assets.error;
+			if (errorPage.Length == 0) errorPage = Assets.error_html;
 			Dispatcher.WebStaticErrorPage = errorPage;
 		}
 		protected static bool webCheckIfResponseIsRedirect () {
 			HttpResponse response = HttpContext.Current.Response;
 			int httpStatusCode = response.StatusCode;
 			bool redirectCode = (httpStatusCode >= 300 && httpStatusCode < 400);
+			if (redirectCode) return true;
 			bool redirectHeader = false;
 			string[] headerNames = response.Headers.AllKeys;
 			string header;
 			for (int i = 0, l = headerNames.Length; i < l; i += 1) {
 				header = headerNames[i].Trim().ToLower();
-				if (header.IndexOf("location") == 0 || header.IndexOf("refresh") == 0) {
+				if (header.IndexOf("location", StringComparison.OrdinalIgnoreCase) == 0 || header.IndexOf("refresh", StringComparison.OrdinalIgnoreCase) == 0) {
 					redirectHeader = true;
 					break;
 				}
 			}
-			return redirectCode || redirectHeader;
+			return redirectHeader;
 		}
 		protected static bool webIsRequestToFileWithDotNetExecExtension () {
 			string ext = HttpContext.Current.Request.CurrentExecutionFilePathExtension.ToLower();
@@ -414,17 +420,28 @@ namespace Desharp.Core {
             return this.FireDump;
         }
 		internal void Configure (DebugConfig cfg) {
-			if (cfg.EnvType != EnvType.Auto) Dispatcher.EnvType = cfg.EnvType;
-			if (cfg.Enabled.HasValue) this.Enabled = cfg.Enabled.Value;
-			if (cfg.LogFormat != LogFormat.Auto) this.Output = cfg.LogFormat;
-			if (cfg.Directory != null && cfg.Directory.Length > 0) Dispatcher.staticInitDirectory(cfg.Directory);
-			if (cfg.ErrorPage != null && cfg.ErrorPage.Length > 0) Dispatcher.staticInitWebErrorPage(cfg.ErrorPage);
-			if (cfg.Depth != null && cfg.Depth.Value > 0) Dispatcher.DumpDepth = cfg.Depth.Value;
-			if (cfg.LogWriteMilisecond != null && cfg.LogWriteMilisecond.Value > 0) {
-				Dispatcher.LogWriteMilisecond = cfg.LogWriteMilisecond.Value;
-				FileLog.InitBackgroundWritingIfNecessary();
-			}
-			if (cfg.Panels != null && cfg.Panels.Length > 0) Dispatcher.staticInitWebRegisterPanels(cfg.Panels);
+            lock (Dispatcher.dispatchersLock) {
+                if (cfg.EnvType != EnvType.Auto)
+                    Dispatcher.EnvType = cfg.EnvType;
+                if (cfg.Enabled.HasValue)
+                    this.Enabled = cfg.Enabled.Value;
+                if (cfg.LogFormat != LogFormat.Auto)
+                    this.Output = cfg.LogFormat;
+                if (cfg.Directory != null && cfg.Directory.Length > 0)
+                    Dispatcher.staticInitDirectory(cfg.Directory);
+                if (cfg.ErrorPage != null && cfg.ErrorPage.Length > 0)
+                    Dispatcher.staticInitWebErrorPage(cfg.ErrorPage);
+                if (cfg.Depth != null && cfg.Depth.Value > 0)
+                    Dispatcher.DumpDepth = cfg.Depth.Value;
+                if (cfg.LogWriteMilisecond != null && cfg.LogWriteMilisecond.Value > 0) {
+                    Dispatcher.LogWriteMilisecond = cfg.LogWriteMilisecond.Value;
+                    FileLog.InitBackgroundWritingIfNecessary();
+                }
+                if (cfg.SourceLocation.HasValue)
+                    Dispatcher.SourceLocation = cfg.SourceLocation.Value;
+                if (cfg.Panels != null && cfg.Panels.Length > 0)
+                    Dispatcher.staticInitWebRegisterPanels(cfg.Panels);
+            }
 		}
 		internal void WriteDumpToOutput (string dumpedCode) {
 			if (Dispatcher.EnvType == EnvType.Web) {
@@ -474,9 +491,10 @@ namespace Desharp.Core {
 				if (this.WebRequestState == 1) this.WebRequestSessionBegin();
 				if (this.WebRequestState == 2) this.WebRequestSessionEnd();
 				this.WebRequestPreSendHeaders();
-				this.WebRequestPreSendBody();
+				this.WebRequestPreSendBody(); // HttpContext.Current.Response.Flush();
 				Dispatcher.Remove();
-				HttpContext.Current.Response.End();
+                HttpContext.Current.Response.Flush();
+                HttpContext.Current.Response.End();
 			} else {
                 Environment.Exit(Environment.ExitCode);
             }
@@ -489,38 +507,47 @@ namespace Desharp.Core {
 			this.WebRequestState = 1;
 		}
 		internal void WebRequestSessionBegin () {
-			if (this.Enabled != true || this.webBarPanels == null) return;
-			foreach (var item in this.webBarPanels) {
-				try {
-					item.Value.SessionBegin();
-				} catch { }
+			if (this.WebRequestState < 2) {
+				if (this.Enabled == true && this.webBarPanels != null) {
+					Desharp.Panels.ISessionPanel sessionPanel;
+					foreach (var item in this.webBarPanels) {
+						if (item.Value is Desharp.Panels.ISessionPanel) {
+							sessionPanel = item.Value as Desharp.Panels.ISessionPanel;
+							try {
+								sessionPanel.SessionBegin();
+							} catch { }
+						}
+					}
+				}
+				this.WebRequestState = 2;
 			}
-			this.WebRequestState = 2;
 		}
 		internal void WebRequestSessionEnd () {
-			if (this.Enabled == true) {
-				this.WebRequestEndTime = Debug.GetProcessingTime();
-				HttpSessionState session = HttpContext.Current.Session;
-				List<List<RenderedPanel>> sessionStorrage = Dispatcher.webGetSessionStorrage();
-				this.webRedirect = Dispatcher.webCheckIfResponseIsRedirect();
-				if (this.webRedirect == true) {
-					this.webRequestSessionEndCallBarPanelsSessionEnd();
-					List<RenderedPanel> renderedPanels = HtmlResponse.RenderDebugPanels(this.webBarPanels);
-					sessionStorrage.Insert(0, renderedPanels);
-					if (session is HttpSessionState) {
-						session[Debug.SESSION_STORAGE_KEY] = sessionStorrage;
+			if (this.WebRequestState < 3) {
+				if (this.Enabled == true && this.webBarPanels != null) { 
+					this.WebRequestEndTime = Debug.GetProcessingTime();
+					HttpSessionState session = HttpContext.Current.Session;
+					List<List<RenderedPanel>> sessionStorrage = Dispatcher.webGetSessionStorrage();
+					this.webRedirect = Dispatcher.webCheckIfResponseIsRedirect();
+					if (this.webRedirect == true) {
+						this.webRequestSessionEndCallBarPanelsSessionEnd();
+						List<RenderedPanel> renderedPanels = HtmlResponse.RenderDebugPanels(this.webBarPanels);
+						sessionStorrage.Insert(0, renderedPanels);
+						if (session is HttpSessionState) {
+							session[Debug.SESSION_STORAGE_KEY] = sessionStorrage;
+						}
+						this.webBarPanels = null; // frees memory
+					} else {
+						this.webReqEndSession = sessionStorrage;
+						// clear session storage, panels will be rendered in this request end event
+						if (session is HttpSessionState && session[Debug.SESSION_STORAGE_KEY] != null) {
+							session.Remove(Debug.SESSION_STORAGE_KEY);
+						}
+						this.webRequestSessionEndCallBarPanelsSessionEnd();
 					}
-					this.webBarPanels = null; // frees memory
-				} else {
-					this.webReqEndSession = sessionStorrage;
-					// clear session storage, panels will be rendered in this request end event
-					if (session is HttpSessionState && session[Debug.SESSION_STORAGE_KEY] != null) {
-						session.Remove(Debug.SESSION_STORAGE_KEY);
-					}
-					this.webRequestSessionEndCallBarPanelsSessionEnd();
 				}
+				this.WebRequestState = 3;
 			}
-			this.WebRequestState = 3;
 		}
 		internal void WebRequestPreSendHeaders () {
 			this.GetFireDump().CloseHeaders();
@@ -556,10 +583,13 @@ namespace Desharp.Core {
 						this.webBarPanels = null;
 					}
 					HtmlResponse.WriteDebugBarToResponse(renderedPanels);
-				}
+				} else {
+                    //HttpContext.Current.Response.Flush();
+                }
 			} else {
 				if (this.webTransmitErrorPage && Dispatcher.WebStaticErrorPage.Length > 0)
 					HtmlResponse.TransmitStaticErrorPageSendContent();
+                //HttpContext.Current.Response.Flush();
 			}
 		}
 		protected void webManageContentSecurityPolicyHeader () {
@@ -615,20 +645,23 @@ namespace Desharp.Core {
 			HttpContext.Current.Server.ClearError();
 			// get request id
 			long crt = Tools.GetRequestId();
-			if (this.Enabled != true) {
+			if (this.Enabled == true) {
+				// render exception and store it for request end to send to into client
+				Debug.Dump(lastException, new DumpOptions {
+					CatchedException = false,
+					SourceLocation = true
+				});
+				// keep everything bad, what should be written in response
+			} else {
 				// write exception into hard drive
-				Debug.Log(lastException);
+				Debug.Log(lastException, Level.ERROR);
 				// clear everything bad, what shoud be written in response
 				HttpContext.Current.Response.Clear();
 				// transmit error page at request end
 				this.webTransmitErrorPage = true;
-			} else {
-				// render exception and store it for request end to send to into client
-				Debug.Dump(lastException, new DumpOptions {
-					CatchedException = false
-				});
-				// keep everything bad, what should be written in response
 			}
+			HttpContext.Current.Response.Flush();
+			Dispatcher.Remove();
 		}
 		protected void webInitEnabled () {
 			this.Enabled = Dispatcher.EnabledGlobal == true;
@@ -640,12 +673,14 @@ namespace Desharp.Core {
 		}
 		protected void webRequestSessionEndCallBarPanelsSessionEnd () {
 			if (this.webBarPanels != null) {
+				Desharp.Panels.ISessionPanel sessionPanel;
 				foreach (var item in this.webBarPanels) {
-					try {
-						// item.Value.SessionEnd(); // do not use this line, it always calls abstract method
-						MethodInfo mi = item.Value.GetType().GetMethod("SessionEnd");
-						mi.Invoke(item.Value, null);
-					} catch { }
+					if (item.Value is Desharp.Panels.ISessionPanel) {
+						sessionPanel = item.Value as Desharp.Panels.ISessionPanel;
+						try {
+							sessionPanel.SessionEnd();
+						} catch { }
+					}
 				}
 			}
 		}

@@ -182,14 +182,14 @@ namespace Desharp {
 			Dispatcher dispatcher = Dispatcher.GetCurrent();
 			if (dispatcher.Enabled != true) return;
 			bool htmlOut = dispatcher.Output == LogFormat.Html && Dispatcher.EnvType == EnvType.Web;
-		    string renderedException = Exceptions.RenderCurrentApplicationPoint(
+            string renderedException = Exceptions.RenderCurrentApplicationPoint(
                 "Script has been stopped.", "Exception", false, htmlOut
             );
             if (Dispatcher.EnvType == EnvType.Web){
 				HtmlResponse.SendRenderedExceptions(renderedException, "Exception");
 			} else {
 				dispatcher.WriteExceptionToOutput(new List<string>() { renderedException });
-                Console.Read();
+                Console.ReadLine();
 			}
             dispatcher.Stop();
 		}
@@ -213,7 +213,13 @@ namespace Desharp {
             Dispatcher dispatcher = Dispatcher.GetCurrent();
 			dispatcher.LastError = exception;
 			if (dispatcher.Enabled != true) return "";
-			if (!options.HasValue) options = new DumpOptions { Return = false, Depth = 0, MaxLength = 0 };
+			if (!options.HasValue)
+                options = new DumpOptions {
+                    Return = false,
+                    Depth = 0,
+                    MaxLength = 0,
+                    SourceLocation = Dispatcher.SourceLocation
+                };
 			DumpOptions optionsValue = options.Value;
 			string dumpResult = "";
 			List<string> exceptionResult = new List<string>();
@@ -224,12 +230,23 @@ namespace Desharp {
 				if (!optionsValue.CatchedException.HasValue) {
 					optionsValue.CatchedException = true;
 				}
-				exceptionResult = Exceptions.RenderExceptions(exception, false, htmlOut, optionsValue.CatchedException.Value);
+				exceptionResult = Exceptions.RenderExceptions(
+                    exception, false, htmlOut, optionsValue.CatchedException.Value
+                );
 			} else {
-				if (!optionsValue.Depth.HasValue) optionsValue.Depth = 0;
-				if (!optionsValue.MaxLength.HasValue) optionsValue.MaxLength = 0;
-				if (!optionsValue.Return.HasValue) optionsValue.Return = false;
+				if (!optionsValue.Depth.HasValue)
+                    optionsValue.Depth = 0;
+				if (!optionsValue.MaxLength.HasValue)
+                    optionsValue.MaxLength = 0;
+				if (!optionsValue.Return.HasValue)
+                    optionsValue.Return = false;
+				if (!optionsValue.SourceLocation.HasValue)
+                    optionsValue.SourceLocation = Dispatcher.SourceLocation;
 				dumpResult = Dumper.Dump(exception, htmlOut, optionsValue.Depth.Value, optionsValue.MaxLength.Value);
+                if (optionsValue.SourceLocation.HasValue && optionsValue.SourceLocation.Value)
+                    dumpResult += Desharp.Renderers.FileLink.Render(
+                        Completers.StackTrace.CompleteCallerPoint(), htmlOut
+                    );
             }
             if (!optionsValue.Return.HasValue || (optionsValue.Return.HasValue && !optionsValue.Return.Value)) {
                 if (dumpResult.Length == 0 && exceptionResult.Count > 0) {
@@ -257,13 +274,22 @@ namespace Desharp {
 			string result;
 			StringBuilder resultItems = new StringBuilder();
 			bool htmlOut = Dispatcher.EnvType == EnvType.Web;
-			if (args == null) args = new object[] { null };
-			if (args.GetType().FullName != "System.Object[]") args = new object[] { args };
+			if (args == null)
+                args = new object[] { null };
+			if (args.GetType().FullName != "System.Object[]")
+                args = new object[] { args };
+            bool renderSourceLoc = Dispatcher.SourceLocation;
 			for (int i = 0; i < args.Length; i++) {
                 try {
 					resultItems.Append(Dumper.Dump(args[i], htmlOut));
+                    if (renderSourceLoc) resultItems.Append(
+                        Desharp.Renderers.FileLink.Render(Completers.StackTrace.CompleteCallerPoint(), htmlOut)
+                    );
                 } catch (Exception e) {
 					resultItems.Append(Dumper.Dump(e, htmlOut));
+                    if (renderSourceLoc) resultItems.Append(
+                        Desharp.Renderers.FileLink.Render(Completers.StackTrace.CompleteCallerPoint(), htmlOut)
+                    );
                 }
 			}
 			result = resultItems.ToString();
@@ -284,11 +310,20 @@ namespace Desharp {
 		public static string Dump (object obj, DumpOptions? options = null) {
             Dispatcher dispatcher = Dispatcher.GetCurrent();
 			if (dispatcher.Enabled != true) return "";
-			if (!options.HasValue) options = new DumpOptions { Return = false, Depth = 0, MaxLength = 0 };
+			if (!options.HasValue) options = new DumpOptions {
+                Return = false,
+                Depth = 0,
+                MaxLength = 0
+            };
 			DumpOptions optionsValue = options.Value;
-			if (!optionsValue.Depth.HasValue) optionsValue.Depth = 0;
-			if (!optionsValue.MaxLength.HasValue) optionsValue.MaxLength = 0;
-			if (!optionsValue.Return.HasValue) optionsValue.Return = false;
+			if (!optionsValue.Depth.HasValue)
+                optionsValue.Depth = 0;
+			if (!optionsValue.MaxLength.HasValue)
+                optionsValue.MaxLength = 0;
+			if (!optionsValue.Return.HasValue)
+                optionsValue.Return = false;
+			if (!optionsValue.SourceLocation.HasValue)
+                optionsValue.SourceLocation = Dispatcher.SourceLocation;
 			string result = "";
 			bool htmlOut = Dispatcher.EnvType == EnvType.Web;
 			try {
@@ -296,6 +331,8 @@ namespace Desharp {
 			} catch (Exception e) {
 				result = Debug.Dump(e, optionsValue);
 			}
+            if (optionsValue.SourceLocation.HasValue && optionsValue.SourceLocation.Value) 
+                result += Desharp.Renderers.FileLink.Render(Completers.StackTrace.CompleteCallerPoint(), htmlOut);
 			if (!optionsValue.Return.Value || (optionsValue.Return.HasValue && !optionsValue.Return.Value)) {
 				dispatcher.WriteDumpToOutput(result);
 				return "";
@@ -321,6 +358,8 @@ namespace Desharp {
 			if (!optionsValue.Return.HasValue) optionsValue.Return = true;
 			if (!optionsValueClone.Return.HasValue) optionsValueClone.Return = false;
 			string result = Debug.Dump(obj, optionsValue);
+            if (optionsValue.SourceLocation.HasValue && optionsValue.SourceLocation.Value) 
+                result += Desharp.Renderers.FileLink.Render(Completers.StackTrace.CompleteCallerPoint(), Dispatcher.EnvType == EnvType.Web);
 			if (Dispatcher.EnvType == EnvType.Web) {
 				HttpContext.Current.Response.Write(result);
 			} else {
@@ -342,7 +381,7 @@ namespace Desharp {
 		/// <param name="exception">Exception instance to print.</param>
 		[ComVisible(true)]
 		public static void Log (Exception exception = null) {
-			Dispatcher dispatcher = Dispatcher.GetCurrent();
+			Dispatcher dispatcher = Dispatcher.GetCurrent(true);
 			dispatcher.LastError = exception;
 			bool htmlOut = dispatcher.Output == LogFormat.Html;
 			List<string> renderedExceptions = Exceptions.RenderExceptions(exception, true, htmlOut, true);
@@ -359,7 +398,7 @@ namespace Desharp {
 		/// <returns>Returns empty string by default or dumped variable string if you specify in second argument <c>DumpOptions.Return</c> to <c>true</c>.</returns>
 		[ComVisible(true)]
 		public static void Log (object obj = null, Level level = Level.INFO, int maxDepth = 0, int maxLength = 0) {
-			Dispatcher dispatcher = Dispatcher.GetCurrent();
+			Dispatcher dispatcher = Dispatcher.GetCurrent(true);
 			bool htmlOut = dispatcher.Output == LogFormat.Html;
 			string renderedObj;
 			string logLevelValue = LevelValues.Values[level];

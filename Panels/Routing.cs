@@ -16,7 +16,7 @@ using System.Runtime.InteropServices;
 
 namespace Desharp.Panels {
 	[ComVisible(true)]
-	public class Routing: IPanel {
+	public class Routing: IPanel, ISessionPanel {
 		public static string PanelName = "routing";
 		public int[] DefaultWindowSizes => new int[] { 350, 250 };
 		public string IconValue => Routing.PanelName;

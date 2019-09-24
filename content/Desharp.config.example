@@ -96,6 +96,14 @@
     -->
     <add key="Desharp:Directory" value="~/logs" />
     
+    <!-- 
+      Always render source location from where dump has been called
+      - not required, recomanded
+      - possible values: 1, 0, true, false
+      - if not configured, no dumps source locations are displayed
+    -->
+    <add key="Desharp:SourceLocation" value="1" />
+    
     <!--
       Milisecond timeout how often logged messages or exceptions are written from RAM to HDD
       - not required, recomanded for speed optimalization in production mode

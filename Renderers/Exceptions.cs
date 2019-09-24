@@ -31,7 +31,9 @@ namespace Desharp.Renderers {
 			return result;
 		}
 		internal static string RenderCurrentApplicationPoint (string message = "", string exceptionType = "", bool fileSystemLog = true, bool htmlOut = false) {
-			RenderingCollection preparedResult = StackTrace.CompleteStackTraceForCurrentApplicationPoint(message, exceptionType, fileSystemLog, htmlOut);
+			RenderingCollection preparedResult = StackTrace.CompleteStackTraceForCurrentApplicationPoint(
+                message, exceptionType, fileSystemLog, htmlOut
+               );
 			List<string[]> headers = new List<string[]>();
 			if (Dispatcher.EnvType == EnvType.Web) {
 				headers = HttpHeaders.CompletePossibleHttpHeaders();
@@ -94,32 +96,40 @@ namespace Desharp.Renderers {
 			string linkValue = "https://www.google.com/search?sourceid=desharp&gws_rd=us&q="
 				+ HttpUtility.UrlEncode(preparedResult.ExceptionMessage);
 			string causedByMsg = preparedResult.CausedByMessage;
-			if (causedByMsg.Length > 50) causedByMsg = causedByMsg.Substring(0, 50) + "...";
-			string result = @"<div class=""exception"">"
-				+ @"<div class=""head"">"
-					+ @"<div class=""type"">" + preparedResult.ExceptionType + " (Hash Code: " + preparedResult.ExceptionHash + ")</div>"
-					+ @"<a href=""" + linkValue + @""" target=""_blank"">"
-							+ preparedResult.ExceptionMessage
-					+ "</a>"
-					+ @"<div class=""info"">"
-						+ "Catched: " + (preparedResult.Catched ? "yes" : "no")
-						+ (preparedResult.CausedByHash.Length > 0 
+			if (causedByMsg.Length > 50)
+                causedByMsg = causedByMsg.Substring(0, 50) + "...";
+            StringBuilder result = new StringBuilder();
+            result
+                .Append(@"<div class=""exception"">")
+				.Append(@"<div class=""head"">")
+					.Append(@"<div class=""type"">" + preparedResult.ExceptionType)
+                        .Append(!String.IsNullOrEmpty(preparedResult.ExceptionHash) 
+                            ? " (Hash Code: " + preparedResult.ExceptionHash + ")" 
+                            : "")
+                    .Append("</div>")
+					.Append(@"<a href=""" + linkValue + @""" target=""_blank"">")
+							.Append(preparedResult.ExceptionMessage)
+					.Append("</a>")
+					.Append(@"<div class=""info"">")
+						.Append("Catched: " + (preparedResult.Catched ? "yes" : "no"))
+						.Append(preparedResult.CausedByHash.Length > 0 
 							? ", Caused By: " + preparedResult.CausedByType + " (Hash Code: " + preparedResult.CausedByHash + ", Message: " + causedByMsg + ")" 
 							: "")
-					+ "</div>"
-				+ "</div>"
-				+ errorFileStr
-				+ stackTraceStr;
-			if (preparedResult.Headers.Count > 0) {
-				result += Exceptions._renderHtmlDataTable("HTTP Headers:", headersStr);
-			}
-			result += Exceptions._renderHtmlDataTable(
-				"Application Domain Assemblies:", 
-				Exceptions._renderDataTableRows(LoadedAssemblies.CompleteLoadedAssemblies(), true, true)
+					.Append("</div>")
+				.Append("</div>")
+				.Append(errorFileStr)
+				.Append(stackTraceStr);
+			if (preparedResult.Headers.Count > 0) 
+				result.Append(Exceptions._renderHtmlDataTable("HTTP Headers:", headersStr));
+			result.Append(
+                Exceptions._renderHtmlDataTable(
+    				"Application Domain Assemblies:", 
+	    			Exceptions._renderDataTableRows(LoadedAssemblies.CompleteLoadedAssemblies(), true, true)
+                )
 			);
-			result += Exceptions._renderHtmlResponseFooterInfo();
-			result += "</div>";
-			return result;
+			result.Append(Exceptions._renderHtmlResponseFooterInfo());
+			result.Append("</div>");
+			return result.ToString();
 		}
 		private static string _renderStackRecordResultHtmlLog (
 			RenderingCollection preparedResult,
@@ -253,7 +263,8 @@ namespace Desharp.Renderers {
 				StackTraceItem newStackTraceItem;
 				foreach (StackTraceItem stackTraceItem in stackTrace) {
 					newStackTraceItem = new StackTraceItem(stackTraceItem);
-					if (newStackTraceItem.Method.Length > textLengths[0]) textLengths[0] = newStackTraceItem.Method.Length;
+					if (newStackTraceItem.Method.Length > textLengths[0])
+                        textLengths[0] = newStackTraceItem.Method.Length;
 					if (htmlOut && format == StackTraceFormat.Json && newStackTraceItem.File.ToString().Length > 0) {
 						newStackTraceItem.File = new string[] {
 							newStackTraceItem.File.ToString(),
@@ -262,7 +273,8 @@ namespace Desharp.Renderers {
 					} else {
 						newStackTraceItem.File = Tools.RelativeSourceFullPath(newStackTraceItem.File.ToString());
 					}
-					if (newStackTraceItem.File.ToString().Length > textLengths[1]) textLengths[1] = newStackTraceItem.File.ToString().Length;
+					if (newStackTraceItem.File.ToString().Length > textLengths[1])
+                        textLengths[1] = newStackTraceItem.File.ToString().Length;
 					newStackTrace.Add(newStackTraceItem);
 				}
 				stackTrace = newStackTrace;
@@ -288,7 +300,7 @@ namespace Desharp.Renderers {
 		private static string _renderStackTraceLine(StackTraceItem stackTraceItem, StackTraceFormat format, int[] textLengths) {
 			string result = "";
 			string fileNameLink = "";
-			bool fileDefined = stackTraceItem.File.ToString().Length > 0 && stackTraceItem.File.ToString().Length > 0;
+			bool fileDefined = stackTraceItem.File.ToString().Length > 0 && stackTraceItem.Line.ToString().Length > 0;
 			if (format == StackTraceFormat.Html) {
 				if (fileDefined) {
 					fileNameLink = @"<a href=""editor://open/?file=" + HttpUtility.UrlEncode(stackTraceItem.File.ToString())

@@ -10,31 +10,48 @@ using System.Web;
 
 namespace Desharp.Producers {
     internal class HtmlResponse {
-        private static string _assets;
+        private static StringBuilder _assets;
         static HtmlResponse () {
-            HtmlResponse._assets = System.Environment.NewLine
-                + "<style>" + Assets.bar_css + Assets.bar_window_css + Assets.bar_panels_css + Assets.bar_exception_css + Assets.exception_css + Assets.dumps_css + "</style>"
-                + System.Environment.NewLine
-                + "<script>" + Assets.dumps_js + "</script>";
+            HtmlResponse._assets = new StringBuilder();
+            HtmlResponse._assets
+                .Append(System.Environment.NewLine)
+                .Append("<style>")
+                .Append(Assets.bar_css)
+                .Append(Assets.bar_window_css)
+                .Append(Assets.bar_panels_css)
+                .Append(Assets.bar_exception_css)
+                .Append(Assets.exception_css)
+                .Append(Assets.dumps_css)
+                .Append("</style>")
+                .Append(System.Environment.NewLine)
+                .Append("<script>")
+                .Append(Assets.dumps_js)
+                .Append("</script>");
         }
         public static void SendRenderedExceptions (string renderedExceptions, string exceptionType) {
-            HttpContext.Current.Response.ContentType = "text/html";
-            HttpContext.Current.Response.Write(
-                "<!DOCTYPE HTML>" + System.Environment.NewLine
-                + @"<html lang=""en-US"">" + System.Environment.NewLine 
-                    + "<head>"
-                        + @"<meta charset=""UTF-8"" />"
-						+ "<title>" + exceptionType + "</title>"
-                        + "<script>document.title='" + HttpUtility.JavaScriptStringEncode(exceptionType) + "';</script>"
-                        + HtmlResponse._assets
-                    + "</head>" + System.Environment.NewLine
-                    + @"<body class=""debug-exception"">"
-                        + renderedExceptions
-                    + "</body>"
-                + "</html>"
-            );
+            HttpResponse res = HttpContext.Current.Response;
+			try {
+				res.ContentType = "text/html";
+				res.StatusCode = (int)HttpStatusCode.InternalServerError;
+			} catch { }
+            StringBuilder str = new StringBuilder();
+            str
+                .Append(@"<!DOCTYPE HTML>" + System.Environment.NewLine)
+                .Append(@"<html lang=""en-US"">" + System.Environment.NewLine)
+                .Append(@"<head>")
+                .Append(@"<meta charset=""UTF-8"" />")
+                .Append(@"<title>" + exceptionType + @"</title>")
+                .Append(@"<script>document.title='")
+                .Append(HttpUtility.JavaScriptStringEncode(exceptionType))
+                .Append(@"';</script>")
+                .Append(HtmlResponse._assets.ToString())
+                .Append(@"</head>" + System.Environment.NewLine)
+                .Append(@"<body class=""desharp-exception""><div class=""desharp-screen"">")
+                .Append(renderedExceptions)
+                .Append(@"</div></body>")
+                .Append(@"</html>");
+            res.Write(str.ToString());
 			Dispatcher.GetCurrent().WebAssetsInserted = true;
-            HttpContext.Current.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
 		}
 		internal static void TransmitStaticErrorPagePrepareHeaders () {
 			HttpContext.Current.Response.StatusCode = 500;
@@ -96,7 +113,7 @@ namespace Desharp.Producers {
 				.Append(jsCode)
 				.Append((responseIsXml ? "/* ]]> */" : "") + "</script>");
 			response.Write(responseCode.ToString());
-			response.Flush();
+			//response.Flush();
 		}
 		internal static List<RenderedPanel> RenderDebugPanels (Dictionary<string, Panels.IPanel> requestPanels = null) {
 			List<RenderedPanel> result = new List<RenderedPanel>();

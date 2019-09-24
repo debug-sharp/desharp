@@ -6,10 +6,10 @@ using System.Web.SessionState;
 
 namespace Desharp.Panels {
 	[ComVisible(true)]
-	public class Session: IPanel {
+	public class Session: IPanel, ISessionPanel {
 		public static string PanelName = "session";
 		public static int DumpDepth = 0;
-		public int[] DefaultWindowSizes => new int[] { 400, 300 };
+		public int[] DefaultWindowSizes => new int[] { 600, 600 };
 		public bool AddIfEmpty => true;
 		public string IconValue => Session.PanelName;
 		public string Name => Session.PanelName;
@@ -23,14 +23,16 @@ namespace Desharp.Panels {
 		public void SessionEnd () {
 			HttpSessionState session = HttpContext.Current.Session;
 			if (session == null) return;
-			this.content.Append(@"<div class=""content"">");
-			this.content.Append(@"<b class=""heading"">Configuration:</b>");
-			this.content.Append(@"<table class=""session-configuration""><tbody>");
-			this.content.Append("<tr><th>Timeout</th><td>" + session.Timeout + "</td></tr>");
-			this.content.Append("<tr><th>Mode</th><td>" + session.Mode.ToString() + "</td></tr>");
-			this.content.Append("<tr><th>CookieMode</th><td>" + session.CookieMode.ToString() + "</td></tr>");
-			this.content.Append("</tbody></table>");
-			if (session.Count == 0) this.content.Append(@"<b class=""heading"">No items</b>");
+			this.content
+                .Append(@"<div class=""content"">")
+			    .Append(@"<b class=""heading"">Configuration:</b>")
+			    .Append(@"<table class=""session-configuration""><tbody>")
+			    .Append("<tr><th>Timeout</th><td>" + session.Timeout + "</td></tr>")
+			    .Append("<tr><th>Mode</th><td>" + session.Mode.ToString() + "</td></tr>")
+			    .Append("<tr><th>CookieMode</th><td>" + session.CookieMode.ToString() + "</td></tr>")
+			    .Append("</tbody></table>");
+			if (session.Count == 0)
+                this.content.Append(@"<b class=""heading"">No items</b>");
 			this.content.Append("</p>");
 			this.count = session.Count;
 			if (session.Count > 0) { 
