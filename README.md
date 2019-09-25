@@ -25,9 +25,10 @@
 
 ## About
 
-**C#/VB .NET debuging utility:**
+**C#/VB .NET debuging utility for:**
 - dump or log **any** structuralized variables
 - dump or log exceptions with stack trace and inner exceptions
+
 **Dump any variables into:**
 - Console window
 - Output debug panel in Visual Studio 
