@@ -48,7 +48,7 @@ namespace Desharp {
 					Desharp.Debug.Log(ex.Message + "\r\n" + ex.StackTrace);
 				}
 			};
-			application.PostAcquireRequestState += delegate (object o, EventArgs e) {
+			application.PostRequestHandlerExecute += delegate (object o, EventArgs e) {
 				try {
                     Dispatcher dispatcher = Dispatcher.GetCurrent(false);
 					if (dispatcher != null) 
@@ -73,7 +73,7 @@ namespace Desharp {
 			application.PreSendRequestHeaders += delegate (object o, EventArgs e) {
 				try {
                     Dispatcher dispatcher = Dispatcher.GetCurrent(false);
-                    if (dispatcher != null) { 
+                    if (dispatcher != null) {
 					    dispatcher.WebRequestSessionEnd();
 					    dispatcher.WebRequestPreSendHeaders();
                     }

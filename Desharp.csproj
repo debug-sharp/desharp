@@ -178,7 +178,7 @@
   <PropertyGroup>
     <PreBuildEvent>@IF EXIST $(ProjectDir)Assets\node_modules\desharp-assets (
    CD $(ProjectDir)Assets\node_modules\desharp-assets\dev-tools
-  build.cmd
+   build.cmd
 )</PreBuildEvent>
   </PropertyGroup>
   <PropertyGroup>

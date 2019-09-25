@@ -2,7 +2,7 @@
 <configuration xmlns:xdt="http://schemas.microsoft.com/XML-Document-Transform">
   <system.webServer xdt:Transform="InsertIfMissing">
     <modules xdt:Transform="InsertIfMissing">
-      <add name="Desharp" type="Desharp.Module" xdt:Transform="InsertIfMissing" xdt:Locator="Match(name)" />
+      <add name="Desharp" type="Desharp.Module" xdt:Transform="InsertIfMissing" xdt:Locator="Match(name)" preCondition="managedHandler" />
     </modules>
     <httpErrors errorMode="Detailed" xdt:Transform="InsertIfMissing" xdt:Locator="Match(errorMode)" />
     <security xdt:Transform="InsertIfMissing">
