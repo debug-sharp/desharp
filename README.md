@@ -40,7 +40,7 @@
 --------------------------------------------------------------------
 
 
-### Instalation
+## Instalation
 
 [Desharp on Nuget.org](https://www.nuget.org/packages/Desharp/)
 
@@ -52,7 +52,7 @@ PM> Install-Package Desharp
 --------------------------------------------------------------------
 
 
-### Demos & Examples
+## Demos & Examples
 
 - [**Console Application Demo (C#)**](https://github.com/debug-sharp/example-console-csharp), [**(VB.NET)**](https://github.com/debug-sharp/example-console-visualbasic)  
   Demo dumps and exceptions rendering into console window, logging on HDD and optional tests running.
@@ -69,7 +69,7 @@ PM> Install-Package Desharp
 --------------------------------------------------------------------
 
 
-### Do Not Miss
+## Do Not Miss
 - [**Visual Studio code snippets**](https://github.com/debug-sharp/codesnippets)  
   Download and install predefined VS snippets for most offten `Desharp` calls.
 - [**Visual Studio opener**](https://github.com/debug-sharp/editor-opener)  
@@ -79,21 +79,14 @@ PM> Install-Package Desharp
 --------------------------------------------------------------------
 
 
-### Code snippets
-To use long **[Desharp](https://www.nuget.org/packages/Desharp/)** calls more comfortable, install [Visual Studio code snippets](https://github.com/tomFlidr/desharp-codesnippets) for desharp to create proper shortcuts
-More info [about code snippets for Visual Studio](https://code.visualstudio.com/docs/editor/userdefinedsnippets).
+## Usage In Code
 
-
---------------------------------------------------------------------
-
-
-### Dump/log any variable
 #### C#:
 ```cs
 using Desharp;
 using System.Collections.Generic;
 
-var list = new List<string>() { "a", "b", "c" };
+var list = new List<int?>() { 100, 200, null };
 Debug.Dump(list);  // print list by Console.WriteLine(); or append into html response as floating window
 Debug.Log(list);   // store dumped list in debug.log or debug.html file on HDD
 ```
@@ -102,16 +95,16 @@ Debug.Log(list);   // store dumped list in debug.log or debug.html file on HDD
 Imports Desharp
 Imports System.Collections.Generic
 
-Dim list As New List(Of String)() { "a", "b", "c" }
+Dim list As New List(Of Int32?)() { 100, 200, null }
 Debug.Dump(list)  ' print list by Console.WriteLine(); or append into html response as floating window
 Debug.Log(list)   ' store dumped list in debug.log or debug.html file on HDD
 ```
-Dumped list for both languages in debug output or console window:
+Dumped result for both languages:
 ```
-[List<string>(3)]
-   0: "a" [String(1)]
-   1: "b" [String(1)]
-   2: "c" [String(1)]
+[List<Int32?>(3)]
+   0: 100 [Int32]
+   1: 200 [Int32]
+   2: null
 ```
 
 ### Dump/log `Exception`
@@ -508,3 +501,12 @@ Debug.Configure(new DebugConfig {
   Depth = 3
 });
 ```
+
+
+--------------------------------------------------------------------
+
+
+### Code snippets
+To use long **[Desharp](https://www.nuget.org/packages/Desharp/)** calls more comfortable, install [Visual Studio code snippets](https://github.com/tomFlidr/desharp-codesnippets) for desharp to create proper shortcuts
+More info [about code snippets for Visual Studio](https://code.visualstudio.com/docs/editor/userdefinedsnippets).
+
