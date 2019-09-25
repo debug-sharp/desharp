@@ -7,14 +7,14 @@
 C#/VB .NET debuging utility to dump or log structuralized variables, exceptions, stack traces and much more into console window, Visual Studio output panel, into html web response as floating window, into html/text log files on HDD or into any form field component.
 
 ## Outline
-- Instalation
-- Demos & Examples
-- Do not miss
-- Usage in code
-- Configuration
-- Dumps & logs outputs
-- Dumps & logs possibilities
-- VS Code snippets
+- [Instalation](#instalation)
+- [Demos & Examples](#demos--examples)
+- [Do not miss](#do-not-miss)
+- [Usage in code](#usage-in-code)
+- [Configuration](#configuration)
+- [Dumps & logs outputs](#dumps--logs-outputs)
+- [Dumps & logs possibilities](#dumps--logs-possibilities)
+- [VS Code snippets](#vs-code-snippets)
 
 ---
 
