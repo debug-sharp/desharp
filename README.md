@@ -5,6 +5,9 @@
 ![.NET Version](https://img.shields.io/badge/.NET->=4.0-brightgreen.svg?style=plastic)
 
 
+--------------------------------------------------------------------
+
+
 C#/VB .NET debuging utility to dump or log structuralized variables, exceptions, stack traces and much more into console window, Visual Studio output panel, into html web response as floating window, into html/text log files on HDD or into any form field component.
 
 
@@ -19,7 +22,7 @@ C#/VB .NET debuging utility to dump or log structuralized variables, exceptions,
 - [**VS Code snippets**](#vs-code-snippets)
 
 
----
+--------------------------------------------------------------------
 
 
 ### Instalation
