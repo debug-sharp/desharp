@@ -16,7 +16,7 @@
 - [**Usage In Code**](#usage-in-code)
 - [**Dumps & Logs Outputs**](#dumps--logs-outputs)
 - [**What You Can Dump Or Log**](#what-you-can-dump-or-log)
-- [**What Is Dumped Or Logged**](#what-is-dumped-or-logged)
+- [**What Is Rendered (Dumps & Logs)**](#what-is-dumped-or-logged)
 - [**Configuration**](#configuration)
   - [**Configuration Examples**](#configuration-examples)
   - [**Runtime Configuration Options**](#runtime-configuration-options)
@@ -190,7 +190,7 @@ System.Exception (Hash Code: 50632145):
 - exceptions with inner exceptions
 - much more... you can try:-)
 
-## What Is Dumped Or Logged
+## What Is Rendered (Dumps & Logs)
 
 - variables
   - always is rendered/logged the dumped variable:-)
