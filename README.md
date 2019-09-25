@@ -12,17 +12,18 @@ C#/VB .NET debuging utility to dump or log structuralized variables, exceptions,
 - Do not miss
 - Usage in code
 - Configuration
-- Dump/log outputs
-- Dump/log possibilities
+- Dumps & logs outputs
+- Dumps & logs possibilities
+- VS Code snippets
 
 ---
 
-## Instalation
+### Instalation
 ```nuget
 PM> Install-Package Desharp
 ```
 
-## Demos & Examples
+### Demos & Examples
 
 - Console Application Demo
 - Windows Forms Application Demo
@@ -30,7 +31,7 @@ PM> Install-Package Desharp
 - Web MVC Application Demo
 - Web Forms Application Demo
 
-## Do not miss
+### Do not miss
 - Visual Studio code snippets for most offten `Desharp` calls
 - Visual Studio file:line opener from rendered logs and exceptions
 
