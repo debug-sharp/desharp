@@ -14,10 +14,14 @@
 - [**Demos & Examples**](#demos--examples)
 - [**Do Not Miss**](#do-not-miss)
 - [**Usage In Code**](#usage-in-code)
-- [**Configuration**](#configuration)
 - [**Dumps & Logs Outputs**](#dumps--logs-outputs)
-- [**What Is Possible To Dump Or Log**](#what-is-possible-to-dump-or-log)
-- [**VS Code Snippets**](#vs-code-snippets)
+- [**What You Can Dump Or Log**](#what-you-can-dump-or-log)
+- [**What Is Dumped Or Logged**](#what-is-dumped-or-logged)
+- [**Configuration**](#configuration)
+  - [**Configuration Examples**](#configuration-examples)
+  - [**Runtime Configuration Options**](#runtime-configuration-options)
+  - [**All XML Configuration Options**](#all-xml-configuration-options)
+- [**Visual Studio - Code Snippets**](#visual-studio---code-snippets)
 
 
 --------------------------------------------------------------------
@@ -188,59 +192,53 @@ System.Exception (Hash Code: 50632145):
 
 ## What Is Dumped Or Logged
 
-- dumped variables
-  - dumper variable is always rendered :-)
-  - dump is rendered with optional source location call
-  - dump is rendered with optional dump depth (default: 3)
-  - dump is rendered with optional maximum string length
-  - dump is rendered with optional return flag (to return dumped result as string)
+- variables
+  - always is rendered/logged the dumped variable:-)
+  - dump is rendered with configurable return flag (to return dumped result as string)
+  - dump or log is rendered with configurable:
+    - source location call (default: `false`)
+    - dump depth (default: `3`)
+    - maximum string length (default: `1024`)
 
 - exceptions
-  - rendered in dump and log is exception message, process and thread id
-  - rendered in dump and log is file and line, where exception has been thrown
-    (only if source code is possible to target by `*.PDB` file, there is rendered  
-    a few lines from source code, where the  `Debug.dump()` or `Debug.Log()` 
-	has been called or where `Exception` has been thrown)
-  - rendered in dump and log is also exception callstack
-    (with editor opener links in web dump or in html log)
-  - rendered in dump and log are all inner exceptions inside
-  - exceptions in web environment:
+  - dump or log has always rendered
+    - exception message, process and thread id
+    - file and line, where exception has been dumped, logged or thrown
+      (only if source code is possible to target by `*.PDB` file, there is rendered  
+      a few lines from source code, where the  `Debug.dump()` or `Debug.Log()` 
+	  has been called or where `Exception` has been thrown)
+    - exception callstack
+      (with editor opener links in web dump or in html log)
+    - all inner exceptions inside the given exception
+  - exceptions in web environment has always rendered:
     - requested URL, all http request headers and client IP
-    - rendered are all loaded assemblies
-    - different dump rendering for catched and not catched exceptions:
+    - all loaded assemblies
+    - there are different dump rendering for catched and not catched exceptions:
       - if optional flag for catched exception is `true`, exception is rendered as
 	    openable exception in floating bar in left bottom screen corner
 	  - if optional flag for catched exception is `false`, exception is rendered 
 	    over whole browser window immediately with possibility to close it back into floating bar 
 
+
 --------------------------------------------------------------------
-
-
-#### Log calls possibilities
-- log level (file name)
-- rendered process/thread/request id
-- rendered current dump/log time (from `DateTime.Now`)
-- rendered callstack, where was `Debug.Log()` used or where `Exception` has been thrown
-- if exception has been caused by another exception (inner exceptions)
-  - there is automatically rendered source exception object hash  
-    (if source code is possible to target by *.PDB file, there is rendered  
-    a few lines from source code, where the `Debug.Log()` has been used or  
-	where `Exception` has been thrown)
-
 
 
 ## Configuration
 
-You can configure by `app.config`/`web.config` or directly by calling `Debug.Configure()`:
-- if debugging is enabled or not (enabled by default)
-- debug IPs to enable debugging only for list of client IPs (no ips by default)
-- logs directory (app root if not defined)
-- log files format:
-  - text (*.log, by default)
-  - html (*.html)
+You can configure the `Desharp` utility by:
+- `app.config` or `web.config`
+- anytime directly by calling `Debug.Configure()` from any thread
+
+You can configure:
+- if dumping/debugging is enabled or not (enabled by default after nuget package installation)
+- debug IPs to enable debugging only for listed client IPs (localhost IPs by default)
+- logs directory (`~/Logs` by default, relative from app root)
+- logs file format:
+  - html (`*.html`, by default in config file for all apps)
+  - text (`*.log`, by default for desktop apps if config file is missing)
 - logging levels:
-  - debug (by default)
-  - exception
+  - debug (by default for all variables)
+  - exception (by default for logged exceptions)
   - info
   - notice
   - warning
@@ -249,305 +247,264 @@ You can configure by `app.config`/`web.config` or directly by calling `Debug.Con
   - alert
   - emergency
   - javascript
-- favourite editor to open files from html output by `editor://` protocol (MSVS by default)
+- favourite editor to open files from html debug output or log file by `editor://` protocol (`MSVS` by default)
+- source file location to render where the `Desharp` library has been called in your source code
 
-### Configuration examples
 
-#### Console, Windows forms or WPF application `App.config`:
-- after instaling Desharp Nuget package, there are automaticly added appSettings keys bellow into your App.config:
-  - `<add key="Desharp:Enabled" value="1" />`
-  - `<add key="Desharp:Output" value="html" />`
-  - `<add key="Desharp:Levels" value="+exception,debug,info,-notice,-warning,+error,+critical,alert,+emergency,javascript" />`
-  - `<add key="Desharp:Directory" value="~/logs" />`
+### Configuration Examples
+
+After instaling **Desharp nuget package**, there are **automatically added** subnodes  
+into your `App.config` or into `Web.config` file (if exists):
+- into node `<appSettings>` - for desktop and web applications
+- into node `<system.webServer>` - for web applications only
+
+#### Console Apps, WinForms & WPF Apps:
+
 ```xml
-<?xml version="1.0" encoding="utf-8"?>
-<configuration>
-    <appSettings>
-        
-        <!-- 
-            Web debug panel enabled od console priniting enabled
-            - not required, recomanded
-            - possible values: 1, 0, true, false
-            - if not configured - enabled is only when VS debugger is attached or entry assembly is builded as Debug
-            - if disabled - all Debug.Log() calls are still enabled, see more option "Desharp:Levels"
-        -->
-        <add key="Desharp:Enabled" value="1" />
-        
-        <!--
-            Logs content format
-            - not required, text by default
-            - possible values: html, text
-        -->
-        <add key="Desharp:Output" value="html" />
-        
-        <!--
-            Loggin levels to enable/disable to write on hard drive and also to enable/disable for email notification
-            - not required, recomanded
-            - possible values: exception, debug, info, notice, warning, error, critical, alert, emergency, javascript
-            - if not configured, all logging levels are enabled for logging, not enabled for email notification
-            - if at least one level is configured, then all other configured levels are disabled for logging and for email notification
-            - if you want to enable any logging level - write level name bellow
-            - if you want to disable any logging level - put minus (-) character before level name or remove level name
-            - if you want to enable any logging level for email notification - put plus (+) character before level name
-        -->
-        <add key="Desharp:Levels" value="+exception,debug,info,-notice,-warning,+error,+critical,alert,+emergency,javascript" />
-        
-        <!--
-            Logged messages notification by configured levels
-            - not required, recomanded in production mode
-            - possible values: 
-                - host: required, mail server smtp domain | IPv4 | IPv6
-                - port: not required, 25 by default
-                - ssl: not required, false by default
-                - from: required if no username and password specified, email address to specify sender, if no value specified, there is used username
-                - username and password: required if no from sender specified, mail server username/password for sender account, always necessary to use together
-                - to: required, recepient email adress or adresses separated by semicolon ';'
-                - priority: not required, possible values: 'low' | 'normal' | 'high', 'normal' by defaut
-                - timeout: not required, time cpecified in miliseconds, 10000 by default (10 seconds)
-        -->
-        <add key="Desharp:NotifySettings" value="{
-            host: 'smtp.host.com',
-            port: 25,
-            ssl: false,
-            user: 'username',
-            password: 'secret',
-            from: 'username@host.com',
-            to: 'mydaily@mailbox.com;myother@mailbox.com',
-            priority: 'high',
-            timeout: 30000
-        }" />
-        
-        <!--
-            Absolute or relative path from application root directory
-            - not required, recomanded
-            - relative path from app root has to start with '~/' like: '~/path/to/logs'
-            - if not configured, all log files are written into application root directory
-        -->
-        <add key="Desharp:Directory" value="~/logs" />
-        
-        <!--
-            Milisecond timeout how often logged messages or exceptions are written from RAM to HDD
-            - not required, recomanded for speed optimalization in production mode
-            - possible values - use digits to define any miliseconds number
-            - if not configured, all messages or exceptions are written in singleton background thread immediately
-        -->
-        <add key="Desharp:WriteMiliseconds" value="5000" />
-        
-        <!--
-            C# object dumping depth
-            - not required, recomanded for speed optimalization in production mode
-            - possible values: just digit like 3, 4 or 5
-            - if not configured, 3 by default
-        -->
-        <add key="Desharp:Depth" value="3" />
-        
-        <!--
-            Max length for dumped string values
-            - not required, recomanded for speed optimalization in production mode
-            - possible values: just digit like 512, 1024 or 4000
-            - if not configured, 1024 by default
-        -->
-        <add key="Desharp:MaxLength" value="512" />
-
-        <!--
-            Dump all backing fields in class instances, created usually for properties 
-            and all class instance member types marked with 'CompillerGenerated' attribute.
-            - not required, recomanded only for depp development view
-            - possible values: 1, 0, true, false
-            - if not configured, false by default
-            - if not configured or configured as false, you can hide for dumping
-        -->
-        <add key="Desharp:DumpCompillerGenerated" value="true" />
-        
-        <!-- 
-            Default editor param value
-            - not required, marginal
-            - for file opening links by 'editor://file=...&line=...&editor=MSVS'
-            - possible values: any string key to open your editor from html output by
-            - if not configured, value is automaticly detected by Visual Studio instalation on current system
-        -->
-        <add key="Desharp:Editor" value="MSVS" />
-        
-    </appSettings>
-</configuration>
+<appSettings>
+  ...
+  <add key="Desharp:Enabled" value="1" />
+  <add key="Desharp:Output" value="html" />
+  <add key="Desharp:Levels" value="+exception,debug,info,-notice,-warning,+error,+critical,alert,+emergency,javascript" />
+  <add key="Desharp:Directory" value="~/Logs" />
+</appSettings>
 ```
 
-#### Website application `Web.config`:
-- after instaling Desharp Nuget package, there are automaticly added new Desharp http module and appSettings keys bellow into your Web.config:
-  - `<add key="Desharp:Enabled" value="1" />`
-  - `<add key="Desharp:Output" value="html" />`
-  - `<add key="Desharp:DebugIps" value="127.0.0.1,::1" />`
-  - `<add key="Desharp:Levels" value="+exception,debug,info,-notice,-warning,+error,+critical,alert,+emergency,javascript" />`
-  - `<add key="Desharp:Panels" value="Desharp.Panels.Session" />`
-  - `<add key="Desharp:Directory" value="~/logs" />`
+#### Website Apps:
+
 ```xml
-<?xml version="1.0" encoding="utf-8"?>
-<configuration>
-    
-    <startup>
-        <supportedRuntime version="v4.0" sku=".NETFramework,Version=v4.5" />
-    </startup>
-    
-    
-    <!-- For web applications only - you have to add Desharp http module by: -->
-    <system.webServer>
-        <modules>
-            <add name="Desharp" type="Desharp.Module" />
-        </modules>
-        <httpErrors errorMode="DetailedLocalOnly" />
-    </system.webServer>
-    
-    
-    <appSettings>
-        
-        <!-- 
-            Web debug panel enabled od console priniting enabled
-            - not required, recomanded
-            - possible values: 1, 0, true, false
-            - if not configured - enabled is only when VS debugger is attached or entry assembly is builded as Debug
-            - if disabled - all Debug.Log() calls are still enabled, see more option "Desharp:Levels"
-        -->
-        <add key="Desharp:Enabled" value="1" />
-        
-        <!--
-            Logs content format
-            - not required, text by default
-            - possible values: html, text
-        -->
-        <add key="Desharp:Output" value="html" />
-        
-        <!--
-            Client ip adresses list to limit enabled desharp only for some users
-            - not required, recomanded
-            - possible values: IPv4 or IPv6, separated by comma
-            - if not configured and desharp is enabled, then is enabled for all client ips
-        -->
-        <add key="Desharp:DebugIps" value="127.0.0.1,::1" />
-        
-        <!--
-            Loggin levels to enable/disable to write on hard drive and also to enable/disable for email notification
-            - not required, recomanded
-            - possible values: exception, debug, info, notice, warning, error, critical, alert, emergency, javascript
-            - if not configured, all logging levels are enabled for logging, not enabled for email notification
-            - if at least one level is configured, then all other configured levels are disabled for logging and for email notification
-            - if you want to enable any logging level - write level name bellow
-            - if you want to disable any logging level - put minus (-) character before level name or remove level name
-            - if you want to enable any logging level for email notification - put plus (+) character before level name
-        -->
-        <add key="Desharp:Levels" value="+exception,debug,info,-notice,-warning,+error,+critical,alert,+emergency,javascript" />
-
-        <!--
-            Logged messages notification by configured levels
-            - not required, recomanded in production mode
-            - possible values: exception, debug, info, notice, warning, error, critical, alert, emergency, javascript
-            - if not configured, all logging levels are enabled for logging, not enabled for email notification
-            - if at least one level is configured, then all other configured levels are disabled for logging and for email notification
-            - if you want to enable any logging level - write level name bellow
-            - if you want to disable any logging level - put minus (-) character before level name or remove level name
-            - if you want to enable any logging level for email notification - put plus (+) character before level name
-        -->
-        <add key="Desharp:NotifySettings" value="{
-            host: 'smtp.host.com',
-            port: 25,
-            ssl: false,
-            user: 'username',
-            password: 'secret',
-            from: 'username@host.com',
-            to: 'mydaily@mailbox.com',
-            priority: 'high',
-            timeout: 30000
-        }" />
-        
-        <!--
-            Web debug bar panels
-            - not required, recomanded
-            - full class names separated by comma character
-            - all panel classes has to implement abstract class: Desharp.Panels.Abstract
-            - build-in panels you can use: Desharp.Panels.Session (Desharp.Panels.Routing - TODO)
-            - there are always enabled build-in panels for execution time, dumps and exceptions
-        -->
-        <add key="Desharp:Panels" value="Desharp.Panels.Session" />
-        
-        <!--
-            Absolute or relative path from application root directory
-            - not required, recomanded
-            - relative path from app root has to start with '~/' like: '~/path/to/logs'
-            - if not configured, all log files are written into application root directory
-        -->
-        <add key="Desharp:Directory" value="~/logs" />
-        
-        <!--
-            Milisecond timeout how often logged messages or exceptions are written from RAM to HDD
-            - not required, recomanded for speed optimalization in production mode
-            - possible values - use digits to define any miliseconds number
-            - if not configured, all messages or exceptions are written in singleton background thread immediately
-        -->
-        <add key="Desharp:WriteMiliseconds" value="5000" />
-        
-        <!--
-            C# object dumping depth
-            - not required, recomanded for speed optimalization in production mode
-            - possible values: just digit like 3, 4 or 5
-            - if not configured, 3 by default
-        -->
-        <add key="Desharp:Depth" value="3" />
-        
-        <!--
-            Max length for dumped string values
-            - not required, recomanded for speed optimalization in production mode
-            - possible values: just digit like 512, 1024 or 4000
-            - if not configured, 1024 by default
-        -->
-        <add key="Desharp:MaxLength" value="512" />
-
-        <!--
-            Custom web error page
-            - not required, recomanded for production mode to be original
-            - if desharp is not enabled and there is uncatched exception in your application,
-              you can use custom static error page to transfer into client browser
-            - if not configured - desharp build-in error page is used by default
-        -->
-        <add key="Desharp:ErrorPage" value="~/custom-error-page-500.html" />
-
-        <!--
-            Dump all backing fields in class instances, created usually for properties 
-            and all class instance member types marked with 'CompillerGenerated' attribute.
-            - not required, recomanded only for depp development view
-            - possible values: 1, 0, true, false
-            - if not configured, false by default
-            - if not configured or configured as false, you can hide for dumping
-        -->
-        <add key="Desharp:DumpCompillerGenerated" value="true" />
-        
-        <!-- 
-            Default editor param value
-            - not required, marginal
-            - for file opening links by 'editor://file=...&line=...&editor=MSVS'
-            - possible values: any string key to open your editor from html output by
-            - if not configured, value is automaticly detected by Visual Studio instalation on current system
-        -->
-        <add key="Desharp:Editor" value="MSVS" />
-        
-    </appSettings>
-</configuration>
+<appSettings>
+  ...
+  <add key="Desharp:Enabled" value="1" />
+  <add key="Desharp:Output" value="html" />
+  <add key="Desharp:DebugIps" value="127.0.0.1,::1" />`
+  <add key="Desharp:Levels" value="+exception,debug,info,-notice,-warning,+error,+critical,alert,+emergency,javascript" />
+  <add key="Desharp:Panels" value="Desharp.Panels.SystemInfo,Desharp.Panels.Session" />
+  <add key="Desharp:Directory" value="~/Logs" />
+</appSettings>
+...
+<system.webServer>
+  ...
+  <modules>
+    ...
+    <add name="Desharp" type="Desharp.Module" preCondition="managedHandler" />
+  </modules>
+  <httpErrors errorMode="Detailed" />
+  ...
+</system.webServer>
 ```
 
-Any place inside your application to overwrite config settings:
+### Runtime Configuration Options
+
+To overwrite XML config settings in running application or to temporary define different configuration, 
+you can in any application place and in any thread to reconfigure `Desharp` utility (for all threads) to call:
 ```cs
-Debug.Configure(new DebugConfig {
-  Enabled = true,
-  Directory = "~/logs",
-  OutputType = OutputType.Html,
-  LogWriteMilisecond = 10000,
-  Depth = 3
+Desharp.Debug.Configure(new Desharp.DebugConfig {
+   Enabled = true,
+   SourceLocation = true,
+   Directory = "~/Logs",
+   LogWriteMilisecond = 10000,
+   Depth = 3,
+   // `EnvType.Web` or `EnvType.Windows`, used very rarely:
+   EnvType = EnvType.Web,
+   // `Desharp.LogFormat.Html` or `Desharp.LogFormat.Text`:
+   LogFormat = Desharp.LogFormat.Html,
+   // for web apps only:
+   ErrorPage = "~/custom-error-page.html",
+   Panels = new[] { typeof(Desharp.Panels.SystemInfo), typeof(Desharp.Panels.Session) }
 });
 ```
 
+### All XML Configuration Options
+
+After instaling **Desharp nuget package**, there are **automatically added**  
+new xml file into your project root directory with name `Desharp.config.example`,  
+where are all detailed configuration options you can copy and paste:
+
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  
+  <startup>
+    <supportedRuntime version="v4.0" sku=".NETFramework,Version=v4.5" />
+  </startup>
+  
+  <!-- For web applications only - automatically added after nuget package installation: -->
+  <system.webServer>
+    <modules>
+      <add name="Desharp" type="Desharp.Module" preCondition="managedHandler" />
+    </modules>
+    <httpErrors errorMode="Detailed" />
+  </system.webServer>
+  
+  <appSettings>
+    
+    <!-- 
+      If `true`, all dumps by method `Debug.Dump()` are internally rendered and displayed.
+      For web applications, there is debug panel is displayed in browser with dumped variables or rendered exceptions.
+      For desktop applications, there is console priniting enabled or output debug window printing enabled.
+      - Not required to configure, but very recomanded.
+      - Possible values: `1`, `0`, `true`, `false`.
+      - If not configured - enabled is only when VS debugger is attached or entry assembly is builded as Debug.
+      - If disabled - all `Debug.Log()` calls are still enabled and executed, see more option `Desharp:Levels`.
+    -->
+    <add key="Desharp:Enabled" value="1" />
+    
+    <!--
+      Logs content format.
+      - Not required, `text` by default.
+      - Possible values: `html`, `text`.
+    -->
+    <add key="Desharp:Output" value="html" />
+    
+    <!--
+      Client IP adresses list to limit `Desharp` enabled state only for some clients.
+      - Not required to configure, very recomanded for web applications.
+      - Possible values: IPv4 or IPv6, separated by comma (IPv6 without `[]` brackets).
+      - If not configured and `Desharp` is in enabled state, then `Desharp` is enabled for all clients.
+    -->
+    <add key="Desharp:DebugIps" value="127.0.0.1,::1" />
+    
+    <!--
+      Loggin levels to enable/disable to write on hard drive and also possibility to enable/disable email notifications.
+      - Not required, recomanded.
+      - Possible values: `exception`, `debug`, `info`, `notice`, `warning`, `error`, `critical`, `alert`, `emergency`, `javascript`.
+      - If not configured, all logging levels are enabled for logging and not enabled for email notifications.
+      - If at least one level is configured, then all other configured levels are disabled for logging and for email notifications.
+      - If you want to enable any logging level - put the level name into node `value` attribute (comma separated).
+      - If you want to disable any logging level - put minus (-) character before level name or remove level name.
+      - If you want to enable any logging level for email notifications - put plus (+) character before level name.
+    -->
+    <add key="Desharp:Levels" value="+exception,debug,info,-notice,-warning,+error,+critical,alert,+emergency,javascript" />
+
+    <!--
+      Logged messages notifications by configured levels.
+      - Not required, recomanded in production mode.
+      - Possible values: 
+        - `host`: Required, mail server smtp domain | IPv4 | IPv6.
+        - `port`: Not required, `25` by default.
+        - `ssl`: Not required, `false` by default.
+        - `from`: Required if no username and password specified, email address to  
+          specify sender, if no value specified, there is used `username` value.
+        - `username` and `password`: Required if no `from` sender specified, mail server 
+           username/password credentials for sender account, always necessary to use together.
+        - `to`: Required, single recepient email adress or multiple adresses separated by semicolon `;`.
+        - `priority`: Not required, possible values: `low` | `normal` | `high` (`normal` by defaut).
+        - `timeout`: Not required, smtp server timeout specified in miliseconds, `10000` by default (10 seconds).
+    -->
+    <add key="Desharp:NotifySettings" value="{
+      host: 'smtp.host.com',
+      port: 25,
+      ssl: false,
+      user: 'username',
+      password: 'secret',
+      from: 'username@host.com',
+      to: 'mydaily@mailbox.com',
+      priority: 'high',
+      timeout: 30000
+    }" />
+    
+    <!--
+      Web debug bar panels.
+      - Not required, recomanded.
+      - Full class names separated by comma `,`.
+      - Panel class has to implement public interface: `Desharp.Panels.IPanel`
+      - Panel class could implement interface: `Desharp.Panels.ISessionPanel`,
+        where are method called when session is is read and written every request.
+      - There are always enabled build-in panels for execution time, dumps and exceptions.
+      - Build-in panels you can optionally use: 
+        - `Desharp.Panels.SystemInfo` - to display most important request info
+        - `Desharp.Panels.Session` - to display basic session configuration and values
+        - `Desharp.Panels.Routing` - to display matched MVC routes (still in TODO state)
+    -->
+    <add key="Desharp:Panels" value="Desharp.Panels.SystemInfo,Desharp.Panels.Session" />
+    
+    <!--
+      Absolute or relative path from application root directory.
+      - Not required, recomanded.
+      - Relative path from app root has to start with '~/' like: '~/Path/To/Logs'.
+      - If not configured, all log files are written into application root directory.
+    -->
+    <add key="Desharp:Directory" value="~/Logs" />
+    
+    <!-- 
+      Always render source location from where dump has been called by `Debug.Dump()`.
+      - Not required, recomanded.
+      - Possible values: `1`, `0`, `true`, `false`.
+      - If not configured, no dumps source locations are rendered in dump ouputs.
+    -->
+    <add key="Desharp:SourceLocation" value="1" />
+    
+    <!--
+      Milisecond timeout how often logged messages or exceptions are written from memory to hard drive.
+      - Not required, recomanded for speed optimalization in production mode.
+      - Possible values - use digits to define any miliseconds integer value.
+      - If not configured, all messages or exceptions are written immediately 
+        in current thread, where is called `Desharp.Log()`.
+    -->
+    <add key="Desharp:WriteMiliseconds" value="5000" />
+    
+    <!--
+      .NET objects dumping depth.
+      - Not required, recomanded for speed optimalization in production mode.
+      - Possible values: just digit like `2`, `3`, `4` or `5`.
+      - If not configured, `3` by default.
+    -->
+    <add key="Desharp:Depth" value="3" />
+    
+    <!--
+      Maximum length for dumped string values.
+      - Not required, recomanded for speed optimalization in production mode.
+      - Possible values: just digit like `512`, `1024` or `5000`...
+      - If not configured, `1024` by default.
+    -->
+    <add key="Desharp:MaxLength" value="1024" />
+
+    <!--
+      Custom web error page.
+      - Not required, recomanded for production mode.
+      - If `Desharp` is not enabled and there is uncaught exception in your application,
+        you can use custom static error page to transfer into client browser.
+      - If not configured - `Desharp` build-in error page is used by default with error 500.
+    -->
+    <add key="Desharp:ErrorPage" value="~/custom-error-page-500.html" />
+
+    <!--
+      Dump all internal .NET events, properties ad fields in custom class instances, 
+      (created internally and usually for properties values )and all class instance 
+      member types marked with `System.Runtime.CompilerServices.CompillerGenerated` 
+      attribute or with `Desharp.Hidden` attribute.
+      This option is usefull to see everything in memory.
+      - Not required, recomanded only for deep development view.
+      - Possible values: `1`, `0`, `true`, `false`.
+      - If not configured, `false` by default.
+      - If not configured or configured as `false`, you can hide 
+        your class members for dumping and logging by attributes:
+        - [System.Runtime.CompilerServices.CompilerGenerated] - .NET standard.
+        - [Desharp.Hidden] - shorter.
+    -->
+    <add key="Desharp:DumpCompillerGenerated" value="true" />
+    
+    <!-- 
+      Default editor param value.
+      - Not required, marginal.
+      - For automatic file opening in Visual Studio or in any other editor by rendered links:
+        `<a href="editor://file=...&line=...&editor=MSVS2019">../File.cs:123</a>
+      - Possible values: any string key to open your editor from html output by.
+      - If not configured, value is automaticly detected by Visual Studio instalation on current system.
+    -->
+    <add key="Desharp:Editor" value="MSVS2019" />
+    
+  </appSettings>
+</configuration>
+```
 
 --------------------------------------------------------------------
 
 
-### Code snippets
+## Visual Studio - Code Snippets
+
 To use long **[Desharp](https://www.nuget.org/packages/Desharp/)** calls more comfortable, install [Visual Studio code snippets](https://github.com/tomFlidr/desharp-codesnippets) for desharp to create proper shortcuts
 More info [about code snippets for Visual Studio](https://code.visualstudio.com/docs/editor/userdefinedsnippets).
 
