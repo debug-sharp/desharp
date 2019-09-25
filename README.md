@@ -1,17 +1,38 @@
 # **[Desharp](https://www.nuget.org/packages/Desharp/)** - C#/VB .NET Debugging Tool
 
-[![Latest Stable Version](https://img.shields.io/badge/Stable-v1.2.15-brightgreen.svg?style=plastic)](https://github.com/tomFlidr/desharp/releases)
+[![Latest Stable Version](https://img.shields.io/badge/Stable-v1.3.0-brightgreen.svg?style=plastic)](https://github.com/tomFlidr/desharp/releases)
 [![License](https://img.shields.io/badge/Licence-BSD-brightgreen.svg?style=plastic)](https://raw.githubusercontent.com/debug-sharp/desharp/master/LICENCE.md)
 ![.NET Version](https://img.shields.io/badge/.NET->=4.0-brightgreen.svg?style=plastic)
 
-C#/VB .NET debuging utility to dump or log structuralized variables, exceptions, stack traces and much more into console, visual studio console, into html web response as floating window or into html/text log files on HDD.
+C#/VB .NET debuging utility to dump or log structuralized variables, exceptions, stack traces and much more into console window, Visual Studio output panel, into html web response as floating window, into html/text log files on HDD or into any form field component.
+
+## Outline
+- Instalation
+- Demos & Examples
+- Do not miss
+- Usage in code
+- Configuration
+- Dump/log outputs
+- Dump/log possibilities
+
+---
 
 ## Instalation
 ```nuget
 PM> Install-Package Desharp
 ```
 
-## Usage and examples
+## Demos & Examples
+
+- Console Application Demo
+- Windows Forms Application Demo
+- Web Basic Application Demo
+- Web MVC Application Demo
+- Web Forms Application Demo
+
+## Do not miss
+- Visual Studio code snippets for most offten `Desharp` calls
+- Visual Studio file:line opener from rendered logs and exceptions
 
 ### Code snippets
 To use long **[Desharp](https://www.nuget.org/packages/Desharp/)** calls more comfortable, install [Visual Studio code snippets](https://github.com/tomFlidr/desharp-codesnippets) for desharp to create proper shortcuts
