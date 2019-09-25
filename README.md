@@ -81,7 +81,9 @@ PM> Install-Package Desharp
 
 ## Usage In Code
 
-#### C#:
+### Dumping & Logging Any Structuralized Variables
+
+#### C# Basic Example
 ```cs
 using Desharp;
 using System.Collections.Generic;
@@ -90,7 +92,8 @@ var list = new List<int?>() { 100, 200, null };
 Debug.Dump(list);  // print list by Console.WriteLine(); or append into html response as floating window
 Debug.Log(list);   // store dumped list in debug.log or debug.html file on HDD
 ```
-#### VB:
+
+#### VB Basic Example
 ```vb
 Imports Desharp
 Imports System.Collections.Generic
@@ -101,14 +104,15 @@ Debug.Log(list)   ' store dumped list in debug.log or debug.html file on HDD
 ```
 Dumped result for both languages:
 ```
-[List<Int32?>(3)]
+[List<Int32?>[3]]
    0: 100 [Int32]
    1: 200 [Int32]
    2: null
 ```
 
-### Dump/log `Exception`
-#### C#:
+### Dumping & Logging Exceptions
+
+#### C# Basic Example
 ```cs
 try {
    throw new Exception("Something wrong!");
@@ -117,7 +121,8 @@ try {
    Debug.Log(e);   // store dumped exception in exception.log or exception.html file on HDD
 }
 ```
-#### VB:
+
+#### VB Basic Example
 ```vb
 Try
    Throw New Exception("Something wrong!")
@@ -126,7 +131,8 @@ Catch e As Exception
    Debug.Log(e)   ' store dumped exception in exception.log or exception.html file on HDD
 End Try
 ```
-Dumped exception for both languages in debug output or console window:
+
+Dumped result for both languages:
 ```
 System.Exception (Hash Code: 50632145):
    Message   : Something wrong!
