@@ -37,8 +37,11 @@ PM> Install-Package Desharp
 - [**Windows Forms Application Demo (C#)**](https://github.com/debug-sharp/example-win-forms)  
   Demo dumps and exceptions rendering into text field component, into debug output window and logging on HDD.
 - [**Web Basic Application Demo (C#)**](https://github.com/debug-sharp/example-web-basic)  
+  Demo dumps and exceptions rendering into floating browser bar and logging on HDD.
 - [**Web MVC Application Demo (C#)**](https://github.com/debug-sharp/example-web-mvc)  
+  Demo dumps and exceptions rendering into floating browser bar and logging on HDD.
 - [**Web Forms Application Demo (C#)**](https://github.com/debug-sharp/example-web-forms)  
+  Demo dumps and exceptions rendering into floating browser bar and logging on HDD.
 
 ### Do not miss
 - Visual Studio code snippets for most offten `Desharp` calls
