@@ -55,23 +55,25 @@ PM> Install-Package Desharp
 ### Demos & Examples
 
 - [**Console Application Demo (C#)**](https://github.com/debug-sharp/example-console-csharp), [**(VB.NET)**](https://github.com/debug-sharp/example-console-visualbasic)  
-  <small>Demo dumps and exceptions rendering into console window, logging on HDD and optional tests running.</small>
+  Demo dumps and exceptions rendering into console window, logging on HDD and optional tests running.
 - [**Windows Forms Application Demo (C#)**](https://github.com/debug-sharp/example-win-forms)  
-  <small>Demo dumps and exceptions rendering into text field component, into debug output window and logging on HDD.</small>
+  Demo dumps and exceptions rendering into text field component, into debug output window and logging on HDD.
 - [**Web Basic Application Demo (C#)**](https://github.com/debug-sharp/example-web-basic)  
-  <small>Demo dumps and exceptions rendering into floating browser bar and logging on HDD.</small>
+  Demo dumps and exceptions rendering into floating browser bar and logging on HDD.
 - [**Web MVC Application Demo (C#)**](https://github.com/debug-sharp/example-web-mvc)  
-  <small>Demo dumps and exceptions rendering into floating browser bar and logging on HDD.</small>
+  Demo dumps and exceptions rendering into floating browser bar and logging on HDD.
 - [**Web Forms Application Demo (C#)**](https://github.com/debug-sharp/example-web-forms)  
-  <small>Demo dumps and exceptions rendering into floating browser bar and logging on HDD.</small>
+  Demo dumps and exceptions rendering into floating browser bar and logging on HDD.
 
 
 --------------------------------------------------------------------
 
 
 ### Do not miss
-- Visual Studio code snippets for most offten `Desharp` calls
-- Visual Studio file:line opener from rendered logs and exceptions
+- [**Visual Studio code snippets**](https://github.com/debug-sharp/codesnippets)  
+  Download and install predefined VS snippets for most offten `Desharp` calls.
+- [**Visual Studio opener**](https://github.com/debug-sharp/editor-opener)  
+  Automatic Visual Studio (or any other) editor opening on specific file and line from rendered logs and exceptions.
 
 
 --------------------------------------------------------------------
