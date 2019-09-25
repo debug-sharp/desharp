@@ -16,7 +16,7 @@
 - [**Usage In Code**](#usage-in-code)
 - [**Dumps & Logs Outputs**](#dumps--logs-outputs)
 - [**What You Can Dump Or Log**](#what-you-can-dump-or-log)
-- [**What Is Rendered (Dumps & Logs)**](#what-is-dumped-or-logged)
+- [**What Is Rendered (Dumps & Logs)**](#what-is-rendered-dumps--logs)
 - [**Configuration**](#configuration)
   - [**Configuration Examples**](#configuration-examples)
   - [**Runtime Configuration Options**](#runtime-configuration-options)
