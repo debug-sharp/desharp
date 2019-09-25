@@ -4,7 +4,9 @@
 [![License](https://img.shields.io/badge/Licence-BSD-brightgreen.svg?style=plastic)](https://raw.githubusercontent.com/debug-sharp/desharp/master/LICENCE.md)
 ![.NET Version](https://img.shields.io/badge/.NET->=4.0-brightgreen.svg?style=plastic)
 
+
 C#/VB .NET debuging utility to dump or log structuralized variables, exceptions, stack traces and much more into console window, Visual Studio output panel, into html web response as floating window, into html/text log files on HDD or into any form field component.
+
 
 ## Outline
 - [**Instalation**](#instalation)
@@ -30,11 +32,11 @@ PM> Install-Package Desharp
 
 ### Demos & Examples
 
-- Console Application Demo
-- Windows Forms Application Demo
-- Web Basic Application Demo
-- Web MVC Application Demo
-- Web Forms Application Demo
+- [**Console Application Demo (C#)**](https://github.com/debug-sharp/example-console-csharp), [***(VB.NET)*](https://github.com/debug-sharp/example-console-visualbasic)
+- [**Windows Forms Application Demo (C#)**](https://github.com/debug-sharp/example-win-forms)
+- [**Web Basic Application Demo (C#)**](https://github.com/debug-sharp/example-web-basic)
+- [**Web MVC Application Demo (C#)**](https://github.com/debug-sharp/example-web-mvc)
+- [**Web Forms Application Demo (C#)**](https://github.com/debug-sharp/example-web-forms)
 
 ### Do not miss
 - Visual Studio code snippets for most offten `Desharp` calls
