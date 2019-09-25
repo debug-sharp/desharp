@@ -12,12 +12,12 @@
 - [**About**](#about)
 - [**Instalation**](#instalation)
 - [**Demos & Examples**](#demos--examples)
-- [**Do not miss**](#do-not-miss)
-- [**Usage in code**](#usage-in-code)
+- [**Do Not Miss**](#do-not-miss)
+- [**Usage In Code**](#usage-in-code)
 - [**Configuration**](#configuration)
-- [**Dumps & logs outputs**](#dumps--logs-outputs)
-- [**Dumps & logs possibilities**](#dumps--logs-possibilities)
-- [**VS Code snippets**](#vs-code-snippets)
+- [**Dumps & Logs Outputs**](#dumps--logs-outputs)
+- [**What Is Possible To Dump Or Log**](#what-is-possible-to-dump-or-log)
+- [**VS Code Snippets**](#vs-code-snippets)
 
 
 --------------------------------------------------------------------
@@ -155,7 +155,11 @@ System.Exception (Hash Code: 50632145):
       ExampleConsole.Program.Main(String[] args) /Program.cs 8
 ```
 
-## Dump outputs
+
+--------------------------------------------------------------------
+
+
+## Dumps & Logs Outputs
 
 - console window for console applications
 - Visual Studio console for Windows Forms or WPF applications
@@ -164,34 +168,65 @@ System.Exception (Hash Code: 50632145):
 - file logs in text/html formats
 
 
-## Dump possibilities
+--------------------------------------------------------------------
 
-You can dump or log:
+
+## What You Can Dump Or Log
+
 - any variables
   - primitive variables and it's primitive arrays like: `char`, `int?[]` and more 
-  - `Lists`, `Arrays` or `Dictionaries` (`IList`, `IEnumerable`, `ICollection`, `IDictionary`...)
-  - database results (`DataSet`, `DataTable`, `DataRow`)
-  - **any custom class instances** with rendered events targets and properties and fields values
-  - **anonymous objects**
-  - much more... you can try:-)
+  - collections: `Lists`, `Dictionaries` or any collections (`IList`, `IDictionary`, `ICollection`, `IEnumerable`...)
+  - database results: `DataSet`, `DataTable` and `DataRow` with values
+  - formated instances: `DateTimeOffset`, `DateTime`, `TimeSpan`, `Guid`, `StringBuilder`
+  - any custom class instances with rendered events targets, properties values and fields values
+  - anonymous objects like: `new { any = "value" }`
+  - `Func<>` and `Delegate` types
+  - reflection objects are only displayed as type names
 - exceptions
-  - all inner exceptions inside will be also dumped or logged
+- exceptions with inner exceptions
+- much more... you can try:-)
+
+## What Is Dumped Or Logged
+
+- dumped variables
+  - dumper variable is always rendered :-)
+  - dump is rendered with optional source location call
+  - dump is rendered with optional dump depth (default: 3)
+  - dump is rendered with optional maximum string length
+  - dump is rendered with optional return flag (to return dumped result as string)
+
+- exceptions
+  - rendered in dump and log is exception message, process and thread id
+  - rendered in dump and log is file and line, where exception has been thrown
+    (only if source code is possible to target by `*.PDB` file, there is rendered  
+    a few lines from source code, where the  `Debug.dump()` or `Debug.Log()` 
+	has been called or where `Exception` has been thrown)
+  - rendered in dump and log is also exception callstack
+    (with editor opener links in web dump or in html log)
+  - rendered in dump and log are all inner exceptions inside
+  - exceptions in web environment:
+    - requested URL, all http request headers and client IP
+    - rendered are all loaded assemblies
+    - different dump rendering for catched and not catched exceptions:
+      - if optional flag for catched exception is `true`, exception is rendered as
+	    openable exception in floating bar in left bottom screen corner
+	  - if optional flag for catched exception is `false`, exception is rendered 
+	    over whole browser window immediately with possibility to close it back into floating bar 
+
+--------------------------------------------------------------------
 
 
-## Dump additional info
+#### Log calls possibilities
+- log level (file name)
+- rendered process/thread/request id
+- rendered current dump/log time (from `DateTime.Now`)
+- rendered callstack, where was `Debug.Log()` used or where `Exception` has been thrown
+- if exception has been caused by another exception (inner exceptions)
+  - there is automatically rendered source exception object hash  
+    (if source code is possible to target by *.PDB file, there is rendered  
+    a few lines from source code, where the `Debug.Log()` has been used or  
+	where `Exception` has been thrown)
 
-All dump or log calls have automaticly rendered:
-- process/thread/request id
-- current time from `DateTime.Now`
-- callstack, where was `Debug.Dump()` or Debug.Log() used or where `Exception` happend
-- if exception has been caused by another exception (inner exceptions), there is rendered source exception object hash
-- if source code is possible by *.PDB file, there is rendered:
-  - a few lines from source code, where was `Debug.Dump()` or `Debug.Log()` used or where `Exception` happend
-- if environment is web application, there is rendered:
-  - request URL
-  - all http request headers
-  - client IP
-- if environment is web application, for dump browser output are rendered loaded assemblies
 
 
 ## Configuration
