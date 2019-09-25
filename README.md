@@ -34,10 +34,11 @@ PM> Install-Package Desharp
 
 - [**Console Application Demo (C#)**](https://github.com/debug-sharp/example-console-csharp), [**(VB.NET)**](https://github.com/debug-sharp/example-console-visualbasic)  
   Demo dumps and exceptions rendering into console window, logging on HDD and optional tests running.
-- [**Windows Forms Application Demo (C#)**](https://github.com/debug-sharp/example-win-forms)
-- [**Web Basic Application Demo (C#)**](https://github.com/debug-sharp/example-web-basic)
-- [**Web MVC Application Demo (C#)**](https://github.com/debug-sharp/example-web-mvc)
-- [**Web Forms Application Demo (C#)**](https://github.com/debug-sharp/example-web-forms)
+- [**Windows Forms Application Demo (C#)**](https://github.com/debug-sharp/example-win-forms)  
+  Demo dumps and exceptions rendering into text field component, into debug output window and logging on HDD.
+- [**Web Basic Application Demo (C#)**](https://github.com/debug-sharp/example-web-basic)  
+- [**Web MVC Application Demo (C#)**](https://github.com/debug-sharp/example-web-mvc)  
+- [**Web Forms Application Demo (C#)**](https://github.com/debug-sharp/example-web-forms)  
 
 ### Do not miss
 - Visual Studio code snippets for most offten `Desharp` calls
