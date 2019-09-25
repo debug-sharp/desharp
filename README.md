@@ -8,7 +8,15 @@
 --------------------------------------------------------------------
 
 
-C#/VB .NET debuging utility to dump or log structuralized variables, exceptions, stack traces and much more into console window, Visual Studio output panel, into html web response as floating window, into html/text log files on HDD or into any form field component.
+> C#/VB .NET debuging utility:
+> - dump or log **any** structuralized variables
+> - dump or log exceptions with stack trace and inner exceptions
+> Dump into :
+> - console window
+> - Visual Studio output panel
+> - into html web response as floating window
+> - into html/text log files on HDD
+> - into any form field component
 
 
 ## Outline
