@@ -69,7 +69,7 @@ PM> Install-Package Desharp
 --------------------------------------------------------------------
 
 
-### Do not miss
+### Do Not Miss
 - [**Visual Studio code snippets**](https://github.com/debug-sharp/codesnippets)  
   Download and install predefined VS snippets for most offten `Desharp` calls.
 - [**Visual Studio opener**](https://github.com/debug-sharp/editor-opener)  
