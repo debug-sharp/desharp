@@ -8,18 +8,8 @@
 --------------------------------------------------------------------
 
 
-> C#/VB .NET debuging utility:
-> - dump or log **any** structuralized variables
-> - dump or log exceptions with stack trace and inner exceptions
-> Dump into :
-> - console window
-> - Visual Studio output panel
-> - into html web response as floating window
-> - into html/text log files on HDD
-> - into any form field component
-
-
 ## Outline
+- [**About**](#about)
 - [**Instalation**](#instalation)
 - [**Demos & Examples**](#demos--examples)
 - [**Do not miss**](#do-not-miss)
@@ -33,7 +23,21 @@
 --------------------------------------------------------------------
 
 
+## About
+
+**C#/VB .NET debuging utility:**
+- dump or log **any** structuralized variables
+- dump or log exceptions with stack trace and inner exceptions
+**Dump any variables into:**
+- Console window
+- Output debug panel in Visual Studio 
+- Web response in floating window
+- Html/text log files on HDD
+- Any WinForms or WPF field component
+
+
 ### Instalation
+
 [Desharp on Nuget.org](https://www.nuget.org/packages/Desharp/)
 
 ```nuget
