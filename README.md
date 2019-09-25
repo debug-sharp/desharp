@@ -32,7 +32,7 @@ PM> Install-Package Desharp
 
 ### Demos & Examples
 
-- [**Console Application Demo (C#)**](https://github.com/debug-sharp/example-console-csharp), [**(VB.NET)**](https://github.com/debug-sharp/example-console-visualbasic)
+- [**Console Application Demo (C#)**](https://github.com/debug-sharp/example-console-csharp), [**(VB.NET)**](https://github.com/debug-sharp/example-console-visualbasic)  
   Demo dumps and exceptions rendering into console window, logging on HDD and optional tests running (C# and VB.NET).
 - [**Windows Forms Application Demo (C#)**](https://github.com/debug-sharp/example-win-forms)
 - [**Web Basic Application Demo (C#)**](https://github.com/debug-sharp/example-web-basic)
