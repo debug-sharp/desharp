@@ -37,6 +37,9 @@
 - Any WinForms or WPF field component
 
 
+--------------------------------------------------------------------
+
+
 ### Instalation
 
 [Desharp on Nuget.org](https://www.nuget.org/packages/Desharp/)
@@ -44,6 +47,9 @@
 ```nuget
 PM> Install-Package Desharp
 ```
+
+
+--------------------------------------------------------------------
 
 
 ### Demos & Examples
@@ -59,13 +65,24 @@ PM> Install-Package Desharp
 - [**Web Forms Application Demo (C#)**](https://github.com/debug-sharp/example-web-forms)  
   <small>Demo dumps and exceptions rendering into floating browser bar and logging on HDD.</small>
 
+
+--------------------------------------------------------------------
+
+
 ### Do not miss
 - Visual Studio code snippets for most offten `Desharp` calls
 - Visual Studio file:line opener from rendered logs and exceptions
 
+
+--------------------------------------------------------------------
+
+
 ### Code snippets
 To use long **[Desharp](https://www.nuget.org/packages/Desharp/)** calls more comfortable, install [Visual Studio code snippets](https://github.com/tomFlidr/desharp-codesnippets) for desharp to create proper shortcuts
 More info [about code snippets for Visual Studio](https://code.visualstudio.com/docs/editor/userdefinedsnippets).
+
+
+--------------------------------------------------------------------
 
 
 ### Dump/log any variable
