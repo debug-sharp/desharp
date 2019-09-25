@@ -226,8 +226,8 @@ System.Exception (Hash Code: 50632145):
 ## Configuration
 
 You can configure the `Desharp` utility by:
-- `app.config` or `web.config`
-- anytime directly by calling `Debug.Configure()` from any thread
+- `app.config` or `web.config` - more in [**all XML configuration options**](#all-xml-configuration-options)
+- anytime directly by calling `Debug.Configure()` from any thread - more in [**runtime configuration options**](#runtime-configuration-options)
 
 You can configure:
 - if dumping/debugging is enabled or not (enabled by default after nuget package installation)
