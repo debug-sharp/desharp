@@ -1,4 +1,4 @@
-# **[Desharp](https://www.nuget.org/packages/Desharp/)** - C#/VB .NET Debugging Tool
+# **Desharp - C#/VB .NET Debugging Tool**
 
 [![Latest Stable Version](https://img.shields.io/badge/Stable-v1.3.0-brightgreen.svg?style=plastic)](https://github.com/tomFlidr/desharp/releases)
 [![License](https://img.shields.io/badge/Licence-BSD-brightgreen.svg?style=plastic)](https://raw.githubusercontent.com/debug-sharp/desharp/master/LICENCE.md)
@@ -6,24 +6,25 @@
 
 C#/VB .NET debuging utility to dump or log structuralized variables, exceptions, stack traces and much more into console window, Visual Studio output panel, into html web response as floating window, into html/text log files on HDD or into any form field component.
 
-## Outline
-- [Instalation](#instalation)
-- [Demos & Examples](#demos--examples)
-- [Do not miss](#do-not-miss)
-- [Usage in code](#usage-in-code)
-- [Configuration](#configuration)
-- [Dumps & logs outputs](#dumps--logs-outputs)
-- [Dumps & logs possibilities](#dumps--logs-possibilities)
-- [VS Code snippets](#vs-code-snippets)
+## **Outline**
+- **[Instalation]**(#instalation)
+- **[Demos & Examples]**(#demos--examples)
+- **[Do not miss]**(#do-not-miss)
+- **[Usage in code]**(#usage-in-code)
+- **[Configuration]**(#configuration)
+- **[Dumps & logs outputs]**(#dumps--logs-outputs)
+- **[Dumps & logs possibilities]**(#dumps--logs-possibilities)
+- **[VS Code snippets]**(#vs-code-snippets)
 
 ---
 
-### Instalation
+### **Instalation**
 ```nuget
 PM> Install-Package Desharp
 ```
+**[Desharp on Nuget.org ]**(https://www.nuget.org/packages/Desharp/)
 
-### Demos & Examples
+### **Demos & Examples**
 
 - Console Application Demo
 - Windows Forms Application Demo
