@@ -1,4 +1,4 @@
-# Desharp - C#/VB .NET Debugging Tool
+# Desharp - C# & VB .NET Debugging Tool
 
 [![Latest Stable Version](https://img.shields.io/badge/Stable-v1.3.0-brightgreen.svg?style=plastic)](https://github.com/tomFlidr/desharp/releases)
 [![License](https://img.shields.io/badge/Licence-BSD-brightgreen.svg?style=plastic)](https://raw.githubusercontent.com/debug-sharp/desharp/master/LICENCE.md)
@@ -25,7 +25,7 @@
 
 ## About
 
-**C#/VB .NET debuging utility for:**
+**C# & VB .NET debugging utility for:**
 - dump or log **any** structuralized variables
 - dump or log exceptions with stack trace and inner exceptions
 
