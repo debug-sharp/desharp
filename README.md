@@ -18,7 +18,8 @@ C#/VB .NET debuging utility to dump or log structuralized variables, exceptions,
 
 ---
 
-### Instalation [(Desharp on Nuget.org)](https://www.nuget.org/packages/Desharp/){:target="_blank"}
+### Instalation
+[(Desharp on Nuget.org)](https://www.nuget.org/packages/Desharp/){:target="_blank"}
 ```nuget
 PM> Install-Package Desharp
 ```
