@@ -160,9 +160,9 @@ namespace Desharp.Core {
                         Dispatcher.staticInitDirectory(Config.GetDirectory());
                     FileLog.StaticInit();
                     Dispatcher.StaticInitLock.ExitWriteLock();
-                /*} catch (Exception e3) {
-                    Debug.InitErrors.Add(e3);
-                }*/
+                //} catch (Exception e3) {
+                //    Debug.InitErrors.Add(e3);
+                //}
             }
 		}
 		internal static Dispatcher GetCurrent (bool createIfNecessary = true) {
@@ -654,7 +654,7 @@ namespace Desharp.Core {
 				// keep everything bad, what should be written in response
 			} else {
 				// write exception into hard drive
-				Debug.Log(lastException, Level.ERROR);
+				Debug.Log(lastException);
 				// clear everything bad, what shoud be written in response
 				HttpContext.Current.Response.Clear();
 				// transmit error page at request end

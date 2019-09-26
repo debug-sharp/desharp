@@ -18,17 +18,26 @@ namespace Desharp.Core {
         protected static object queueLock = new object { };
         protected static volatile List<object[]> queue = new List<object[]>();
 		protected static JavaScriptSerializer jsonSerializer = new JavaScriptSerializer();
+		protected static Dictionary<string, object> notifySettings = null;
 		internal static void Notify (string msg, string logLevel, bool htmlOut) {
-            lock (Mailer.queueLock) { 
-				Mailer.queue.Add(new object[] { msg, logLevel, htmlOut });
-				if (Mailer.bgNotifyThread == null || (Mailer.bgNotifyThread is Thread && !Mailer.bgNotifyThread.IsAlive)) {
-					Mailer.bgNotifyThread = new Thread(new ThreadStart(delegate () {
-						object[] args = Mailer.unshiftQueue();
-						if (args.Length == 0) return;
-						Mailer.bgNotify(args[0].ToString(), args[1].ToString(), (bool)args[2]);
-					}));
-					Mailer.bgNotifyThread.IsBackground = true;
-					Mailer.bgNotifyThread.Start();
+			lock (Mailer.queueLock) {
+				if (Mailer.notifySettings == null) 
+					Mailer.notifySettings = Config.GetNotifySettings();
+				if (Mailer.notifySettings.ContainsKey("background") && (bool)Mailer.notifySettings["background"] == false) {
+					Mailer.bgNotify(msg, logLevel, htmlOut);
+				} else {
+					Mailer.queue.Add(new object[] { msg, logLevel, htmlOut });
+					bool notifyThreadNotAlive = Mailer.bgNotifyThread is Thread && !Mailer.bgNotifyThread.IsAlive;
+					if (Mailer.bgNotifyThread == null || notifyThreadNotAlive) {
+						if (notifyThreadNotAlive) Mailer.bgNotifyThread.Abort();
+						Mailer.bgNotifyThread = new Thread(new ThreadStart(delegate () {
+							object[] args = Mailer.unshiftQueue();
+							if (args.Length == 0) return;
+							Mailer.bgNotify(args[0].ToString(), args[1].ToString(), (bool)args[2]);
+						}));
+						Mailer.bgNotifyThread.IsBackground = true;
+						Mailer.bgNotifyThread.Start();
+					}
 				}
 			}
 		}
@@ -44,23 +53,43 @@ namespace Desharp.Core {
 		}
 		protected static void bgNotify (string msg, string logLevel, bool htmlOut) {
 			if (Mailer.failFileExist() || Mailer.notificationSended(logLevel)) return;
-			Dictionary<string, object> notifySettings = Config.GetNotifySettings();
+			Dictionary<string, object> notifySettings = Mailer.notifySettings;
 			try {
-				if (notifySettings.Count == 0)
+				bool errorMsgPresented = (notifySettings.Count == 1 && notifySettings.ContainsKey("error"));
+				if (notifySettings.Count == 0 || errorMsgPresented)
 					throw new Exception(
 						"Configuration doesn't contain key 'Desharp:NotifySettings' or it has wrong JSON format. Try:"
 						+ Environment.NewLine
 						+ @"<add key=""Desharp:NotifySettings"" value=""{host:'smtp.host.com',port:25,ssl:false,user:'username',password:'secret',from:'desharp@yourappdomain.com',to:'username@mailbox.com',priority:'high',timeout:30000}"" />"
+						+ (errorMsgPresented ? Environment.NewLine + Environment.NewLine + notifySettings["error"] : "") 
 					);
-				MailMessage message = Mailer.getMessage(msg, logLevel, htmlOut, notifySettings);
-				SmtpClient smtp = Mailer.getSmtpClient(notifySettings);
+				MailMessage message = Mailer.getMessage(msg, logLevel, htmlOut);
+				SmtpClient smtp = Mailer.getSmtpClient();
 				smtp.SendCompleted += new SendCompletedEventHandler(Mailer.bgNotifySended);
 				smtp.Send(message);
 				Mailer.storeSuccess(logLevel);
 			} catch (Exception sendException) {
-				Mailer.storeFailure(
-					sendException.GetType().FullName + ": " + sendException.Message + Environment.NewLine + sendException.StackTrace
-				);
+				string failureStr =
+					sendException.GetType().FullName + ": " + sendException.Message +
+					Environment.NewLine +
+					sendException.StackTrace;
+				if (sendException.InnerException is Exception) {
+					Exception innerEx1 = sendException.InnerException;
+					failureStr += 
+						Environment.NewLine +
+						innerEx1.GetType().FullName + ": " + innerEx1.Message +
+						Environment.NewLine +
+						innerEx1.StackTrace;
+					if (innerEx1.InnerException is Exception) {
+						Exception innerEx2 = innerEx1.InnerException;
+						failureStr += 
+							Environment.NewLine +
+							innerEx2.GetType().FullName + ": " + innerEx2.Message +
+							Environment.NewLine +
+							innerEx2.StackTrace;
+					}
+				}
+				Mailer.storeFailure(failureStr);
 			}
 			object[] args = Mailer.unshiftQueue();
 			if (args.Length > 0) {
@@ -71,26 +100,54 @@ namespace Desharp.Core {
 			}
 		}
 		private static void bgNotifySended (object sender, AsyncCompletedEventArgs e) {
-			string msg = "";
+			string failureStr = "";
 			if (e.Error is Exception) {
-				msg = e.Error.GetType().FullName + ": " + e.Error.Message + Environment.NewLine + e.Error.StackTrace;
+				failureStr = e.Error.GetType().FullName + ": " + e.Error.Message 
+					+ Environment.NewLine 
+					+ e.Error.StackTrace;
+				if (e.Error.InnerException is Exception) {
+					Exception innerEx1 = e.Error.InnerException;
+					failureStr += 
+						Environment.NewLine +
+						innerEx1.GetType().FullName + ": " + innerEx1.Message +
+						Environment.NewLine +
+						innerEx1.StackTrace;
+					if (innerEx1.InnerException is Exception) {
+						Exception innerEx2 = innerEx1.InnerException;
+						failureStr += 
+							Environment.NewLine +
+							innerEx2.GetType().FullName + ": " + innerEx2.Message +
+							Environment.NewLine +
+							innerEx2.StackTrace;
+					}
+				}
 			} else if (e.Cancelled) {
-				msg = "Sending notification has been canceled.";
+				failureStr = "Sending notification has been canceled.";
 			}
-			if (msg.Length > 0) Mailer.storeFailure(msg);
+			if (failureStr.Length > 0) Mailer.storeFailure(failureStr);
 		}
-		protected static MailMessage getMessage (string msg, string logLevel, bool htmlOut, Dictionary<string, object> notifySettings) {
+		protected static MailMessage getMessage (string msg, string logLevel, bool htmlOut) {
 			MailMessage result = new MailMessage();
-			Assembly entryAssembly = Dispatcher.EnvType == EnvType.Web ? Tools.GetWebEntryAssembly() : Tools.GetWindowsEntryAssembly() ;
-			result.Subject = String.Format("Desharp event: '{0}', assembly: '{1}'.", logLevel, entryAssembly.GetName().Name);
+			Dictionary<string, object> notifySettings = Mailer.notifySettings;
+			Assembly entryAssembly = Dispatcher.EnvType == EnvType.Web 
+				? Tools.GetWebEntryAssembly() 
+				: Tools.GetWindowsEntryAssembly() ;
+			string logLevelName = logLevel.Substring(0, 1).ToUpper() + logLevel.Substring(1);
+			result.Subject = String.Format(
+				"Desharp {0} - assembly: {1}", 
+				logLevelName, entryAssembly.GetName().Name
+			);
 			if (!notifySettings.ContainsKey("from") && !notifySettings.ContainsKey("user"))
 				throw new Exception("Configuration JSON doesn't contain key 'from' or any credentials.");
-			string from = notifySettings.ContainsKey("from") ? notifySettings["from"].ToString() : notifySettings["user"].ToString();
+			string from = notifySettings.ContainsKey("from") 
+				? notifySettings["from"].ToString() 
+				: notifySettings["user"].ToString();
 			result.From = new MailAddress(from);
 			if (!notifySettings.ContainsKey("to"))
 				throw new Exception("Configuration JSON doesn't contain key 'to'.");
 			string[] toRecps = notifySettings["to"].ToString().Split(new char[] { ';' });
-			for (int i = 0, l = toRecps.Length; i < l; i += 1) result.To.Add(new MailAddress(toRecps[i]));
+			for (int i = 0, l = toRecps.Length; i < l; i += 1) 
+				result.To.Add(new MailAddress(toRecps[i]));
 			result.IsBodyHtml = htmlOut;
 			result.SubjectEncoding = System.Text.Encoding.UTF8;
 			result.BodyEncoding = System.Text.Encoding.UTF8;
@@ -112,17 +169,21 @@ namespace Desharp.Core {
 			}
 			return result;
 		}
-		protected static SmtpClient getSmtpClient (Dictionary<string, object> notifySettings) {
+		protected static SmtpClient getSmtpClient () {
+			Dictionary<string, object> notifySettings = Mailer.notifySettings;
 			if (!notifySettings.ContainsKey("host"))
 				throw new Exception("Configuration JSON doesn't contain key 'host'.");
 			string host = notifySettings["host"].ToString();
-			int port = notifySettings.ContainsKey("port") ? Int32.Parse(notifySettings["port"].ToString()) : 25;
+			int port = notifySettings.ContainsKey("port") 
+				? (int)notifySettings["port"] 
+				: 25;
 			SmtpClient smtp = new SmtpClient(host, port);
 			if (notifySettings.ContainsKey("user") && notifySettings.ContainsKey("password")) {
 				string user = notifySettings["user"].ToString();
 				string password = notifySettings["password"].ToString();
 				string domain = "";
-				if (notifySettings.ContainsKey("domain")) domain = notifySettings["domain"].ToString();
+				if (notifySettings.ContainsKey("domain")) 
+					domain = notifySettings["domain"].ToString();
 				NetworkCredential credential;
 				if (domain.Length > 0) {
 					credential = new NetworkCredential(user, password, domain);
@@ -134,17 +195,8 @@ namespace Desharp.Core {
 				smtp.UseDefaultCredentials = true;
 			}
 			smtp.DeliveryMethod = SmtpDeliveryMethod.Network;
-			if (notifySettings.ContainsKey("ssl")) {
-				smtp.EnableSsl = Boolean.Parse(notifySettings["ssl"].ToString());
-			} else {
-				smtp.EnableSsl = false;
-			}
-			int timeout = 10000;
-			if (notifySettings.ContainsKey("timeout")) {
-				string timeoutStr = notifySettings["timeout"].ToString();
-				Int32.TryParse(timeoutStr, out timeout);
-			}
-			smtp.Timeout = timeout;
+			smtp.EnableSsl = notifySettings.ContainsKey("ssl") ? (bool)notifySettings["ssl"] : false;
+			smtp.Timeout = notifySettings.ContainsKey("timeout") ? (int)notifySettings["timeout"] : 10000;
 			return smtp;
 		}
 		protected static bool failFileExist () {
@@ -159,7 +211,9 @@ namespace Desharp.Core {
 				string fullPath = Dispatcher.Directory + "/" + Mailer.MAIL_SENDED_FILE;
 				if (File.Exists(fullPath)) {
 					try {
-						Mailer.successNotifycationLevels = Mailer.jsonSerializer.Deserialize<List<string>>(File.ReadAllText(fullPath));
+						Mailer.successNotifycationLevels = Mailer.jsonSerializer.Deserialize<List<string>>(
+                            File.ReadAllText(fullPath)
+                        );
 					} catch { }
 				}
 			}
@@ -168,14 +222,22 @@ namespace Desharp.Core {
 		private static void storeSuccess (string logLevel) {
 			Mailer.successNotifycationLevels.Add(logLevel);
 			try {
-				string jsonData = Mailer.jsonSerializer.Serialize(Mailer.successNotifycationLevels);
-				File.WriteAllText(Dispatcher.Directory + "/" + Mailer.MAIL_SENDED_FILE, jsonData, System.Text.Encoding.UTF8);
+				string jsonData = Mailer.jsonSerializer.Serialize(
+					Mailer.successNotifycationLevels
+				);
+				File.WriteAllText(
+					Dispatcher.Directory + "/" + Mailer.MAIL_SENDED_FILE, 
+					jsonData, System.Text.Encoding.UTF8
+				);
 			} catch {
 			}
 		}
 		protected static void storeFailure (string msg) {
 			try {
-				File.WriteAllText(Dispatcher.Directory + "/" + Mailer.MAIL_NOT_SENDED_FILE, msg, System.Text.Encoding.UTF8);
+				File.WriteAllText(
+					Dispatcher.Directory + "/" + Mailer.MAIL_NOT_SENDED_FILE, 
+					msg, System.Text.Encoding.UTF8
+				);
 			} catch {
 			}
 			Mailer.failureFileExists = true;

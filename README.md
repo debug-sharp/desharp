@@ -385,24 +385,25 @@ where are all detailed configuration options you can copy and paste:
         - `host`: Required, mail server smtp domain | IPv4 | IPv6.
         - `port`: Not required, `25` by default.
         - `ssl`: Not required, `false` by default.
-        - `from`: Required if no username and password specified, email address to  
-          specify sender, if no value specified, there is used `username` value.
-        - `username` and `password`: Required if no `from` sender specified, mail server 
-           username/password credentials for sender account, always necessary to use together.
+        - `from`: Required if no username and password specified, email address to specify sender, if no value specified, there is used `username` value.
+        - `username` and `password`: Required if no `from` sender specified, mail server username/password credentials for sender account, always necessary to use together.
+		- `domain` - Not required, no default value. Used only as third parametter for `System.Net.NetworkCredential` if presented.
         - `to`: Required, single recepient email adress or multiple adresses separated by semicolon `;`.
         - `priority`: Not required, possible values: `low` | `normal` | `high` (`normal` by defaut).
         - `timeout`: Not required, smtp server timeout specified in miliseconds, `10000` by default (10 seconds).
+		- `background`: Not required at all. Default value is `true` to send all notifications in background thread. 
+		  Use `false` value only to debug email sending.
     -->
     <add key="Desharp:NotifySettings" value="{
-      host: 'smtp.host.com',
-      port: 25,
-      ssl: false,
-      user: 'username',
-      password: 'secret',
-      from: 'username@host.com',
-      to: 'mydaily@mailbox.com',
-      priority: 'high',
-      timeout: 30000
+		host: 'smtp.company.com',
+		port: 587,
+		ssl: true,
+		user: 'noreply@company.com',
+		password: 'your-secret-password',
+		from: 'noreply@company.com',
+		to: 'your.name@gmail.com',
+		priority: 'high',
+		timeout: 30000
     }" />
     
     <!--

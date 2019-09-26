@@ -113,16 +113,14 @@ namespace Desharp.Core {
 						key = rawItem;
 						value = 1;
 					}
-					if (result.ContainsKey(key)) {
+					if (!result.ContainsKey(key)) 
 						result[key] = value;
-					}
 				}
 			}
 			int allLevelsDefaultValue = result.Count > 0 ? 0 : 1;
-			foreach (string levelKey in allPossiblelevels) {
+			foreach (string levelKey in allPossiblelevels) 
 				if (!result.ContainsKey(levelKey))
 					result.Add(levelKey, allLevelsDefaultValue);
-			}
 			return result;
 		}
 		internal static int GetLogWriteMilisecond () {
@@ -186,7 +184,7 @@ namespace Desharp.Core {
 					Regex r1 = new Regex("[\r\n\t]");
 					rawJson = r1.Replace(rawJson, "");
 					// fix all keys with missing begin and end double quotes
-					Regex r2 = new Regex(@"([^""])([a-zA-Z0-9_]+):");
+					Regex r2 = new Regex(@"([^""])([a-zA-Z]+):");
 					rawJson = r2.Replace(rawJson, @"$1""$2"":");
 					// change all values with single quots to double quots
 					Regex r3 = new Regex(@"'([^']*)'");
@@ -196,13 +194,37 @@ namespace Desharp.Core {
 					rawJson = r4.Replace(rawJson, @""":");
 					// remove all spaces between value and another key
 					Regex r5 = new Regex(@""",\s+""");
-					rawJson = r5.Replace(rawJson, "");
+					rawJson = r5.Replace(rawJson, @""",""");
 					Regex r6 = new Regex(@"""\s+\}");
-					rawJson = r6.Replace(rawJson, "");
+					rawJson = r6.Replace(rawJson, @"""}");
 					// so let's deserialize string data
 					JavaScriptSerializer jsonSerializer = new JavaScriptSerializer();
 					result = jsonSerializer.Deserialize<Dictionary<string, object>>(rawJson);
-				} catch { }
+				} catch (Exception ex) {
+					result.Add("error", ex.Message);
+				}
+			}
+			if (result.ContainsKey("port")) {
+				string portStr = result["port"].ToString();
+				int port = 25;
+				Int32.TryParse(portStr, out port);
+				result["port"] = port;
+			}
+			if (result.ContainsKey("timeout")) {
+				string timeoutStr = result["timeout"].ToString();
+				int timeout = 10000;
+				Int32.TryParse(timeoutStr, out timeout);
+				result["timeout"] = timeout;
+			}
+			if (result.ContainsKey("ssl")) {
+				result["ssl"] = Boolean.Parse(result["ssl"].ToString().ToLower());
+			} else {
+				result["ssl"] = false;
+			}
+			if (result.ContainsKey("background")) {
+				result["background"] = Boolean.Parse(result["background"].ToString().ToLower());
+			} else {
+				result["background"] = false;
 			}
 			return result;
 		}

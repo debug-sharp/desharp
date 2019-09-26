@@ -385,8 +385,10 @@ namespace Desharp {
 			dispatcher.LastError = exception;
 			bool htmlOut = dispatcher.Output == LogFormat.Html;
 			List<string> renderedExceptions = Exceptions.RenderExceptions(exception, true, htmlOut, true);
-			if (Dispatcher.Levels["exception"] == 2) Mailer.Notify(String.Join(Environment.NewLine, renderedExceptions), "exception", htmlOut);
-			foreach (string renderedException in renderedExceptions) FileLog.Log(renderedException + Environment.NewLine, "exception");
+			if (Dispatcher.Levels["exception"] == 2)
+                Mailer.Notify(String.Join(Environment.NewLine, renderedExceptions), "exception", htmlOut);
+			foreach (string renderedException in renderedExceptions)
+                FileLog.Log(renderedException + Environment.NewLine, "exception");
 		}
 		/// <summary>
 		/// Log any type value to application <c>*.log|*.html</c> file, specified by level param.
@@ -421,7 +423,8 @@ namespace Desharp {
 				renderedObj = Exceptions.RenderCurrentApplicationPoint(
 					renderedObj, "Value", true, htmlOut
 				) + Environment.NewLine;
-				if (Dispatcher.Levels[logLevelValue] == 2) Mailer.Notify(renderedObj, logLevelValue, htmlOut);
+				if (Dispatcher.Levels[logLevelValue] == 2)
+                    Mailer.Notify(renderedObj, logLevelValue, htmlOut);
 			}
 			FileLog.Log(renderedObj, logLevelValue);
 		}
