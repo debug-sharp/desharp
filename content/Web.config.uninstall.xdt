@@ -8,7 +8,7 @@
 	<security>
       <requestFiltering>
         <hiddenSegments>
-          <add segment="logs" xdt:Transform="Remove" xdt:Locator="Match(segment)" />
+          <add segment="Logs" xdt:Transform="Remove" xdt:Locator="Match(segment)" />
           <add segment="Desharp.config.example" xdt:Transform="Remove" xdt:Locator="Match(segment)" />
         </hiddenSegments>
       </requestFiltering>
@@ -20,6 +20,6 @@
     <add key="Desharp:DebugIps" value="127.0.0.1,::1" xdt:Transform="Remove" xdt:Locator="Match(key)" />
     <add key="Desharp:Levels" value="+exception,debug,info,-notice,-warning,+error,+critical,alert,+emergency,javascript" xdt:Transform="Remove" xdt:Locator="Match(key)" />
     <add key="Desharp:Panels" value="Desharp.Panels.SystemInfo,Desharp.Panels.Session" xdt:Transform="Remove" xdt:Locator="Match(key)" />
-    <add key="Desharp:Directory" value="~/logs" xdt:Transform="Remove" xdt:Locator="Match(key)" />
+    <add key="Desharp:Directory" value="~/Logs" xdt:Transform="Remove" xdt:Locator="Match(key)" />
   </appSettings>
 </configuration>
