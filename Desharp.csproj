@@ -41,7 +41,7 @@
     </ApplicationIcon>
   </PropertyGroup>
   <PropertyGroup>
-    <SignAssembly>true</SignAssembly>
+    <SignAssembly>false</SignAssembly>
   </PropertyGroup>
   <PropertyGroup>
     <AssemblyOriginatorKeyFile>Tom Flidr - .NET.pfx</AssemblyOriginatorKeyFile>
@@ -176,8 +176,13 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PreBuildEvent>@IF EXIST $(ProjectDir)Assets\node_modules\desharp-assets (
-   CD $(ProjectDir)Assets\node_modules\desharp-assets\dev-tools
+    <PreBuildEvent>@IF EXIST $(ProjectDir)\Assets\node_modules\desharp-assets (
+   @cd $(ProjectDir)\Assets\node_modules\desharp-assets\dev-tools
+   build.cmd
+) else (
+   @cd $(ProjectDir)\Assets
+   load-asset-sources.cmd
+   @cd $(ProjectDir)\Assets\node_modules\desharp-assets\dev-tools
    build.cmd
 )</PreBuildEvent>
   </PropertyGroup>
