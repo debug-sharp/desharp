@@ -293,5 +293,5 @@ obj/Dev/*
 *.user
 .vs/
 Assets/node_modules/*
-_CreateNewNuGetPackage/*
+/Assets/package-lock.json
 docs/*
