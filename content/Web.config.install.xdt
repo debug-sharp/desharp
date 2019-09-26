@@ -18,7 +18,7 @@
     <add key="Desharp:Enabled" value="1" xdt:Transform="InsertIfMissing" xdt:Locator="Match(key)" />
     <add key="Desharp:Output" value="html" xdt:Transform="InsertIfMissing" xdt:Locator="Match(key)" />
     <add key="Desharp:DebugIps" value="127.0.0.1,::1" xdt:Transform="InsertIfMissing" xdt:Locator="Match(key)" />
-    <add key="Desharp:Levels" value="+exception,debug,info,-notice,-warning,+error,+critical,alert,+emergency,javascript" xdt:Transform="InsertIfMissing" xdt:Locator="Match(key)" />
+    <add key="Desharp:Levels" value="exception,debug,info,-notice,-warning,error,critical,alert,emergency,javascript" xdt:Transform="InsertIfMissing" xdt:Locator="Match(key)" />
     <add key="Desharp:Panels" value="Desharp.Panels.SystemInfo,Desharp.Panels.Session" xdt:Transform="InsertIfMissing" xdt:Locator="Match(key)" />
     <add key="Desharp:Directory" value="~/Logs" xdt:Transform="InsertIfMissing" xdt:Locator="Match(key)" />
   </appSettings>
