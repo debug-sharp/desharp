@@ -144,6 +144,7 @@
     <None Include="Desharp.nuspec">
       <SubType>Designer</SubType>
     </None>
+    <None Include="README.md" />
     <None Include="Tom Flidr - .NET.pfx" />
   </ItemGroup>
   <ItemGroup />
