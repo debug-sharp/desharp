@@ -5,7 +5,7 @@
 ![.NET Version](https://img.shields.io/badge/.NET->=4.0-brightgreen.svg?style=plastic)
 
 
---------------------------------------------------------------------
+---
 
 
 ## Outline
@@ -29,7 +29,7 @@
 - [**Visual Studio - Code Snippets**](#visual-studio---code-snippets)
 
 
---------------------------------------------------------------------
+---
 
 
 ## About
@@ -46,7 +46,7 @@
 - Any WinForms or WPF field component
 
 
---------------------------------------------------------------------
+---
 
 
 ## Instalation
@@ -58,7 +58,7 @@ PM> Install-Package Desharp
 ```
 
 
---------------------------------------------------------------------
+---
 
 
 ## Demos & Examples
@@ -75,7 +75,7 @@ PM> Install-Package Desharp
   Demo dumps and exceptions rendering into floating browser bar and logging on HDD.
 
 
---------------------------------------------------------------------
+---
 
 
 ## Do Not Miss
@@ -85,7 +85,7 @@ PM> Install-Package Desharp
   Automatic Visual Studio (or any other) editor opening on specific file and line from rendered logs and exceptions.
 
 
---------------------------------------------------------------------
+---
 
 
 ## Usage In Code
@@ -268,7 +268,7 @@ Desharp.Debug.Stop();
 Desharp.Debug.Timer(string name = null, bool returnTimerSeconds = false, Level logLevel = Level.DEBUG);
 ```
 
---------------------------------------------------------------------
+---
 
 
 ## Dumps & Logs Outputs
@@ -280,7 +280,7 @@ Desharp.Debug.Timer(string name = null, bool returnTimerSeconds = false, Level l
 - file logs in text/html formats
 
 
---------------------------------------------------------------------
+---
 
 
 ## What You Can Dump Or Log
@@ -328,7 +328,7 @@ Desharp.Debug.Timer(string name = null, bool returnTimerSeconds = false, Level l
 	    over whole browser window immediately with possibility to close it back into floating bar 
 
 
---------------------------------------------------------------------
+---
 
 
 ## Configuration
@@ -373,7 +373,7 @@ into your `App.config` or into `Web.config` file (if exists):
   ...
   <add key="Desharp:Enabled" value="1" />
   <add key="Desharp:Output" value="html" />
-  <add key="Desharp:Levels" value="+exception,debug,info,-notice,-warning,+error,+critical,alert,+emergency,javascript" />
+  <add key="Desharp:Levels" value="exception,debug,info,-notice,-warning,error,critical,alert,emergency,javascript" />
   <add key="Desharp:Directory" value="~/Logs" />
 </appSettings>
 ```
@@ -386,7 +386,7 @@ into your `App.config` or into `Web.config` file (if exists):
   <add key="Desharp:Enabled" value="1" />
   <add key="Desharp:Output" value="html" />
   <add key="Desharp:DebugIps" value="127.0.0.1,::1" />`
-  <add key="Desharp:Levels" value="+exception,debug,info,-notice,-warning,+error,+critical,alert,+emergency,javascript" />
+  <add key="Desharp:Levels" value="exception,debug,info,-notice,-warning,error,critical,alert,emergency,javascript" />
   <add key="Desharp:Panels" value="Desharp.Panels.SystemInfo,Desharp.Panels.Session" />
   <add key="Desharp:Directory" value="~/Logs" />
 </appSettings>
@@ -610,7 +610,7 @@ where are all detailed configuration options you can copy and paste:
 </configuration>
 ```
 
---------------------------------------------------------------------
+---
 
 
 ## Visual Studio - Code Snippets
