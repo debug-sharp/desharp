@@ -14,6 +14,11 @@
 - [**Demos & Examples**](#demos--examples)
 - [**Do Not Miss**](#do-not-miss)
 - [**Usage In Code**](#usage-in-code)
+  - [**Basic Dumping & Logging Any Structuralized Variables**](#basic-dumping--logging-any-structuralized-variables)
+  - [**Basic Dumping & Logging Exceptions**](#basic-dumping--logging-exceptions)
+  - [**All Dump Methods**](#all-dump-methods)
+  - [**All Log Methods**](#all-log-methods)
+  - [**All Other Methods**](#all-other-methods)
 - [**Dumps & Logs Outputs**](#dumps--logs-outputs)
 - [**What You Can Dump Or Log**](#what-you-can-dump-or-log)
 - [**What Is Rendered (Dumps & Logs)**](#what-is-rendered-dumps--logs)
@@ -85,7 +90,7 @@ PM> Install-Package Desharp
 
 ## Usage In Code
 
-### Dumping & Logging Any Structuralized Variables
+### Basic Dumping & Logging Any Structuralized Variables
 
 #### C# Basic Example
 ```cs
@@ -114,42 +119,7 @@ Dumped result for both languages:
    2: null
 ```
 
-#### All Dump Methods:
-
-```cs
-/**
- * Dump any values to application output (in web applications into debug bar,  
- * in desktop applications into console or debug output window)
- */
-Desharp.Debug.Dump(params object[] args);
-
-/**
- * Dump exception instance to application output if output dumping is enabled. It renders:
- * - exception type, exception message and exception hash id
- * - yes/no if exception has been caught or not caught
- * - error file where exception has been thrown
- * - thread call stack
- * - all inner exceptions after this exception in the same way
- */
-Desharp.Debug.Dump(Exception exception = null, DumpOptions? options = default(DumpOptions?));
-
-/**
- * Dump any values to application output (in web applications into debug bar,  
- * in desktop applications into console or debug output window)
- * This method dumps only single object with dump options like to dump
- * different object depth as usual, different string length or to dump source location and more...
- */
-Desharp.Debug.Dump(object obj, DumpOptions? options = default(DumpOptions?));
-
-/**
- * Dump any type value to direct application output (not into web request debug
- * bar in web applications!) and stop request/thread (in web applications dump into
- * direct response body, in desktop applications into console or debug output window)
- */
-Desharp.Debug.DumpAndDie(object obj = null, DumpOptions? options = default(DumpOptions?));
-```
-
-### Dumping & Logging Exceptions
+### Basic Dumping & Logging Exceptions
 
 #### C# Basic Example
 ```cs
@@ -194,6 +164,109 @@ System.Exception (Hash Code: 50632145):
       ExampleConsole.Program.Main(String[] args) /Program.cs 8
 ```
 
+### All Dump Methods
+
+```cs
+/**
+ * Dump any values to application output (in web applications into debug bar,  
+ * in desktop applications into console or debug output window)
+ */
+Desharp.Debug.Dump(params object[] args);
+
+/**
+ * Dump exception instance to application output if output dumping is enabled. It renders:
+ * - exception type, exception message and exception hash id
+ * - yes/no if exception has been caught or not caught
+ * - error file where exception has been thrown
+ * - thread call stack
+ * All inner exceptions after this exception in the same way.
+ */
+Desharp.Debug.Dump(Exception exception = null, DumpOptions? options = default(DumpOptions?));
+
+/**
+ * Dump any values to application output (in web applications into debug bar,  
+ * in desktop applications into console or debug output window)
+ * This method dumps only single object with dump options like to dump
+ * different object depth as usual, different string length or to dump source location and more...
+ */
+Desharp.Debug.Dump(object obj, DumpOptions? options = default(DumpOptions?));
+
+/**
+ * Dump any type value to direct application output (not into web request debug
+ * bar in web applications!) and stop request/thread (in web applications dump into
+ * direct response body, in desktop applications into console or debug output window).
+ */
+Desharp.Debug.DumpAndDie(object obj = null, DumpOptions? options = default(DumpOptions?));
+```
+
+### All Log Methods
+```cs
+/**
+ * Log exception instance as dumped string into exceptions.log|exceptions.html file. It stores:
+ * - exception type
+ * - exception message
+ * - if exception has been caught or not caught
+ * - exception hash id
+ * - error file where exception has been thrown
+ * - thread call stack
+ * All inner exceptions after this exception in the same way.
+ */
+Desharp.Debug.Log(Exception exception = null);
+
+/**
+ * Log any type value to application *.log|*.html file, specified by level param.
+ */
+Desharp.Debug.Log(object obj = null, Level level = Level.INFO, int maxDepth = 0, int maxLength = 0);
+```
+
+### All Other Methods
+```cs
+/**
+ * Print to application output or log into file (if enabled) first param to be true
+ * or not and describe what was equal or not in first param by second param message.
+ */
+Desharp.Debug.Assert(bool assertion, string description = "", Level logLevel = Level.DEBUG);
+
+/**
+ * Configure Desharp assembly from running application environment and override
+ * any XML config settings or automatically detected settings.
+ */
+Desharp.Debug.Configure(DebugConfig cfg);
+
+/**
+ * Enable or disable variables dumping from application code environment for all threads 
+ * or get enabled/disabled Desharp dumping state if no boolean param provided.
+ */
+Desharp.Debug.Enabled(bool? enabled = default(bool?));
+
+/**
+ * Return last uncaught Exception in request, mostly used in web applications by
+ * error page rendering process to know something about Exception before.
+ */
+Desharp.Debug.GetLastError();
+
+/**
+ * Return spent request processing time for web applications or return application
+ * up time for all other platforms.
+ */
+Desharp.Debug.GetProcessingTime();
+
+/**
+ * Print current thread stack trace into application output and exit running application.
+ * In web applications - stop current request, in any other applications - stop application
+ * with all it's threads and exit.
+ */
+Desharp.Debug.Stop();
+
+/**
+ * Prints to output or into log file number of seconds from last timer call under
+ * called name in seconds with 3 floating point decimal spaces.
+ * If no name specified or name is empty string, there is returned:
+ * Web applications - number of seconds from request beginning.
+ * Desktop applications - number of seconds from application start.
+ */
+Desharp.Debug.Timer(string name = null, bool returnTimerSeconds = false, Level logLevel = Level.DEBUG);
+```
 
 --------------------------------------------------------------------
 
