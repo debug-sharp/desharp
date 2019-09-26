@@ -114,6 +114,41 @@ Dumped result for both languages:
    2: null
 ```
 
+#### All Dump Methods:
+
+```cs
+/**
+ * Dump any values to application output (in web applications into debug bar,  
+ * in desktop applications into console or debug output window)
+ */
+Desharp.Debug.Dump(params object[] args);
+
+/**
+ * Dump exception instance to application output if output dumping is enabled. It renders:
+ * - exception type, exception message and exception hash id
+ * - yes/no if exception has been caught or not caught
+ * - error file where exception has been thrown
+ * - thread call stack
+ * - all inner exceptions after this exception in the same way
+ */
+Desharp.Debug.Dump(Exception exception = null, DumpOptions? options = default(DumpOptions?));
+
+/**
+ * Dump any values to application output (in web applications into debug bar,  
+ * in desktop applications into console or debug output window)
+ * This method dumps only single object with dump options like to dump
+ * different object depth as usual, different string length or to dump source location and more...
+ */
+Desharp.Debug.Dump(object obj, DumpOptions? options = default(DumpOptions?));
+
+/**
+ * Dump any type value to direct application output (not into web request debug
+ * bar in web applications!) and stop request/thread (in web applications dump into
+ * direct response body, in desktop applications into console or debug output window)
+ */
+Desharp.Debug.DumpAndDie(object obj = null, DumpOptions? options = default(DumpOptions?));
+```
+
 ### Dumping & Logging Exceptions
 
 #### C# Basic Example
