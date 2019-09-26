@@ -483,6 +483,7 @@ where are all detailed configuration options you can copy and paste:
       - If you want to enable any logging level - put the level name into node `value` attribute (comma separated).
       - If you want to disable any logging level - put minus (-) character before level name or remove level name.
       - If you want to enable any logging level for email notifications - put plus (+) character before level name.
+		For any notification type with plus sign, it required to configure `Desharp:NotifySettings` property!
     -->
     <add key="Desharp:Levels" value="+exception,debug,info,-notice,-warning,+error,+critical,alert,+emergency,javascript" />
 
